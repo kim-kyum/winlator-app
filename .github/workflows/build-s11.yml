@@ -87,14 +87,41 @@ jobs:
         env:
           S11_KEYSTORE_PASSWORD: ${{ secrets.S11_KEYSTORE_PASSWORD }}
           S11_KEY_ALIAS: s11
+        shell: bash
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon --stacktrace assembleDebug
+          ./gradlew --no-daemon --stacktrace assembleDebug 2>&1 | tee "$RUNNER_TEMP/build.log"
           APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
           OUT="Winlator-S11-build${GITHUB_RUN_NUMBER}.apk"
           mv "$APK" "$OUT"
           echo "APK_FILE=$OUT" >> "$GITHUB_ENV"
           ls -l "$OUT"
+
+      # Job logs live in blob storage the build session cannot reach, so failed
+      # builds leave their log on the s11-ci-log branch instead.
+      - name: Publish build log on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LOG="$RUNNER_TEMP/build.log"
+          mkdir -p "$RUNNER_TEMP/logrepo" && cd "$RUNNER_TEMP/logrepo"
+          {
+            echo "run ${GITHUB_RUN_NUMBER} commit ${GITHUB_SHA}"
+            if [ -f "$LOG" ]; then
+              grep -nE "error:|e: |FAILED|What went wrong|Caused by|undefined reference|fatal" "$LOG" | head -200
+              echo "----- tail -----"
+              tail -400 "$LOG"
+            else
+              echo "no build log (failed before the Gradle step)"
+            fi
+          } > build-log.txt
+          git init -q
+          git config user.name "s11-ci"
+          git config user.email "s11-ci@users.noreply.github.com"
+          git add build-log.txt
+          git commit -qm "build ${GITHUB_RUN_NUMBER} log"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/s11-ci-log
 
       - uses: actions/upload-artifact@v4
         with:
