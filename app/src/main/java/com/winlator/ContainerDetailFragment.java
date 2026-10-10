@@ -53,6 +53,7 @@ import com.winlator.core.WineInfo;
 import com.winlator.core.WineInstaller;
 import com.winlator.core.WineRegistryEditor;
 import com.winlator.core.WineThemeManager;
+import com.winlator.s11.ModernLook;
 import com.winlator.core.WineUtils;
 import com.winlator.widget.CPUListView;
 import com.winlator.widget.ColorPickerView;
@@ -335,7 +336,8 @@ public class ContainerDetailFragment extends Fragment {
             AppUtils.setSpinnerSelectionFromValue(sSystemFont, msLogFont.getFaceName());
 
             SeekBar sbLogPixels = view.findViewById(R.id.SBLogPixels);
-            sbLogPixels.setValue(registryEditor.getDwordValue("Control Panel\\Desktop", "LogPixels", 96));
+            // Winlator S11: new containers start at 144 dpi, which goes with the 1920x1200 default
+            sbLogPixels.setValue(registryEditor.getDwordValue("Control Panel\\Desktop", "LogPixels", isEditMode() ? 96 : ModernLook.DEFAULT_DPI));
 
             List<String> mouseWarpOverrideList = Arrays.asList(context.getString(R.string.disable), context.getString(R.string.enable), context.getString(R.string.force));
             Spinner sMouseWarpOverride = view.findViewById(R.id.SMouseWarpOverride);

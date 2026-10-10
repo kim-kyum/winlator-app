@@ -15,7 +15,10 @@
         <item>1366x768 (16:9)</item>
         <item>1440x900 (16:10)</item>
         <item>1600x900 (16:9)</item>
+        <item>1680x1050 (16:10)</item>
         <item>1920x1080 (16:9)</item>
+        <item>1920x1200 (16:10)</item>
+        <item>2560x1600 (16:10)</item>
     </string-array>
     <string-array name="audio_driver_entries">
         <item>ALSA</item>
@@ -116,6 +119,7 @@
         <item>12.2</item>
     </string-array>
     <string-array name="system_font_entries">
+        <item>Segoe UI</item>
         <item>Arial</item>
         <item>Andale Mono</item>
         <item>Comic Sans MS</item>

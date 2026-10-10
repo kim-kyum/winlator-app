@@ -13,6 +13,32 @@ there stay untouched.
   `AppUtils.java`, `gladio.h`, `vortek.h` and `winlator.h`.
 - The FileProvider authority follows the application id.
 
+## Desktop look
+
+The Wine desktop is set up to look like Windows 10/11 rather than Windows 95:
+
+- **Visual style "Winlator S11"** (`tools/s11/theme/build_msstyles.py`): Wine 11's
+  Aero theme with our colours and name. Wine 10.10's uxtheme loads it. Shipped in the
+  rootfs overlay and linked into each prefix; used with the light desktop theme.
+  `ModernLook` marks it as loaded before, so uxtheme keeps the colours from
+  `WineThemeManager` instead of the theme's own.
+- **Colours** (`WineThemeManager`): light title bars that match the dialogs, Windows
+  blue selection, 3D colours tuned so classic controls get flat 1 px borders.
+- **Title bars**: Windows 10 sizes (`ModernLook`), thin Marlett glyphs
+  (`tools/s11/theme/build_marlett.py`, installed as a newer Marlett in the overlay),
+  and `CaptionButtons` turns off the raised push-button frame Wine draws around them
+  (one verified call in the bundled `win32u.so`).
+- **Fonts**: "Segoe UI" is served by S11 Sans, our build of Microsoft's Selawik
+  (`tools/s11/fonts/build_s11sans.py`, SIL OFL; renamed as the OFL requires), and
+  dialogs follow it. NanumGothic is linked behind the common Latin fonts for Hangul.
+- **Resolution**: new containers use 1920×1200 at 144 dpi; containers still on the old
+  1280×800/96 dpi defaults move there once.
+- **Wallpaper**: an original S11 wallpaper (`tools/s11/theme/make_wallpaper.py`),
+  rendered at the screen's size instead of 480 px tall.
+
+Licences: the visual style and Marlett come from Wine (LGPL 2.1); S11 Sans keeps
+Selawik's OFL (`S11Sans-OFL.txt` next to the fonts).
+
 ## Builds
 
 Every push to the `tab-s11` branch runs `.github/workflows/build-s11.yml`, which

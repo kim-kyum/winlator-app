@@ -18,7 +18,8 @@ import java.util.Iterator;
 
 public class Container {
     public static final String DEFAULT_ENV_VARS = "ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=1 TU_DEBUG=noconform";
-    public static final String DEFAULT_SCREEN_SIZE = "1280x800"; // Winlator S11: half of the Tab S11 panel (2560x1600, 16:10)
+    // Winlator S11: 3/4 of the Tab S11 panel (2560x1600, 16:10), used with 144 dpi (150%)
+    public static final String DEFAULT_SCREEN_SIZE = "1920x1200";
     public static final String DEFAULT_AUDIO_DRIVER = AudioDrivers.ALSA;
     public static final String DEFAULT_DXWRAPPER = DXWrappers.DXVK;
     public static final String DEFAULT_WINCOMPONENTS = "direct3d=1,directsound=1,directmusic=1,directshow=0,directplay=0,xaudio=1,vcrun2005=0,vcrun2010=1,wmdecoder=1";

@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 
+import com.winlator.s11.ModernLook;
 import com.winlator.win32.MSBitmap;
 import com.winlator.xenvironment.RootFS;
 import com.winlator.xserver.ScreenInfo;
@@ -22,7 +23,40 @@ public abstract class WineThemeManager {
     public enum Theme {LIGHT, DARK}
     public enum BackgroundType {IMAGE, COLOR}
     public static final String DEFAULT_DESKTOP_THEME = Theme.LIGHT+","+BackgroundType.IMAGE+",#0277bd";
-    public static final String DEFAULT_WALLPAPER_ID = "wallpaper-1";
+    public static final String DEFAULT_WALLPAPER_ID = "wallpaper-s11";
+
+    /*
+     * Winlator S11 palettes: Windows 10/11 colours. Title bars match the dialog surface and
+     * the 3D colours are set up so DrawEdge draws flat 1 px borders: raised edges (buttons,
+     * frames) take their outer line from ButtonLight/ButtonDkShadow, sunken ones (edit
+     * boxes) their inner line from ButtonDkShadow/ButtonLight, while ButtonHilight and
+     * ButtonShadow stay close to the face.
+     */
+    private static final String[][] LIGHT_COLORS = {
+        {"ActiveBorder", "243 243 243"}, {"ActiveTitle", "243 243 243"}, {"AppWorkspace", "171 171 171"},
+        {"ButtonAlternateFace", "243 243 243"}, {"ButtonDkShadow", "160 160 160"}, {"ButtonFace", "243 243 243"},
+        {"ButtonHilight", "255 255 255"}, {"ButtonLight", "191 191 191"}, {"ButtonShadow", "213 213 213"},
+        {"ButtonText", "0 0 0"}, {"GradientActiveTitle", "243 243 243"}, {"GradientInactiveTitle", "243 243 243"},
+        {"GrayText", "109 109 109"}, {"Hilight", "0 120 215"}, {"HilightText", "255 255 255"},
+        {"HotTrackingColor", "0 102 204"}, {"InactiveBorder", "243 243 243"}, {"InactiveTitle", "243 243 243"},
+        {"InactiveTitleText", "140 140 140"}, {"InfoText", "0 0 0"}, {"InfoWindow", "255 255 255"},
+        {"Menu", "249 249 249"}, {"MenuBar", "243 243 243"}, {"MenuHilight", "0 120 215"}, {"MenuText", "0 0 0"},
+        {"Scrollbar", "240 240 240"}, {"TitleText", "0 0 0"}, {"Window", "255 255 255"},
+        {"WindowFrame", "160 160 160"}, {"WindowText", "0 0 0"}
+    };
+
+    private static final String[][] DARK_COLORS = {
+        {"ActiveBorder", "32 32 32"}, {"ActiveTitle", "32 32 32"}, {"AppWorkspace", "40 40 40"},
+        {"ButtonAlternateFace", "43 43 43"}, {"ButtonDkShadow", "96 96 96"}, {"ButtonFace", "43 43 43"},
+        {"ButtonHilight", "58 58 58"}, {"ButtonLight", "80 80 80"}, {"ButtonShadow", "50 50 50"},
+        {"ButtonText", "255 255 255"}, {"GradientActiveTitle", "32 32 32"}, {"GradientInactiveTitle", "32 32 32"},
+        {"GrayText", "140 140 140"}, {"Hilight", "0 120 215"}, {"HilightText", "255 255 255"},
+        {"HotTrackingColor", "96 205 255"}, {"InactiveBorder", "32 32 32"}, {"InactiveTitle", "32 32 32"},
+        {"InactiveTitleText", "150 150 150"}, {"InfoText", "255 255 255"}, {"InfoWindow", "43 43 43"},
+        {"Menu", "43 43 43"}, {"MenuBar", "32 32 32"}, {"MenuHilight", "0 120 215"}, {"MenuText", "255 255 255"},
+        {"Scrollbar", "43 43 43"}, {"TitleText", "255 255 255"}, {"Window", "25 25 25"},
+        {"WindowFrame", "96 96 96"}, {"WindowText", "255 255 255"}
+    };
 
     public static class ThemeInfo {
         public final Theme theme;
@@ -61,87 +95,28 @@ public abstract class WineThemeManager {
             }
             else registryEditor.removeValue("Control Panel\\Desktop", "Wallpaper");
 
-            if (themeInfo.theme == Theme.LIGHT) {
-                registryEditor.setStringValue("Control Panel\\Colors", "ActiveBorder", "245 245 245");
-                registryEditor.setStringValue("Control Panel\\Colors", "ActiveTitle", "96 125 139");
-                registryEditor.setStringValue("Control Panel\\Colors", "Background", background);
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonAlternateFace", "245 245 245");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonDkShadow", "158 158 158");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonFace", "245 245 245");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonHilight", "224 224 224");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonLight", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonShadow", "158 158 158");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonText", "0 0 0");
-                registryEditor.setStringValue("Control Panel\\Colors", "GradientActiveTitle", "96 125 139");
-                registryEditor.setStringValue("Control Panel\\Colors", "GradientInactiveTitle", "117 117 117");
-                registryEditor.setStringValue("Control Panel\\Colors", "GrayText", "158 158 158");
-                registryEditor.setStringValue("Control Panel\\Colors", "Hilight", "2 136 209");
-                registryEditor.setStringValue("Control Panel\\Colors", "HilightText", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "HotTrackingColor", "2 136 209");
-                registryEditor.setStringValue("Control Panel\\Colors", "InactiveBorder", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "InactiveTitle", "117 117 117");
-                registryEditor.setStringValue("Control Panel\\Colors", "InactiveTitleText", "200 200 200");
-                registryEditor.setStringValue("Control Panel\\Colors", "InfoText", "0 0 0");
-                registryEditor.setStringValue("Control Panel\\Colors", "InfoWindow", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "Menu", "245 245 245");
-                registryEditor.setStringValue("Control Panel\\Colors", "MenuBar", "245 245 245");
-                registryEditor.setStringValue("Control Panel\\Colors", "MenuHilight", "2 136 209");
-                registryEditor.setStringValue("Control Panel\\Colors", "MenuText", "0 0 0");
-                registryEditor.setStringValue("Control Panel\\Colors", "Scrollbar", "245 245 245");
-                registryEditor.setStringValue("Control Panel\\Colors", "TitleText", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "Window", "245 245 245");
-                registryEditor.setStringValue("Control Panel\\Colors", "WindowFrame", "158 158 158");
-                registryEditor.setStringValue("Control Panel\\Colors", "WindowText", "0 0 0");
-            }
-            else if (themeInfo.theme == Theme.DARK) {
-                registryEditor.setStringValue("Control Panel\\Colors", "ActiveBorder", "48 48 48");
-                registryEditor.setStringValue("Control Panel\\Colors", "ActiveTitle", "33 33 33");
-                registryEditor.setStringValue("Control Panel\\Colors", "Background", background);
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonAlternateFace", "33 33 33");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonDkShadow", "0 0 0");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonFace", "33 33 33");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonHilight", "48 48 48");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonLight", "48 48 48");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonShadow", "0 0 0");
-                registryEditor.setStringValue("Control Panel\\Colors", "ButtonText", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "GradientActiveTitle", "33 33 33");
-                registryEditor.setStringValue("Control Panel\\Colors", "GradientInactiveTitle", "33 33 33");
-                registryEditor.setStringValue("Control Panel\\Colors", "GrayText", "117 117 117");
-                registryEditor.setStringValue("Control Panel\\Colors", "Hilight", "2 136 209");
-                registryEditor.setStringValue("Control Panel\\Colors", "HilightText", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "HotTrackingColor", "2 136 209");
-                registryEditor.setStringValue("Control Panel\\Colors", "InactiveBorder", "48 48 48");
-                registryEditor.setStringValue("Control Panel\\Colors", "InactiveTitle", "33 33 33");
-                registryEditor.setStringValue("Control Panel\\Colors", "InactiveTitleText", "117 117 117");
-                registryEditor.setStringValue("Control Panel\\Colors", "InfoText", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "InfoWindow", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "Menu", "33 33 33");
-                registryEditor.setStringValue("Control Panel\\Colors", "MenuBar", "48 48 48");
-                registryEditor.setStringValue("Control Panel\\Colors", "MenuHilight", "2 136 209");
-                registryEditor.setStringValue("Control Panel\\Colors", "MenuText", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "Scrollbar", "48 48 48");
-                registryEditor.setStringValue("Control Panel\\Colors", "TitleText", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "Window", "48 48 48");
-                registryEditor.setStringValue("Control Panel\\Colors", "WindowFrame", "0 0 0");
-                registryEditor.setStringValue("Control Panel\\Colors", "WindowText", "255 255 255");
-            }
+            registryEditor.setStringValues("Control Panel\\Colors", themeInfo.theme == Theme.LIGHT ? LIGHT_COLORS : DARK_COLORS);
+            registryEditor.setStringValue("Control Panel\\Colors", "Background", background);
+
+            // Winlator S11: visual style (light theme) and Windows 10 window metrics
+            ModernLook.applyTheme(rootDir, registryEditor, themeInfo.theme == Theme.LIGHT);
         }
     }
 
     private static void createWallpaperBMPFile(Context context, String wallpaperId, ScreenInfo screenInfo) {
-        final int outputHeight = 480;
-        int outputWidth = (int)Math.ceil(((float)outputHeight / screenInfo.height) * screenInfo.width);
+        // Winlator S11: render at the screen's own size (Wine stretches the bitmap to the
+        // screen, so the old 480 px tall bitmap came out blurry)
+        int outputWidth = screenInfo.width;
+        int outputHeight = screenInfo.height;
 
         Bitmap outputBitmap = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888);
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
         Canvas canvas = new Canvas(outputBitmap);
 
         File userWallpaperFile = getUserWallpaperFile(context);
         if (wallpaperId.equals("user-wallpaper") && userWallpaperFile.isFile()) {
             Bitmap image = BitmapFactory.decodeFile(userWallpaperFile.getPath());
-            Rect srcRect = new Rect(0, 0, image.getWidth(), image.getHeight());
-            Rect dstRect = new Rect(0, 0, outputWidth, outputHeight);
-            canvas.drawBitmap(image, srcRect, dstRect, paint);
+            if (image != null) drawCover(canvas, image, outputWidth, outputHeight, paint);
         }
         else if (wallpaperId.startsWith("wallpaper-")) {
             String wallpaperDir = "wallpapers/"+wallpaperId;
@@ -149,40 +124,60 @@ public abstract class WineThemeManager {
             try {
                 config = new JSONObject(FileUtils.readString(context, wallpaperDir+"/config.json"));
             }
-            catch (JSONException e) {
+            catch (JSONException | NullPointerException e) {
                 return;
             }
 
-            int primaryColor = Color.parseColor(config.optString("primaryColor", "#ffffff"));
-            int secondaryColor = Color.parseColor(config.optString("secondaryColor", "#ffffff"));
-            String orientation = config.optString("orientation", "none");
-            float scale = (float)config.optDouble("scale", 1.0);
-            Bitmap wallpaperBitmap = ImageUtils.getBitmapFromAsset(context, wallpaperDir+"/image.png");
-            paint.setStyle(Paint.Style.FILL);
-
-            if (orientation.equals("horizontal")) {
-                paint.setColor(primaryColor);
-                canvas.drawRect(0, 0, outputWidth * 0.5f, outputHeight, paint);
-                paint.setColor(secondaryColor);
-                canvas.drawRect(outputWidth * 0.5f, 0, outputWidth, outputHeight, paint);
+            String fullImage = config.optString("full", "");
+            if (!fullImage.isEmpty()) {
+                // A picture that fills the screen
+                Bitmap image = ImageUtils.getBitmapFromAsset(context, wallpaperDir+"/"+fullImage);
+                if (image != null) drawCover(canvas, image, outputWidth, outputHeight, paint);
             }
-            else if (orientation.equals("vertical")) {
-                paint.setColor(primaryColor);
-                canvas.drawRect(0, 0, outputWidth, outputHeight * 0.5f, paint);
-                paint.setColor(secondaryColor);
-                canvas.drawRect(0, outputHeight * 0.5f, outputWidth, outputHeight, paint);
-            }
+            else {
+                int primaryColor = Color.parseColor(config.optString("primaryColor", "#ffffff"));
+                int secondaryColor = Color.parseColor(config.optString("secondaryColor", "#ffffff"));
+                String orientation = config.optString("orientation", "none");
+                float scale = (float)config.optDouble("scale", 1.0);
+                Bitmap wallpaperBitmap = ImageUtils.getBitmapFromAsset(context, wallpaperDir+"/image.png");
+                paint.setStyle(Paint.Style.FILL);
 
-            float targetSize = outputHeight * scale;
-            float centerX = (outputWidth - targetSize) * 0.5f;
-            float centerY = (outputHeight - targetSize) * 0.5f;
-            Rect srcRect = new Rect(0, 0, wallpaperBitmap.getWidth(), wallpaperBitmap.getHeight());
-            RectF dstRect = new RectF(centerX, centerY, centerX + targetSize, centerY + targetSize);
-            canvas.drawBitmap(wallpaperBitmap, srcRect, dstRect, paint);
+                if (orientation.equals("horizontal")) {
+                    paint.setColor(primaryColor);
+                    canvas.drawRect(0, 0, outputWidth * 0.5f, outputHeight, paint);
+                    paint.setColor(secondaryColor);
+                    canvas.drawRect(outputWidth * 0.5f, 0, outputWidth, outputHeight, paint);
+                }
+                else if (orientation.equals("vertical")) {
+                    paint.setColor(primaryColor);
+                    canvas.drawRect(0, 0, outputWidth, outputHeight * 0.5f, paint);
+                    paint.setColor(secondaryColor);
+                    canvas.drawRect(0, outputHeight * 0.5f, outputWidth, outputHeight, paint);
+                }
+
+                float targetSize = outputHeight * scale;
+                float centerX = (outputWidth - targetSize) * 0.5f;
+                float centerY = (outputHeight - targetSize) * 0.5f;
+                Rect srcRect = new Rect(0, 0, wallpaperBitmap.getWidth(), wallpaperBitmap.getHeight());
+                RectF dstRect = new RectF(centerX, centerY, centerX + targetSize, centerY + targetSize);
+                canvas.drawBitmap(wallpaperBitmap, srcRect, dstRect, paint);
+            }
         }
 
         RootFS rootFS = RootFS.find(context);
         MSBitmap.create(outputBitmap, new File(rootFS.getRootDir(), RootFS.USER_CACHE_PATH +"/wallpaper.bmp"));
+        outputBitmap.recycle();
+    }
+
+    /** Scales the image to cover the whole output, cropping the overflow evenly. */
+    private static void drawCover(Canvas canvas, Bitmap image, int outputWidth, int outputHeight, Paint paint) {
+        float scale = Math.max((float)outputWidth / image.getWidth(), (float)outputHeight / image.getHeight());
+        float width = image.getWidth() * scale;
+        float height = image.getHeight() * scale;
+        float left = (outputWidth - width) * 0.5f;
+        float top = (outputHeight - height) * 0.5f;
+        Rect srcRect = new Rect(0, 0, image.getWidth(), image.getHeight());
+        canvas.drawBitmap(image, srcRect, new RectF(left, top, left + width, top + height), paint);
     }
 
     public static File getUserWallpaperFile(Context context) {

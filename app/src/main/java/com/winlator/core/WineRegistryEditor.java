@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -207,6 +208,35 @@ public class WineRegistryEditor implements Closeable {
             return bytes;
         }
         return null;
+    }
+
+    /** Reads a REG_MULTI_SZ value, stored either as str(7):"a\0b\0" or as hex(7):... */
+    public String[] getMultiStringValue(String key, String name) {
+        String value = getRawValue(key, name);
+        if (value == null) return null;
+
+        ArrayList<String> items = new ArrayList<>();
+        if (value.startsWith("str(7):\"") && value.endsWith("\"")) {
+            for (String item : value.substring(8, value.length() - 1).split("\\\\0", -1)) {
+                if (!item.isEmpty()) items.add(item);
+            }
+        }
+        else {
+            byte[] bytes = getHexValues(key, name);
+            if (bytes == null) return null;
+            for (String item : new String(bytes, StandardCharsets.UTF_16LE).split("\0")) {
+                if (!item.isEmpty()) items.add(item);
+            }
+        }
+        return items.toArray(new String[0]);
+    }
+
+    /** Writes a REG_MULTI_SZ value the way Wine itself does: str(7):"a\0b\0" */
+    public void setMultiStringValue(String key, String name, String[] values) {
+        StringBuilder data = new StringBuilder("str(7):\"");
+        for (String value : values) data.append(escape(value)).append("\\0");
+        data.append("\"");
+        setRawValue(key, name, data.toString());
     }
 
     public String getSymlinkValue(String key, String name) {

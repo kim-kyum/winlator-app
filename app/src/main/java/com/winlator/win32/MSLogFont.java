@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 public class MSLogFont {
-    private int height = -11;
+    private int height = -12; // Winlator S11: 9 pt Segoe UI, the Windows UI font since Vista
     private int width = 0;
     private int escapement = 0;
     private int orientation = 0;
@@ -17,7 +17,7 @@ public class MSLogFont {
     private byte clipPrecision = 0;
     private byte quality = 0;
     private byte pitchAndFamily = 34;
-    private String faceName = "Tahoma";
+    private String faceName = "Segoe UI";
 
     public int getHeight() {
         return height;

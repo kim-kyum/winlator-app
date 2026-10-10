@@ -54,8 +54,8 @@ public abstract class WineUtils {
 
     public static void setSystemFont(WineRegistryEditor userRegistry, String faceName) {
         byte[] fontNormalData = (new MSLogFont()).setFaceName(faceName).toByteArray();
-        byte[] fontBoldData = (new MSLogFont()).setFaceName(faceName).setWeight(700).toByteArray();
-        userRegistry.setHexValues("Control Panel\\Desktop\\WindowMetrics", "CaptionFont", fontBoldData);
+        // Winlator S11: regular-weight titles, as in Windows 10/11 (the title bar is light now)
+        userRegistry.setHexValues("Control Panel\\Desktop\\WindowMetrics", "CaptionFont", fontNormalData);
         userRegistry.setHexValues("Control Panel\\Desktop\\WindowMetrics", "IconFont", fontNormalData);
         userRegistry.setHexValues("Control Panel\\Desktop\\WindowMetrics", "MenuFont", fontNormalData);
         userRegistry.setHexValues("Control Panel\\Desktop\\WindowMetrics", "MessageFont", fontNormalData);

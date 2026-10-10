@@ -95,10 +95,12 @@ import com.winlator.xserver.Window;
 import com.winlator.xserver.WindowManager;
 import com.winlator.xserver.XKeycode;
 import com.winlator.xserver.XServer;
+import com.winlator.s11.CaptionButtons;
 import com.winlator.s11.ComposingOverlay;
 import com.winlator.s11.ImeSession;
 import com.winlator.s11.KoreanFonts;
 import com.winlator.s11.LegacyBrowserCleanup;
+import com.winlator.s11.ModernLook;
 import com.winlator.s11.PowerMenu;
 import com.winlator.s11.RootfsOverlay;
 
@@ -215,6 +217,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             String dxwrapperConfig = container.getDXWrapperConfig();
             String graphicsDriverConfig = container.getGraphicsDriverConfig();
             audioDriverConfig = new KeyValueSet(container.getAudioDriverConfig());
+            ModernLook.migrateDisplay(container); // Winlator S11: 1920x1200 at 144 dpi for old defaults
             screenInfo = resolveScreenInfo(container.getScreenSize());
 
             if (shortcut != null) {
@@ -576,8 +579,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     }
 
     private void setupWineSystemFiles() {
-        // Winlator S11: Korean locale and fonts in the rootfs (re-extracted when they change)
+        // Winlator S11: Korean locale, fonts and the S11 visual style in the rootfs
+        // (re-extracted when they change), and flat title bar buttons
         RootfsOverlay.installIfNeeded(this, rootFS.getRootDir());
+        CaptionButtons.applyIfNeeded(rootFS.getRootDir());
 
         String appVersion = String.valueOf(AppUtils.getVersionCode(this));
         String rfsVersion = String.valueOf(rootFS.getVersion());
@@ -629,6 +634,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         }
 
         if (KoreanFonts.applyIfNeeded(container, rootFS.getRootDir())) containerDataChanged = true;
+        if (ModernLook.applyIfNeeded(container, rootFS.getRootDir())) containerDataChanged = true;
 
         if (containerDataChanged) container.saveData();
     }
