@@ -20,9 +20,9 @@ patches the assets (cached between runs), builds the APK and publishes it as a
 GitHub release named `s11-buildN`.
 
 Updates install over the previous build only when every build is signed with the
-same key. The key lives in the repository secrets `S11_KEYSTORE_B64`,
-`S11_KEYSTORE_PASSWORD` and `S11_KEY_PASSWORD`; without them the build falls back
-to a throwaway debug key.
+same key. The key is `tools/s11/signing/s11-release.p12` (PKCS12, encrypted with
+AES-256); its password is the repository secret `S11_KEYSTORE_PASSWORD`. Without
+the secret the workflow still compiles, but publishes nothing.
 
 ## Following upstream
 

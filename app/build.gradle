@@ -26,7 +26,8 @@ android {
                 storeFile file(s11Keystore)
                 storePassword System.getenv('S11_KEYSTORE_PASSWORD')
                 keyAlias System.getenv('S11_KEY_ALIAS') ?: 's11'
-                keyPassword System.getenv('S11_KEY_PASSWORD')
+                // PKCS12 keystores use one password for the store and the key
+                keyPassword System.getenv('S11_KEY_PASSWORD') ?: System.getenv('S11_KEYSTORE_PASSWORD')
             }
         }
     }

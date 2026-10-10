@@ -66,21 +66,23 @@ jobs:
           path: .s11-cache
           key: s11-assets-${{ hashFiles('app/src/main/assets/**', 'tools/s11/patch_assets.py') }}
 
+      # The keystore in tools/s11/signing is encrypted (PKCS12, AES-256); only its
+      # password lives in the repository secret S11_KEYSTORE_PASSWORD.
       - name: Signing key
         env:
-          KEYSTORE_B64: ${{ secrets.S11_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.S11_KEYSTORE_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_B64" ]; then
-            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/s11.jks"
-            echo "S11_KEYSTORE=$RUNNER_TEMP/s11.jks" >> "$GITHUB_ENV"
+          if [ -n "$KEYSTORE_PASSWORD" ]; then
+            echo "S11_KEYSTORE=$GITHUB_WORKSPACE/tools/s11/signing/s11-release.p12" >> "$GITHUB_ENV"
+            echo "S11_SIGNED=1" >> "$GITHUB_ENV"
           else
-            echo "::warning::S11_KEYSTORE_B64 secret missing; APK uses a throwaway debug key and cannot update a previous install"
+            echo "::warning::Secret S11_KEYSTORE_PASSWORD is missing: this build is a compile check only and is not published"
+            echo "S11_SIGNED=0" >> "$GITHUB_ENV"
           fi
 
       - name: Build APK
         env:
           S11_KEYSTORE_PASSWORD: ${{ secrets.S11_KEYSTORE_PASSWORD }}
-          S11_KEY_PASSWORD: ${{ secrets.S11_KEY_PASSWORD }}
           S11_KEY_ALIAS: s11
         run: |
           chmod +x gradlew
@@ -97,6 +99,7 @@ jobs:
           path: ${{ env.APK_FILE }}
 
       - name: Publish release
+        if: env.S11_SIGNED == '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
