@@ -39,6 +39,12 @@ public class LocaleHelper {
 
     public static void setEnvVars(EnvVars envVars) {
         Locale locale = Locale.getDefault();
+        // Winlator S11 ships ko_KR.UTF-8 locale data: Korean code page (949) for
+        // non-Unicode Korean programs and Wine's own dialogs in Korean.
+        if (locale.getLanguage().equals("ko")) {
+            envVars.put("LC_ALL", "ko_KR.UTF-8");
+            return;
+        }
         for (String name : supportedLocales) {
             if (locale.toString().startsWith(name.substring(0, 2))) {
                 envVars.put("LC_ALL", name+".UTF-8");

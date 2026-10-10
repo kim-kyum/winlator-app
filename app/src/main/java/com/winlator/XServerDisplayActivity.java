@@ -94,6 +94,8 @@ import com.winlator.xserver.WindowManager;
 import com.winlator.xserver.XServer;
 import com.winlator.s11.ComposingOverlay;
 import com.winlator.s11.ImeSession;
+import com.winlator.s11.KoreanFonts;
+import com.winlator.s11.RootfsOverlay;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -447,6 +449,9 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     }
 
     private void setupWineSystemFiles() {
+        // Winlator S11: Korean locale and fonts in the rootfs (re-extracted when they change)
+        RootfsOverlay.installIfNeeded(this, rootFS.getRootDir());
+
         String appVersion = String.valueOf(AppUtils.getVersionCode(this));
         String rfsVersion = String.valueOf(rootFS.getVersion());
         boolean containerDataChanged = false;
@@ -492,6 +497,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             container.putExtra("openAndroidBrowserFromWine", openAndroidBrowserFromWineStr);
             containerDataChanged = true;
         }
+
+        if (KoreanFonts.applyIfNeeded(container, rootFS.getRootDir())) containerDataChanged = true;
 
         if (containerDataChanged) container.saveData();
     }

@@ -66,6 +66,9 @@ jobs:
           path: .s11-cache
           key: s11-assets-${{ hashFiles('app/src/main/assets/**', 'tools/s11/patch_assets.py') }}
 
+      - name: Build S11 rootfs overlay
+        run: python3 tools/s11/build_overlay.py tools/s11/rootfs-overlay app/src/main/assets
+
       # The keystore in tools/s11/signing is encrypted (PKCS12, AES-256); only its
       # password lives in the repository secret S11_KEYSTORE_PASSWORD.
       - name: Signing key
