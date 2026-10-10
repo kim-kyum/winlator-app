@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Rewrite the app's data path inside Winlator's bundled .tzst archives.
+"""Rewrite the app's data path inside Winlator's bundled .tzst archives, and
+drop the files Winlator S11 does not ship.
 
 Winlator's rootfs, Box64, graphics drivers and patches have the install path
 "/data/data/com.winlator" compiled into binaries (ELF interpreter, RPATH),
@@ -9,6 +10,10 @@ app under a different application id, so that path must change everywhere.
 The new id has the same length as the old one, so every replacement keeps
 byte offsets intact and binaries stay valid. Tar headers are rebuilt with
 Python's tarfile so their checksums stay correct.
+
+REMOVE lists archive members left out of the APK (each entry also removes
+everything below it). Containers made by earlier builds are cleaned at
+runtime by com.winlator.s11.LegacyBrowserCleanup.
 
 Usage: patch_assets.py <assets_dir> [--app-id com.winlatab] [--check]
 """
@@ -22,6 +27,33 @@ import tarfile
 import tempfile
 
 OLD_ID = "com.winlator"
+
+# Archive (relative to the assets dir) -> member paths to leave out.
+REMOVE = {
+    # Wine's Internet Explorer stub: the builtin iexplore.exe (without it
+    # wineboot cannot recreate the placeholder) and the placeholder folders
+    # every new container starts with. Web links open in the Android browser.
+    "rootfs.tzst": [
+        "opt/wine/lib/wine/i386-windows/iexplore.exe",
+        "opt/wine/lib/wine/x86_64-windows/iexplore.exe",
+    ],
+    "container_pattern.tzst": [
+        ".wine/drive_c/Program Files/Internet Explorer",
+        ".wine/drive_c/Program Files (x86)/Internet Explorer",
+    ],
+}
+
+
+def member_path(name):
+    """Tar member name without a leading "./" or trailing "/"."""
+    if name.startswith("./"):
+        name = name[2:]
+    return name.rstrip("/")
+
+
+def is_removed(name, prefixes):
+    path = member_path(name)
+    return any(path == p or path.startswith(p + "/") for p in prefixes)
 
 
 def zstd_bin():
@@ -47,13 +79,17 @@ def compress(data, path, level):
     os.replace(tmp, path)
 
 
-def rewrite_tar(raw, old, new):
-    """Return (new_tar_bytes, files_changed, replacements)."""
+def rewrite_tar(raw, old, new, remove=()):
+    """Return (new_tar_bytes, files_changed, replacements, removed_names)."""
     src = tarfile.open(fileobj=io.BytesIO(raw), mode="r:")
     out_buf = io.BytesIO()
     dst = tarfile.open(fileobj=out_buf, mode="w:", format=tarfile.GNU_FORMAT)
     changed = hits = 0
+    removed = []
     for ti in src.getmembers():
+        if remove and is_removed(ti.name, remove):
+            removed.append(member_path(ti.name))
+            continue
         n = 0
         if ti.issym() or ti.islnk():
             if old.decode() in ti.linkname:
@@ -72,7 +108,7 @@ def rewrite_tar(raw, old, new):
             changed += 1
             hits += n
     dst.close()
-    return out_buf.getvalue(), changed, hits
+    return out_buf.getvalue(), changed, hits, removed
 
 
 def main():
@@ -88,25 +124,33 @@ def main():
     old = f"/data/data/{OLD_ID}".encode()
     new = f"/data/data/{args.app_id}".encode()
 
-    total_files = total_hits = 0
+    total_files = total_hits = total_removed = 0
     for root, _, names in os.walk(args.assets_dir):
         for name in sorted(names):
             if not name.endswith(".tzst"):
                 continue
             path = os.path.join(root, name)
+            rel = os.path.relpath(path, args.assets_dir).replace(os.sep, "/")
+            remove = REMOVE.get(rel, [])
             raw = decompress(path)
-            if old not in raw:
+            if old not in raw and not remove:
                 continue
-            data, changed, hits = rewrite_tar(raw, old, new)
+            data, changed, hits, removed = rewrite_tar(raw, old, new, remove)
             if old in data:
                 sys.exit(f"{path}: old path still present after rewrite")
-            rel = os.path.relpath(path, args.assets_dir)
-            print(f"{rel}: {changed} files, {hits} replacements")
+            for prefix in remove:
+                if not any(p == prefix or p.startswith(prefix + "/") for p in removed):
+                    print(f"warning: {rel}: nothing to remove at {prefix}")
+            print(f"{rel}: {changed} files, {hits} replacements, {len(removed)} members removed")
+            for p in removed:
+                print(f"    - {p}")
             total_files += changed
             total_hits += hits
+            total_removed += len(removed)
             if not args.check:
                 compress(data, path, args.level)
-    print(f"done: {total_files} files, {total_hits} replacements -> {new.decode()}")
+    print(f"done: {total_files} files, {total_hits} replacements -> {new.decode()}, "
+          f"{total_removed} members removed")
 
 
 if __name__ == "__main__":

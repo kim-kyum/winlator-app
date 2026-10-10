@@ -95,6 +95,7 @@ import com.winlator.xserver.XServer;
 import com.winlator.s11.ComposingOverlay;
 import com.winlator.s11.ImeSession;
 import com.winlator.s11.KoreanFonts;
+import com.winlator.s11.LegacyBrowserCleanup;
 import com.winlator.s11.RootfsOverlay;
 
 import org.json.JSONArray;
@@ -182,6 +183,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
                     if (status == 0) {
                         container.putExtra("wineprefixNeedsUpdate", null);
                         container.putExtra("wincomponents", null);
+                        container.putExtra(LegacyBrowserCleanup.EXTRA_KEY, null);
                         container.saveData();
                         AppUtils.restartActivity(this);
                     }
@@ -463,6 +465,9 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             container.putExtra("rfsVersion", rfsVersion);
             containerDataChanged = true;
         }
+
+        // Winlator S11: no Internet Explorer stub (folders, registry commands, icons)
+        if (LegacyBrowserCleanup.applyIfNeeded(container, wineprefixWasUpdated)) containerDataChanged = true;
 
         if (verifyUserRegistry()) containerDataChanged = true;
         if (extractDXWrapperFiles()) containerDataChanged = true;

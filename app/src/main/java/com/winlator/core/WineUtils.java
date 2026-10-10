@@ -113,7 +113,8 @@ public abstract class WineUtils {
             if (useAndroidBrowser) {
                 registryEditor.setStringValue("Software\\Wine\\WineBrowser", "Browsers", "C:\\windows\\winhandler.exe /url");
             }
-            else registryEditor.setStringValue("Software\\Wine\\WineBrowser", "Browsers", "C:\\windows\\system32\\iexplore.exe");
+            // Winlator S11 ships no Internet Explorer: without the Android browser, links stay closed
+            else registryEditor.removeValue("Software\\Wine\\WineBrowser", "Browsers");
         }
     }
 
