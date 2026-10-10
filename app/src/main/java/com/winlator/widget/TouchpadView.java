@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.view.InputDevice;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,12 +16,15 @@ import android.widget.FrameLayout;
 import com.winlator.core.AppUtils;
 import com.winlator.math.Mathf;
 import com.winlator.math.XForm;
+import com.winlator.renderer.GLRenderer;
 import com.winlator.renderer.ViewTransformation;
 import com.winlator.s11.ImeSession;
 import com.winlator.winhandler.MouseEventFlags;
 import com.winlator.winhandler.WinHandler;
 import com.winlator.xserver.Pointer;
 import com.winlator.xserver.XServer;
+
+import java.util.ArrayList;
 
 public class TouchpadView extends View implements View.OnCapturedPointerListener {
     private static final byte MAX_FINGERS = 4;
@@ -44,6 +48,16 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
     private Runnable fourFingersTapCallback;
     private final float[] xform = XForm.getInstance();
     private ImeSession imeSession;
+    // Winlator S11: Android controls drawn over Wine (the power tab...). A captured mouse only
+    // reaches this view, so its clicks over those controls are handed to them here.
+    private final ArrayList<View> overlayTargets = new ArrayList<>();
+    private final ViewTransformation cursorTransformation = new ViewTransformation();
+    private final float[] cursorPoint = new float[2];
+    private final int[] tmpLocation = new int[2];
+    private View hoveredOverlayTarget;
+    private View pressedOverlayTarget;
+    private int overlayButtons;
+    private OnKeyListener preImeKeyListener;
 
     public TouchpadView(Context context, XServer xServer, boolean capturePointerOnExternalMouse) {
         super(context);
@@ -78,6 +92,111 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
         if (imeSession != null) return imeSession.createInputConnection(this, outAttrs);
         return super.onCreateInputConnection(outAttrs);
+    }
+
+    /** Winlator S11: lets a captured (or plain) mouse click this Android control drawn over Wine. */
+    public void addOverlayTarget(View target) {
+        if (!overlayTargets.contains(target)) overlayTargets.add(target);
+    }
+
+    /** Winlator S11: sees keys before the Android keyboard does (shortcuts it would swallow). */
+    public void setPreImeKeyListener(OnKeyListener preImeKeyListener) {
+        this.preImeKeyListener = preImeKeyListener;
+    }
+
+    @Override
+    public boolean onKeyPreIme(int keyCode, KeyEvent event) {
+        if (preImeKeyListener != null && preImeKeyListener.onKey(this, keyCode, event)) return true;
+        return super.onKeyPreIme(keyCode, event);
+    }
+
+    /** Where the Wine cursor is drawn, in this view's coordinates (renderer letterbox, stretch and zoom included). */
+    private boolean getCursorPositionInView(float[] out) {
+        GLRenderer renderer = xServer.getRenderer();
+        int width = getWidth(), height = getHeight();
+        if (renderer == null || width == 0 || height == 0) return false;
+
+        int screenWidth = xServer.screenInfo.width, screenHeight = xServer.screenInfo.height;
+        float x = xServer.pointer.getClampedX(), y = xServer.pointer.getClampedY();
+
+        // Same pan as GLRenderer.drawFrame (magnifier, or screen raised above the soft keyboard)
+        boolean raised = renderer.isScreenOffsetYRelativeToCursor();
+        float zoom = raised ? 1.0f : renderer.getMagnifierZoom();
+        float panX = 0, panY = 0;
+        if (zoom != 1.0f) panX = Mathf.clamp(x * zoom - screenWidth * 0.5f, 0, screenWidth * Math.abs(1.0f - zoom));
+        if (raised || zoom != 1.0f) {
+            float scaleY = zoom != 1.0f ? Math.abs(1.0f - zoom) : 0.5f;
+            panY = Mathf.clamp(y * zoom - screenHeight * (raised ? 0.25f : 0.5f), 0, screenHeight * scaleY);
+        }
+        x = x * zoom - panX;
+        y = y * zoom - panY;
+
+        if (renderer.isFullscreen()) {
+            out[0] = x * width / screenWidth;
+            out[1] = y * height / screenHeight;
+        }
+        else {
+            cursorTransformation.update(width, height, screenWidth, screenHeight);
+            out[0] = x * cursorTransformation.aspect + cursorTransformation.viewOffsetX;
+            out[1] = y * cursorTransformation.aspect + cursorTransformation.viewOffsetY;
+        }
+        return true;
+    }
+
+    /** The overlay control under the Wine cursor, if any. */
+    private View findOverlayTarget() {
+        if (overlayTargets.isEmpty() || !getCursorPositionInView(cursorPoint)) return null;
+        getLocationInWindow(tmpLocation);
+        float x = cursorPoint[0] + tmpLocation[0];
+        float y = cursorPoint[1] + tmpLocation[1];
+
+        for (int i = overlayTargets.size() - 1; i >= 0; i--) {
+            View target = overlayTargets.get(i);
+            if (!target.isShown() || !target.isEnabled()) continue;
+            target.getLocationInWindow(tmpLocation);
+            if (x >= tmpLocation[0] && x < tmpLocation[0] + target.getWidth() &&
+                y >= tmpLocation[1] && y < tmpLocation[1] + target.getHeight()) return target;
+        }
+        return null;
+    }
+
+    private void updateHoveredOverlayTarget() {
+        if (overlayTargets.isEmpty()) return;
+        View target = findOverlayTarget();
+        if (target == hoveredOverlayTarget) return;
+        if (hoveredOverlayTarget != null) hoveredOverlayTarget.setHovered(false);
+        hoveredOverlayTarget = target;
+        if (target != null) target.setHovered(true);
+    }
+
+    /**
+     * Mouse buttons pressed over an overlay control go to that control, not to Wine (and so do
+     * their releases). captured: Android won't deliver the click itself, so it is done here.
+     */
+    private boolean routeButtonToOverlay(MotionEvent event, boolean captured) {
+        int action = event.getActionMasked();
+        int button = event.getActionButton();
+        if (action == MotionEvent.ACTION_BUTTON_PRESS) {
+            View target = findOverlayTarget();
+            if (target == null) return false;
+            overlayButtons |= button;
+            if (captured && button == MotionEvent.BUTTON_PRIMARY) {
+                target.setPressed(true);
+                pressedOverlayTarget = target;
+            }
+            return true;
+        }
+        else if (action == MotionEvent.ACTION_BUTTON_RELEASE && (overlayButtons & button) != 0) {
+            overlayButtons &= ~button;
+            if (button == MotionEvent.BUTTON_PRIMARY && pressedOverlayTarget != null) {
+                View target = pressedOverlayTarget;
+                pressedOverlayTarget = null;
+                target.setPressed(false);
+                if (findOverlayTarget() == target) target.performClick();
+            }
+            return true;
+        }
+        return false;
     }
 
     private static StateListDrawable createTransparentBackground() {
@@ -382,6 +501,12 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
     }
 
     public boolean onExternalMouseEvent(MotionEvent event) {
+        // Winlator S11: a click on an overlay control (power tab...) is Android's to deliver
+        if (isEnabled() && event.isFromSource(InputDevice.SOURCE_MOUSE) && routeButtonToOverlay(event, false)) return false;
+        return handleMouseEvent(event);
+    }
+
+    private boolean handleMouseEvent(MotionEvent event) {
         boolean handled = false;
         if (isEnabled() && event.isFromSource(InputDevice.SOURCE_MOUSE)) {
             int actionButton = event.getActionButton();
@@ -407,6 +532,7 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
                 case MotionEvent.ACTION_HOVER_MOVE:
                     float[] transformedPoint = XForm.transformPoint(xform, event.getX(), event.getY());
                     xServer.injectPointerMove((int)transformedPoint[0], (int)transformedPoint[1]);
+                    updateHoveredOverlayTarget();
                     handled = true;
                     break;
                 case MotionEvent.ACTION_SCROLL:
@@ -444,7 +570,6 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
 
     @Override
     public boolean onCapturedPointer(View view, MotionEvent event) {
-        if (event.getActionMasked() == MotionEvent.ACTION_BUTTON_PRESS && imeSession != null) imeSession.commitPendingComposition(this);
         if (event.getAction() == MotionEvent.ACTION_MOVE) {
             float dx = event.getX() * sensitivity;
             if (Math.abs(dx) > CURSOR_ACCELERATION_THRESHOLD) dx *= CURSOR_ACCELERATION;
@@ -453,11 +578,14 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
             if (Math.abs(dy) > CURSOR_ACCELERATION_THRESHOLD) dy *= CURSOR_ACCELERATION;
 
             xServer.injectPointerMoveDelta(Mathf.roundPoint(dx), Mathf.roundPoint(dy));
+            updateHoveredOverlayTarget();
             return true;
         }
         else {
+            if (routeButtonToOverlay(event, true)) return true;
+            if (event.getActionMasked() == MotionEvent.ACTION_BUTTON_PRESS && imeSession != null) imeSession.commitPendingComposition(this);
             event.setSource(event.getSource() | InputDevice.SOURCE_MOUSE);
-            return onExternalMouseEvent(event);
+            return handleMouseEvent(event);
         }
     }
 }

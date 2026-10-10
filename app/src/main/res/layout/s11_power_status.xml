@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Winlator S11: shown while Wine asks programs to close. If a program holds things up,
+     "Shut down anyway" and "Cancel" appear, as on Windows. Never takes keyboard focus, so
+     save dialogs can still be answered. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/S11PowerStatus"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="top|center_horizontal"
+    android:layout_marginTop="30dp"
+    android:background="@drawable/s11_power_status_bg"
+    android:clickable="true"
+    android:elevation="10dp"
+    android:focusable="false"
+    android:minWidth="300dp"
+    android:orientation="vertical"
+    android:paddingStart="18dp"
+    android:paddingTop="14dp"
+    android:paddingEnd="14dp"
+    android:paddingBottom="14dp"
+    android:soundEffectsEnabled="false"
+    android:visibility="gone">
+
+    <TextView
+        android:id="@+id/S11PowerStatusTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFFFF"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:layout_marginEnd="4dp"
+        android:maxWidth="400dp"
+        android:text="@string/s11_power_closing_hint"
+        android:textColor="#C8FFFFFF"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:id="@+id/S11PowerStatusActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="end"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/S11PowerStatusCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:background="@drawable/s11_power_status_button"
+            android:clickable="true"
+            android:focusable="false"
+            android:gravity="center"
+            android:minWidth="80dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:soundEffectsEnabled="false"
+            android:text="@string/s11_power_cancel"
+            android:textColor="#FFFFFFFF"
+            android:textSize="13.5sp" />
+
+        <TextView
+            android:id="@+id/S11PowerStatusForce"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/s11_power_status_danger"
+            android:clickable="true"
+            android:focusable="false"
+            android:gravity="center"
+            android:minWidth="80dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:soundEffectsEnabled="false"
+            android:textColor="#FFFFFFFF"
+            android:textSize="13.5sp" />
+    </LinearLayout>
+</LinearLayout>

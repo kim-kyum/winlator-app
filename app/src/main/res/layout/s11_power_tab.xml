@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Winlator S11: always-visible power tab hanging from the top edge (like the Remote Desktop
+     bar). It never takes keyboard focus, so typing keeps going to Windows. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/S11PowerTab"
+    android:layout_width="56dp"
+    android:layout_height="22dp"
+    android:layout_gravity="top|center_horizontal"
+    android:background="@drawable/s11_power_tab_bg"
+    android:clickable="true"
+    android:contentDescription="@string/s11_power_tab"
+    android:elevation="6dp"
+    android:focusable="false"
+    android:focusableInTouchMode="false"
+    android:soundEffectsEnabled="false">
+
+    <ImageView
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="1dp"
+        android:duplicateParentState="true"
+        android:importantForAccessibility="no"
+        android:src="@drawable/s11_ic_power_tab" />
+</FrameLayout>

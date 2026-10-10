@@ -64,7 +64,8 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .s11-cache
-          key: s11-assets-${{ hashFiles('app/src/main/assets/**', 'tools/s11/patch_assets.py') }}
+          # The key computed before patching; hashing again here would see the patched files
+          key: ${{ steps.assets-cache.outputs.cache-primary-key }}
 
       - name: Build S11 rootfs overlay
         run: python3 tools/s11/build_overlay.py tools/s11/rootfs-overlay app/src/main/assets

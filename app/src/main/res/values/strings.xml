@@ -304,10 +304,14 @@
     <string name="s11_power_app_menu">Winlator menu</string>
     <string name="s11_power_app_menu_desc">Keyboard, task manager, input controls and more</string>
     <string name="s11_power_cancel">Cancel</string>
-    <string name="s11_power_hint">Ctrl+Alt+Del anytime, Alt+F4 on the desktop</string>
+    <string name="s11_power_hint">Shortcuts: Ctrl+Alt+Del, Ctrl+Alt+Backspace</string>
     <string name="s11_power_closing">Closing programs…</string>
     <string name="s11_power_restarting">Restarting…</string>
-    <string name="s11_power_closing_hint">Programs may ask to save first. If it gets stuck: Ctrl+Alt+Del → Force quit</string>
+    <string name="s11_power_closing_hint">If a program asks to save, answer it first.</string>
+    <string name="s11_power_tab">Power</string>
+    <string name="s11_power_tab_tip">Shut down, restart or force quit</string>
+    <string name="s11_power_shutdown_anyway">Shut down anyway</string>
+    <string name="s11_power_restart_anyway">Restart anyway</string>
     <string name="enable_background_protection">Enable Background Protection</string>
     <string name="enable_background_protection_tooltip">Keep container alive in background or when device locked, but processes\'re paused.</string>
     <string name="enable_background_wakelock">Enable wakelock when the device is locked</string>

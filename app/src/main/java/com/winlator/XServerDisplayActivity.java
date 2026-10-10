@@ -68,6 +68,7 @@ import com.winlator.inputcontrols.ExternalController;
 import com.winlator.inputcontrols.InputControlsManager;
 import com.winlator.math.Mathf;
 import com.winlator.renderer.GLRenderer;
+import com.winlator.renderer.ViewTransformation;
 import com.winlator.services.ForegroundService;
 import com.winlator.widget.FrameRating;
 import com.winlator.widget.InputControlsView;
@@ -310,7 +311,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         super.onWindowFocusChanged(hasFocus);
 
         if (hasFocus) {
-            if (capturePointerOnExternalMouse) {
+            if (capturePointerOnExternalMouse && (powerMenu == null || !powerMenu.isShowing())) {
                 // Captured events are delivered to the focused view.
                 View captureView = inputControlsView.getVisibility() == View.VISIBLE ? inputControlsView : touchpadView;
                 if (captureView.requestFocus()) captureView.requestPointerCapture();
@@ -349,6 +350,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, Configuration newConfig) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
         ForegroundService.setPipMode(isInPictureInPictureMode);
+        if (powerMenu != null) powerMenu.setTabVisible(!isInPictureInPictureMode);
     }
 
     @Override
@@ -383,6 +385,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
                 drawerLayout.closeDrawers();
                 break;
             case R.id.menu_item_toggle_fullscreen:
+                updatePowerTabInset(!renderer.isFullscreen());
                 renderer.toggleFullscreen();
                 drawerLayout.closeDrawers();
                 break;
@@ -440,11 +443,14 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         return preferences;
     }
 
-    /** Ctrl+Alt+Del (or Ctrl+Alt+End, as in Remote Desktop), and Alt+F4 when the desktop or taskbar has focus. */
+    /**
+     * Ctrl+Alt+Del (Ctrl+Alt+Backspace on keyboards without Delete, Ctrl+Alt+End as in Remote
+     * Desktop), and Alt+F4 when the desktop or taskbar has focus.
+     */
     private boolean isPowerMenuShortcut(KeyEvent event) {
         int keyCode = event.getKeyCode();
-        if (event.isCtrlPressed() && event.isAltPressed()
-            && (keyCode == KeyEvent.KEYCODE_FORWARD_DEL || keyCode == KeyEvent.KEYCODE_MOVE_END)) return true;
+        if (event.isCtrlPressed() && event.isAltPressed() && (keyCode == KeyEvent.KEYCODE_FORWARD_DEL
+            || keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_MOVE_END)) return true;
 
         if (keyCode == KeyEvent.KEYCODE_F4 && event.isAltPressed() && !event.isCtrlPressed()) {
             Window focusedWindow = xServer.windowManager.getFocusedWindow();
@@ -453,10 +459,30 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         return false;
     }
 
+    /** Opens the menu on a shortcut's key press; swallows the rest of the shortcut's keys. */
+    private boolean handlePowerMenuShortcut(KeyEvent event) {
+        if (powerMenu == null || powerMenu.isShowing() || !isPowerMenuShortcut(event)) return false;
+        if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) showPowerMenu();
+        return true;
+    }
+
+    /** Keeps the power tab on the picture when it doesn't reach the top of the screen. */
+    private void updatePowerTabInset(boolean fullscreen) {
+        View rootView = findViewById(R.id.FLXServerDisplay);
+        if (powerMenu == null || rootView.getWidth() == 0 || rootView.getHeight() == 0) return;
+        int inset = 0;
+        if (!fullscreen) {
+            ViewTransformation viewTransformation = new ViewTransformation();
+            viewTransformation.update(rootView.getWidth(), rootView.getHeight(), xServer.screenInfo.width, xServer.screenInfo.height);
+            inset = Math.max(viewTransformation.viewOffsetY, 0);
+        }
+        powerMenu.setTopInset(inset);
+    }
+
     private void showPowerMenu() {
         // The menu takes the keyboard: let go of the keys Wine still sees as held (Ctrl, Alt...)
         final XKeycode[] heldKeys = {XKeycode.KEY_CTRL_L, XKeycode.KEY_CTRL_R, XKeycode.KEY_ALT_L, XKeycode.KEY_ALT_R,
-            XKeycode.KEY_SHIFT_L, XKeycode.KEY_SHIFT_R, XKeycode.KEY_DEL, XKeycode.KEY_END, XKeycode.KEY_F4};
+            XKeycode.KEY_SHIFT_L, XKeycode.KEY_SHIFT_R, XKeycode.KEY_DEL, XKeycode.KEY_BKSP, XKeycode.KEY_END, XKeycode.KEY_F4};
         for (XKeycode key : heldKeys) xServer.injectKeyRelease(key);
 
         InputMethodManager imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
@@ -471,6 +497,11 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private PowerMenu.Listener createPowerMenuListener() {
         return new PowerMenu.Listener() {
             @Override
+            public void onTabClicked() {
+                showPowerMenu();
+            }
+
+            @Override
             public void onShutdown() {
                 s11RestartRequested = false;
                 endWineSession();
@@ -483,8 +514,14 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             }
 
             @Override
-            public void onForceQuit() {
-                exit();
+            public void onForceQuit(boolean restart) {
+                if (restart) restartContainer();
+                else exit();
+            }
+
+            @Override
+            public void onClosingCancelled() {
+                s11RestartRequested = false;
             }
 
             @Override
@@ -743,8 +780,12 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             touchpadView.requestFocus();
         }
 
-        // Winlator S11: Windows-style power menu (Ctrl+Alt+Del, or Alt+F4 on the desktop)
+        // Winlator S11: power tab at the top + Windows-style power menu (also Ctrl+Alt+Del)
         powerMenu = new PowerMenu(this, rootView, container != null ? container.getName() : "", createPowerMenuListener());
+        for (View target : powerMenu.getPointerTargets()) touchpadView.addOverlayTarget(target);
+        touchpadView.setPreImeKeyListener((view, keyCode, event) -> handlePowerMenuShortcut(event));
+        rootView.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
+            view.post(() -> updatePowerTabInset(renderer.isFullscreen())));
 
         if (MainActivity.DEBUG_MODE) rootView.addView(AppUtils.createDebugMsgTextView(this));
         AppUtils.observeSoftKeyboardVisibility(drawerLayout, renderer::setScreenOffsetYRelativeToCursor);
@@ -915,6 +956,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        // While the power menu is open the mouse belongs to it, not to Wine
+        if (powerMenu != null && powerMenu.isShowing()) return super.dispatchGenericMotionEvent(event);
         return !winHandler.onGenericMotionEvent(event) && !touchpadView.onExternalMouseEvent(event) && super.dispatchGenericMotionEvent(event);
     }
 
@@ -923,10 +966,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         if (powerMenu != null) {
             // While the power menu is open it owns the keyboard (arrows, Tab, Enter, Esc)
             if (powerMenu.isShowing()) return powerMenu.onKeyEvent(event) || super.dispatchKeyEvent(event);
-            if (isPowerMenuShortcut(event)) {
-                if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) showPowerMenu();
-                return true;
-            }
+            if (handlePowerMenuShortcut(event)) return true;
         }
         return (!inputControlsView.onKeyEvent(event) && !winHandler.onKeyEvent(event) && xServer.keyboard.onKeyEvent(event)) ||
                (!ExternalController.isGameController(event.getDevice()) && super.dispatchKeyEvent(event));

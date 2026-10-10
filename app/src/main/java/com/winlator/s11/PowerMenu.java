@@ -1,13 +1,10 @@
 package com.winlator.s11;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
-import android.util.TypedValue;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -15,40 +12,59 @@ import android.widget.TextView;
 import com.winlator.R;
 
 /**
- * Windows-style power menu for the running container (Ctrl+Alt+Del, or Alt+F4 on the
- * desktop): shut down back to the container list, restart, force quit, or open Winlator's
- * side menu. Works with keyboard only (arrows/Tab, Enter, Esc) and with a mouse.
+ * Windows-style power menu for the running container, opened from the power tab at the top
+ * of the screen (or Ctrl+Alt+Del / Ctrl+Alt+Backspace): shut down back to the container list,
+ * restart, force quit, or open Winlator's side menu. Works with touch, mouse and keyboard.
  *
- * The activity decides what each action does; this class only draws the menu and the
- * "closing programs" status shown while Wine ends its session.
+ * The activity decides what each action does; this class draws the tab, the menu and the
+ * "closing programs" card shown while Wine ends its session.
  */
 public class PowerMenu {
     public interface Listener {
+        /** The power tab at the top of the screen was clicked. */
+        void onTabClicked();
         /** Ask programs to close (they may offer to save), then leave the container. */
         void onShutdown();
         /** Same as shutdown, then start this container again. */
         void onRestart();
-        /** Stop everything at once. */
-        void onForceQuit();
+        /** Stop everything at once; restart: start this container again afterwards. */
+        void onForceQuit(boolean restart);
+        /** The user gave up waiting for programs to close (the session goes on). */
+        void onClosingCancelled();
         void onOpenAppMenu();
         /** restoreInput: hand keyboard and mouse back to Wine. */
         void onHidden(boolean restoreInput);
     }
 
-    private static final long STATUS_TIMEOUT_MS = 15000;
+    /** Programs normally close within a couple of seconds; after this, offer "anyway" and "cancel". */
+    private static final long STATUS_ACTIONS_DELAY_MS = 6000;
+    private static final long STATUS_TIMEOUT_MS = 120000;
 
-    private final Context context;
     private final Listener listener;
+    private final View tab;
     private final View root;
     private final View firstItem;
-    private final TextView status;
-    private final Runnable hideStatus;
+    private final View status;
+    private final TextView statusTitle;
+    private final View statusActions;
+    private final View statusCancel;
+    private final TextView statusForce;
+    private final Runnable showStatusActions;
+    private final Runnable statusTimeout;
+    private boolean statusRestart;
+    private int topInset = -1;
 
     public PowerMenu(Context context, FrameLayout parent, String containerName, Listener listener) {
-        this.context = context;
         this.listener = listener;
+        LayoutInflater inflater = LayoutInflater.from(context);
 
-        root = LayoutInflater.from(context).inflate(R.layout.s11_power_menu, parent, false);
+        // Order matters: the menu's dim backdrop covers the tab, the status card sits on top
+        tab = inflater.inflate(R.layout.s11_power_tab, parent, false);
+        parent.addView(tab);
+        tab.setOnClickListener(v -> listener.onTabClicked());
+        tab.setTooltipText(context.getString(R.string.s11_power_tab_tip));
+
+        root = inflater.inflate(R.layout.s11_power_menu, parent, false);
         parent.addView(root);
         root.setOnClickListener(v -> hide(true));
 
@@ -63,16 +79,33 @@ public class PowerMenu {
             hide(true);
             listener.onRestart();
         });
-        setupItem(R.id.S11PowerForce, R.drawable.s11_ic_force, R.string.s11_power_force, R.string.s11_power_force_desc, listener::onForceQuit);
+        setupItem(R.id.S11PowerForce, R.drawable.s11_ic_force, R.string.s11_power_force, R.string.s11_power_force_desc, () -> listener.onForceQuit(false));
         setupItem(R.id.S11PowerAppMenu, R.drawable.s11_ic_menu, R.string.s11_power_app_menu, R.string.s11_power_app_menu_desc, () -> {
             hide(false);
             listener.onOpenAppMenu();
         });
         root.findViewById(R.id.S11PowerCancel).setOnClickListener(v -> hide(true));
 
-        status = createStatusView(context);
+        status = inflater.inflate(R.layout.s11_power_status, parent, false);
         parent.addView(status);
-        hideStatus = () -> status.setVisibility(View.GONE);
+        statusTitle = status.findViewById(R.id.S11PowerStatusTitle);
+        statusActions = status.findViewById(R.id.S11PowerStatusActions);
+        statusCancel = status.findViewById(R.id.S11PowerStatusCancel);
+        statusForce = status.findViewById(R.id.S11PowerStatusForce);
+        statusCancel.setOnClickListener(v -> {
+            hideClosingStatus();
+            listener.onClosingCancelled();
+        });
+        statusForce.setOnClickListener(v -> {
+            hideClosingStatus();
+            listener.onForceQuit(statusRestart);
+        });
+        showStatusActions = () -> statusActions.setVisibility(View.VISIBLE);
+        statusTimeout = () -> {
+            if (status.getVisibility() != View.VISIBLE) return;
+            hideClosingStatus();
+            listener.onClosingCancelled();
+        };
     }
 
     private View setupItem(int id, int icon, int title, int description, Runnable action) {
@@ -84,31 +117,28 @@ public class PowerMenu {
         return item;
     }
 
-    private static TextView createStatusView(Context context) {
-        float density = context.getResources().getDisplayMetrics().density;
-        TextView view = new TextView(context);
+    /**
+     * Controls a captured mouse must be able to click. A captured mouse only talks to the
+     * touchpad view, which routes clicks over these to them instead of to Wine.
+     */
+    public View[] getPointerTargets() {
+        return new View[]{tab, statusCancel, statusForce};
+    }
 
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(0xE6202124);
-        background.setCornerRadius(14 * density);
-        view.setBackground(background);
+    /** Keeps the tab and the status card on the picture when it doesn't reach the top edge. */
+    public void setTopInset(int inset) {
+        if (inset == topInset) return;
+        int delta = inset - Math.max(topInset, 0);
+        topInset = inset;
+        ((ViewGroup.MarginLayoutParams)tab.getLayoutParams()).topMargin = inset;
+        ((ViewGroup.MarginLayoutParams)status.getLayoutParams()).topMargin += delta;
+        tab.requestLayout();
+        status.requestLayout();
+    }
 
-        view.setTextColor(Color.WHITE);
-        view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        view.setGravity(Gravity.CENTER);
-        int padH = (int)(20 * density), padV = (int)(10 * density);
-        view.setPadding(padH, padV, padH, padV);
-        view.setElevation(8 * density);
-        view.setClickable(false);
-        view.setFocusable(false);
-        view.setVisibility(View.GONE);
-
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
-            Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        params.topMargin = (int)(24 * density);
-        view.setLayoutParams(params);
-        return view;
+    /** Hidden in picture-in-picture. */
+    public void setTabVisible(boolean visible) {
+        tab.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
     public boolean isShowing() {
@@ -141,12 +171,23 @@ public class PowerMenu {
         return false;
     }
 
-    /** Small non-blocking note at the top while Wine asks programs to close. */
+    /** Card at the top while Wine asks programs to close; offers "anyway"/"cancel" if it takes long. */
     public void showClosingStatus(boolean restart) {
-        status.setText(context.getString(restart ? R.string.s11_power_restarting : R.string.s11_power_closing)
-            + "\n" + context.getString(R.string.s11_power_closing_hint));
+        statusRestart = restart;
+        statusTitle.setText(restart ? R.string.s11_power_restarting : R.string.s11_power_closing);
+        statusForce.setText(restart ? R.string.s11_power_restart_anyway : R.string.s11_power_shutdown_anyway);
+        statusActions.setVisibility(View.GONE);
         status.setVisibility(View.VISIBLE);
-        status.removeCallbacks(hideStatus);
-        status.postDelayed(hideStatus, STATUS_TIMEOUT_MS);
+
+        status.removeCallbacks(showStatusActions);
+        status.removeCallbacks(statusTimeout);
+        status.postDelayed(showStatusActions, STATUS_ACTIONS_DELAY_MS);
+        status.postDelayed(statusTimeout, STATUS_TIMEOUT_MS);
+    }
+
+    public void hideClosingStatus() {
+        status.removeCallbacks(showStatusActions);
+        status.removeCallbacks(statusTimeout);
+        status.setVisibility(View.GONE);
     }
 }
