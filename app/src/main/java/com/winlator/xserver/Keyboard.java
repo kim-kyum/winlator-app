@@ -15,7 +15,7 @@ public class Keyboard {
     public static final short KEYS_COUNT = 248;
     public static final short MAX_KEYCODE = 255;
     public static final short MIN_KEYCODE = 8;
-    public final int[] keysyms = new int[KEYS_COUNT];
+    public final int[] keysyms = new int[KEYS_COUNT * KEYSYMS_PER_KEYCODE];
     private final Bitmask modifiersMask = new Bitmask();
     private final XKeycode[] keycodeMap = createKeycodeMap();
     private final ArraySet<Byte> pressedKeys = new ArraySet<>();
@@ -37,13 +37,13 @@ public class Keyboard {
     }
 
     public void setKeysyms(byte keycode, int minKeysym, int majKeysym) {
-        int index = keycode - MIN_KEYCODE;
+        int index = (keycode & 0xFF) - MIN_KEYCODE;
         keysyms[index*KEYSYMS_PER_KEYCODE+0] = minKeysym;
         keysyms[index*KEYSYMS_PER_KEYCODE+1] = majKeysym;
     }
 
     public boolean hasKeysym(byte keycode, int keysym) {
-        int index = keycode - MIN_KEYCODE;
+        int index = (keycode & 0xFF) - MIN_KEYCODE;
         return keysyms[index*KEYSYMS_PER_KEYCODE+0] == keysym || keysyms[index*KEYSYMS_PER_KEYCODE+1] == keysym;
     }
 
@@ -145,11 +145,11 @@ public class Keyboard {
         XKeycode[] customKeys = XKeycode.getCustomKeys();
         for (XKeycode xKeycode : customKeys) if (hasKeysym(xKeycode.id, keysym)) return xKeycode;
         for (XKeycode xKeycode : customKeys) {
-            int index = xKeycode.id - MIN_KEYCODE;
+            int index = (xKeycode.id & 0xFF) - MIN_KEYCODE;
             if (keysyms[index*KEYSYMS_PER_KEYCODE+0] == 0) return xKeycode;
         }
         for (XKeycode xKeycode : customKeys) {
-            int index = xKeycode.id - MIN_KEYCODE;
+            int index = (xKeycode.id & 0xFF) - MIN_KEYCODE;
             keysyms[index*KEYSYMS_PER_KEYCODE+0] = 0;
             keysyms[index*KEYSYMS_PER_KEYCODE+1] = 0;
         }
@@ -157,7 +157,7 @@ public class Keyboard {
     }
 
     private static XKeycode[] createKeycodeMap() {
-        XKeycode[] keycodeMap = new XKeycode[159];
+        XKeycode[] keycodeMap = new XKeycode[KeyEvent.getMaxKeyCode() + 1];
         keycodeMap[KeyEvent.KEYCODE_ENTER] = XKeycode.KEY_ENTER;
         keycodeMap[KeyEvent.KEYCODE_ESCAPE] = XKeycode.KEY_ESC;
         keycodeMap[KeyEvent.KEYCODE_DPAD_LEFT] = XKeycode.KEY_LEFT;
@@ -259,6 +259,15 @@ public class Keyboard {
         keycodeMap[KeyEvent.KEYCODE_F12] = XKeycode.KEY_F12;
         keycodeMap[KeyEvent.KEYCODE_NUM_LOCK] = XKeycode.KEY_NUM_LOCK;
         keycodeMap[KeyEvent.KEYCODE_CAPS_LOCK] = XKeycode.KEY_CAPS_LOCK;
+        // Winlator S11: the rest of a PC keyboard (Windows keys open the S11 start menu)
+        keycodeMap[KeyEvent.KEYCODE_META_LEFT] = XKeycode.KEY_SUPER_L;
+        keycodeMap[KeyEvent.KEYCODE_META_RIGHT] = XKeycode.KEY_SUPER_R;
+        keycodeMap[KeyEvent.KEYCODE_MENU] = XKeycode.KEY_MENU;
+        keycodeMap[KeyEvent.KEYCODE_SYSRQ] = XKeycode.KEY_PRTSCN;
+        keycodeMap[KeyEvent.KEYCODE_SCROLL_LOCK] = XKeycode.KEY_SCROLL_LOCK;
+        keycodeMap[KeyEvent.KEYCODE_BREAK] = XKeycode.KEY_PAUSE;
+        keycodeMap[KeyEvent.KEYCODE_NUMPAD_ENTER] = XKeycode.KEY_KP_ENTER;
+        keycodeMap[KeyEvent.KEYCODE_NUMPAD_EQUALS] = XKeycode.KEY_EQUAL;
         return keycodeMap;
     }
 
@@ -359,6 +368,16 @@ public class Keyboard {
         keyboard.setKeysyms(XKeycode.KEY_F10.id, 65479, 0);
         keyboard.setKeysyms(XKeycode.KEY_F11.id, 65480, 0);
         keyboard.setKeysyms(XKeycode.KEY_F12.id, 65481, 0);
+        // Winlator S11
+        keyboard.setKeysyms(XKeycode.KEY_CAPS_LOCK.id, 65509, 0);  // Caps_Lock
+        keyboard.setKeysyms(XKeycode.KEY_NUM_LOCK.id, 65407, 0);   // Num_Lock
+        keyboard.setKeysyms(XKeycode.KEY_SCROLL_LOCK.id, 65300, 0); // Scroll_Lock
+        keyboard.setKeysyms(XKeycode.KEY_PRTSCN.id, 65377, 0);     // Print
+        keyboard.setKeysyms(XKeycode.KEY_PAUSE.id, 65299, 0);      // Pause
+        keyboard.setKeysyms(XKeycode.KEY_KP_ENTER.id, 65421, 0);   // KP_Enter
+        keyboard.setKeysyms(XKeycode.KEY_SUPER_L.id, 65515, 0);    // Super_L
+        keyboard.setKeysyms(XKeycode.KEY_SUPER_R.id, 65516, 0);    // Super_R
+        keyboard.setKeysyms(XKeycode.KEY_MENU.id, 65383, 0);       // Menu
         return keyboard;
     }
 

@@ -36,6 +36,22 @@ The Wine desktop is set up to look like Windows 10/11 rather than Windows 95:
 - **Wallpaper**: an original S11 wallpaper (`tools/s11/theme/make_wallpaper.py`),
   rendered at the screen's size instead of 480 px tall.
 
+## Taskbar and start menu
+
+`tools/s11/shell/s11shell.c` is a small Win32 program (built with clang against Wine's
+headers, `build.sh`; the exe ships in the rootfs overlay) that replaces explorer.exe's
+taskbar on the desktop session: centred program buttons with icons and tooltips, the
+notification area (it answers Wine's `Shell_NotifyIcon` messages as `Shell_TrayWnd`), a
+clock, and a start menu with every installed program, search (Hangul initial consonants
+too) and Shut down / Restart, which go to the app over winhandler's UDP port. The Windows
+key opens it; Win+D shows the desktop, Win+E the file manager. Maximized windows are kept
+above it, and it steps aside for fullscreen programs.
+
+`S11Shell` switches explorer's taskbar off for the "shell" desktop and has winhandler.exe
+start the shell; Settings has a switch to go back to Wine's taskbar. The Windows keys now
+reach Wine: Meta maps to Super_L/R, and the X server's keyboard mapping reply was fixed to
+cover keycodes above 131.
+
 Licences: the visual style and Marlett come from Wine (LGPL 2.1); S11 Sans keeps
 Selawik's OFL (`S11Sans-OFL.txt` next to the fonts).
 

@@ -102,6 +102,11 @@ public enum XKeycode {
     KEY_NEXT(117),
     KEY_INSERT(118),
     KEY_DEL(119),
+    // Winlator S11: Windows keys, the context menu key and Pause (evdev keycode + 8)
+    KEY_PAUSE(127),
+    KEY_SUPER_L(133),
+    KEY_SUPER_R(134),
+    KEY_MENU(135),
     KEY_CUSTOM_1(93),
     KEY_CUSTOM_2(94),
     KEY_CUSTOM_3(97),

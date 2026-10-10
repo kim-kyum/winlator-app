@@ -24,4 +24,7 @@ abstract class RequestCodes {
     public static final byte SHOW_WINDOW = 20;
     public static final byte GET_EXECUTABLE_PATH = 21;
     public static final byte PRE_EXEC = 22;
+    // Winlator S11 start menu (tools/s11/shell)
+    public static final byte S11_SHUTDOWN = 100;
+    public static final byte S11_RESTART = 101;
 }

@@ -292,6 +292,7 @@
     <string name="open_android_browser_from_wine">Open Android Browser from Wine</string>
     <string name="use_android_clipboard_on_Wine">Use Android Clipboard on Wine</string>
     <string name="s11_ime_input">Type through the Android keyboard (Korean and other composed input)</string>
+    <string name="s11_shell">Windows 11 style taskbar and start menu</string>
     <!-- Winlator S11 power menu -->
     <string name="s11_power_title">Container</string>
     <string name="s11_power_subtitle">What do you want to do?</string>

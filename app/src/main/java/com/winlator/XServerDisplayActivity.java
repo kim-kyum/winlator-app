@@ -103,6 +103,7 @@ import com.winlator.s11.LegacyBrowserCleanup;
 import com.winlator.s11.ModernLook;
 import com.winlator.s11.PowerMenu;
 import com.winlator.s11.RootfsOverlay;
+import com.winlator.s11.S11Shell;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -120,6 +121,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private boolean s11ImeEnabled;
     private PowerMenu powerMenu;
     private volatile boolean s11RestartRequested;
+    private boolean s11ShellEnabled;
     private XEnvironment environment;
     private DrawerLayout drawerLayout;
     private Container container;
@@ -541,6 +543,15 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         };
     }
 
+    /** Shut down / Restart from the S11 start menu (sent through winhandler's UDP port). */
+    public void onShellPowerRequest(boolean restart) {
+        runOnUiThread(() -> {
+            if (powerMenu == null || isFinishing()) return;
+            s11RestartRequested = restart;
+            endWineSession();
+        });
+    }
+
     /**
      * Shuts Wine down the way Windows does: programs get WM_QUERYENDSESSION and may offer to
      * save first. Run through winhandler.exe so it happens inside this session's desktop. When
@@ -636,6 +647,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         if (KoreanFonts.applyIfNeeded(container, rootFS.getRootDir())) containerDataChanged = true;
         if (ModernLook.applyIfNeeded(container, rootFS.getRootDir())) containerDataChanged = true;
 
+        // Winlator S11: our taskbar and start menu instead of explorer's
+        s11ShellEnabled = S11Shell.isEnabled(preferences, rootFS.getRootDir());
+        if (S11Shell.configure(container, rootFS.getRootDir(), s11ShellEnabled)) containerDataChanged = true;
+
         if (containerDataChanged) container.saveData();
     }
 
@@ -720,6 +735,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         environment.startEnvironmentComponents();
 
         winHandler.start();
+        // Winlator S11: winhandler.exe starts the taskbar once it is up (desktop sessions only)
+        if (s11ShellEnabled && shortcut == null && !getIntent().hasExtra("exec_path")) {
+            winHandler.exec(S11Shell.EXE_DOS_PATH, null);
+        }
         envVars.clear();
         graphicsDriver = null;
         dxwrapperConfig = null;

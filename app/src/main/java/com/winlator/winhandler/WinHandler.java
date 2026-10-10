@@ -405,6 +405,10 @@ public class WinHandler {
                 }
                 break;
             }
+            case RequestCodes.S11_SHUTDOWN:
+            case RequestCodes.S11_RESTART:
+                activity.onShellPowerRequest(requestCode == RequestCodes.S11_RESTART);
+                break;
             case RequestCodes.PRE_EXEC: {
                 int requestLength = receiveData.getInt();
                 boolean shouldExit = false;
