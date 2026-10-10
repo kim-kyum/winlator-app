@@ -117,14 +117,28 @@ public class Keyboard {
         }
         else if (action == KeyEvent.ACTION_MULTIPLE) {
             String chars = event.getCharacters();
-            if (chars != null && chars.length() == 1) {
-                int keysym = chars.charAt(0);
-                XKeycode xKeycode = getCustomXKeycodeForKeysym(keysym);
-                xServer.injectKeyPress(xKeycode, keysym);
-                AppUtils.runDelayed(() -> xServer.injectKeyRelease(xKeycode), 30);
+            if (chars != null) {
+                for (int i = 0; i < chars.length(); ) {
+                    int codePoint = chars.codePointAt(i);
+                    i += Character.charCount(codePoint);
+                    typeUnicode(codePoint);
+                }
             }
         }
         return true;
+    }
+
+    /**
+     * Types one character through a spare keycode. X11 keysyms equal the code point only
+     * for Latin-1; anything above U+00FF (Hangul, CJK, Cyrillic, ...) must be sent as
+     * 0x01000000 | code point, which Wine maps straight to WM_CHAR (Winlator S11).
+     */
+    public void typeUnicode(int codePoint) {
+        if (codePoint <= 0 || codePoint > 0xFFFF) return; // Wine maps the BMP only
+        int keysym = codePoint <= 0xFF ? codePoint : (0x01000000 | codePoint);
+        XKeycode xKeycode = getCustomXKeycodeForKeysym(keysym);
+        xServer.injectKeyPress(xKeycode, keysym);
+        xServer.injectKeyRelease(xKeycode);
     }
 
     private XKeycode getCustomXKeycodeForKeysym(int keysym) {

@@ -8,12 +8,15 @@ import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
 
 import com.winlator.core.AppUtils;
 import com.winlator.math.Mathf;
 import com.winlator.math.XForm;
 import com.winlator.renderer.ViewTransformation;
+import com.winlator.s11.ImeSession;
 import com.winlator.winhandler.MouseEventFlags;
 import com.winlator.winhandler.WinHandler;
 import com.winlator.xserver.Pointer;
@@ -40,6 +43,7 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
     private final XServer xServer;
     private Runnable fourFingersTapCallback;
     private final float[] xform = XForm.getInstance();
+    private ImeSession imeSession;
 
     public TouchpadView(Context context, XServer xServer, boolean capturePointerOnExternalMouse) {
         super(context);
@@ -57,6 +61,23 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
                 if (requestFocus()) requestPointerCapture();
             });
         }
+    }
+
+    /** Winlator S11: lets this view host the Android keyboard so composed text (Hangul) works. */
+    public void setImeSession(ImeSession imeSession) {
+        this.imeSession = imeSession;
+        if (imeSession != null) setFocusableInTouchMode(true);
+    }
+
+    @Override
+    public boolean onCheckIsTextEditor() {
+        return imeSession != null;
+    }
+
+    @Override
+    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+        if (imeSession != null) return imeSession.createInputConnection(this, outAttrs);
+        return super.onCreateInputConnection(outAttrs);
     }
 
     private static StateListDrawable createTransparentBackground() {
@@ -142,6 +163,11 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
         int pointerId = event.getPointerId(actionIndex);
         int actionMasked = event.getActionMasked();
         if (pointerId >= MAX_FINGERS) return true;
+        if (actionMasked == MotionEvent.ACTION_DOWN && imeSession != null) {
+            imeSession.commitPendingComposition(this);
+            // Take focus back (e.g. after the side drawer) so a hardware keyboard keeps composing.
+            if (!hasFocus()) requestFocus();
+        }
 
         switch (actionMasked) {
             case MotionEvent.ACTION_DOWN:
@@ -418,6 +444,7 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
 
     @Override
     public boolean onCapturedPointer(View view, MotionEvent event) {
+        if (event.getActionMasked() == MotionEvent.ACTION_BUTTON_PRESS && imeSession != null) imeSession.commitPendingComposition(this);
         if (event.getAction() == MotionEvent.ACTION_MOVE) {
             float dx = event.getX() * sensitivity;
             if (Math.abs(dx) > CURSOR_ACCELERATION_THRESHOLD) dx *= CURSOR_ACCELERATION;

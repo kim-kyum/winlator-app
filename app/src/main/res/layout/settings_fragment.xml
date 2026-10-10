@@ -293,6 +293,13 @@
                         android:layout_marginTop="8dp" />
 
                     <CheckBox
+                        android:id="@+id/CBS11ImeInput"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/s11_ime_input"
+                        android:layout_marginTop="8dp" />
+
+                    <CheckBox
                         android:id="@+id/CBEnableBackgroundProtection"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

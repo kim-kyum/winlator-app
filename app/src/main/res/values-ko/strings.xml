@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Winlator S11. Strings not listed here fall back to English. -->
+    <string name="s11_ime_input">안드로이드 키보드로 입력 (한글 조합 입력)</string>
+</resources>

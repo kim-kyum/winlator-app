@@ -92,6 +92,8 @@ import com.winlator.xserver.ScreenInfo;
 import com.winlator.xserver.Window;
 import com.winlator.xserver.WindowManager;
 import com.winlator.xserver.XServer;
+import com.winlator.s11.ComposingOverlay;
+import com.winlator.s11.ImeSession;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -106,6 +108,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private XServerView xServerView;
     private InputControlsView inputControlsView;
     private TouchpadView touchpadView;
+    private boolean s11ImeEnabled;
     private XEnvironment environment;
     private DrawerLayout drawerLayout;
     private Container container;
@@ -362,7 +365,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         final GLRenderer renderer = xServerView.getRenderer();
         switch (item.getItemId()) {
             case R.id.menu_item_keyboard:
-                AppUtils.showKeyboard(this);
+                if (s11ImeEnabled) ImeSession.toggleKeyboard(touchpadView);
+                else AppUtils.showKeyboard(this);
                 drawerLayout.closeDrawers();
                 break;
             case R.id.menu_item_input_controls:
@@ -625,6 +629,15 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
                 ControlsProfile profile = inputControlsManager.getProfile(Integer.parseInt(controlsProfile));
                 if (profile != null) showInputControls(profile);
             }
+        }
+
+        // Winlator S11: Android keyboard composition (Hangul) through the touchpad view.
+        s11ImeEnabled = ImeSession.isEnabled(this);
+        if (s11ImeEnabled) {
+            ComposingOverlay composingOverlay = new ComposingOverlay(this);
+            rootView.addView(composingOverlay);
+            touchpadView.setImeSession(new ImeSession(xServer, composingOverlay));
+            touchpadView.requestFocus();
         }
 
         if (MainActivity.DEBUG_MODE) rootView.addView(AppUtils.createDebugMsgTextView(this));
