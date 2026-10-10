@@ -1,19 +1,39 @@
 apply plugin: 'com.android.application'
 
+// Winlator S11: the CI run number goes into versionCode so each build installs
+// over the previous one, and a fixed key (from CI secrets) keeps updates possible.
+def s11Build = (System.getenv('GITHUB_RUN_NUMBER') ?: '0').toInteger()
+def s11Keystore = System.getenv('S11_KEYSTORE')
+
 android {
     namespace 'com.winlator'
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.winlator'
+        // Installs next to the official app. Must stay 12 characters long:
+        // tools/s11/patch_assets.py rewrites "/data/data/com.winlator" inside
+        // the bundled binaries byte-for-byte.
+        applicationId 'com.winlatab'
         minSdkVersion 26
         targetSdkVersion 28
-        versionCode 33
-        versionName "11.2"
+        versionCode 330000 + s11Build
+        versionName "11.2-s11.${s11Build}"
+    }
+
+    signingConfigs {
+        if (s11Keystore) {
+            s11 {
+                storeFile file(s11Keystore)
+                storePassword System.getenv('S11_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('S11_KEY_ALIAS') ?: 's11'
+                keyPassword System.getenv('S11_KEY_PASSWORD')
+            }
+        }
     }
 
     buildTypes {
         debug {
+            if (s11Keystore) signingConfig signingConfigs.s11
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
 

@@ -1,0 +1,106 @@
+name: Build Winlator S11
+
+on:
+  push:
+    branches: [ tab-s11 ]
+  workflow_dispatch:
+
+concurrency:
+  group: build-s11-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Install NDK and CMake
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses > /dev/null
+          "$SDKM" --install "ndk;24.0.8215888" "cmake;3.22.1" > /dev/null
+          command -v zstd || sudo apt-get install -y zstd
+
+      # The bundled archives carry the install path /data/data/com.winlator;
+      # rewrite it for com.winlatab. Slow (about 4 min), so cache the result.
+      - name: Restore patched assets
+        id: assets-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .s11-cache
+          key: s11-assets-${{ hashFiles('app/src/main/assets/**', 'tools/s11/patch_assets.py') }}
+
+      - name: Patch assets
+        run: |
+          if [ "${{ steps.assets-cache.outputs.cache-hit }}" = "true" ]; then
+            cp -r .s11-cache/assets/. app/src/main/assets/
+            echo "used cached patched assets"
+          else
+            python3 tools/s11/patch_assets.py app/src/main/assets
+            mkdir -p .s11-cache/assets
+            git diff --name-only -- app/src/main/assets | while read -r f; do
+              rel="${f#app/src/main/assets/}"
+              mkdir -p ".s11-cache/assets/$(dirname "$rel")"
+              cp "$f" ".s11-cache/assets/$rel"
+            done
+          fi
+          if zstd -dc app/src/main/assets/rootfs.tzst | grep -aqF /data/data/com.winlator/; then
+            echo "::error::rootfs still contains the old install path"; exit 1
+          fi
+
+      - name: Save patched assets
+        if: steps.assets-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .s11-cache
+          key: s11-assets-${{ hashFiles('app/src/main/assets/**', 'tools/s11/patch_assets.py') }}
+
+      - name: Signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.S11_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/s11.jks"
+            echo "S11_KEYSTORE=$RUNNER_TEMP/s11.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::S11_KEYSTORE_B64 secret missing; APK uses a throwaway debug key and cannot update a previous install"
+          fi
+
+      - name: Build APK
+        env:
+          S11_KEYSTORE_PASSWORD: ${{ secrets.S11_KEYSTORE_PASSWORD }}
+          S11_KEY_PASSWORD: ${{ secrets.S11_KEY_PASSWORD }}
+          S11_KEY_ALIAS: s11
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace assembleDebug
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
+          OUT="Winlator-S11-build${GITHUB_RUN_NUMBER}.apk"
+          mv "$APK" "$OUT"
+          echo "APK_FILE=$OUT" >> "$GITHUB_ENV"
+          ls -l "$OUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: winlator-s11-build${{ github.run_number }}
+          path: ${{ env.APK_FILE }}
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "s11-build${GITHUB_RUN_NUMBER}" "$APK_FILE" \
+            --target "$GITHUB_SHA" \
+            --title "Winlator S11 build ${GITHUB_RUN_NUMBER}" \
+            --notes "$(git log -1 --format='%s%n%n%b')"
