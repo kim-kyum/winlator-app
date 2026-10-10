@@ -14,6 +14,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
@@ -91,11 +92,13 @@ import com.winlator.xserver.Property;
 import com.winlator.xserver.ScreenInfo;
 import com.winlator.xserver.Window;
 import com.winlator.xserver.WindowManager;
+import com.winlator.xserver.XKeycode;
 import com.winlator.xserver.XServer;
 import com.winlator.s11.ComposingOverlay;
 import com.winlator.s11.ImeSession;
 import com.winlator.s11.KoreanFonts;
 import com.winlator.s11.LegacyBrowserCleanup;
+import com.winlator.s11.PowerMenu;
 import com.winlator.s11.RootfsOverlay;
 
 import org.json.JSONArray;
@@ -112,6 +115,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private InputControlsView inputControlsView;
     private TouchpadView touchpadView;
     private boolean s11ImeEnabled;
+    private PowerMenu powerMenu;
+    private volatile boolean s11RestartRequested;
     private XEnvironment environment;
     private DrawerLayout drawerLayout;
     private Container container;
@@ -435,6 +440,89 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         return preferences;
     }
 
+    /** Ctrl+Alt+Del (or Ctrl+Alt+End, as in Remote Desktop), and Alt+F4 when the desktop or taskbar has focus. */
+    private boolean isPowerMenuShortcut(KeyEvent event) {
+        int keyCode = event.getKeyCode();
+        if (event.isCtrlPressed() && event.isAltPressed()
+            && (keyCode == KeyEvent.KEYCODE_FORWARD_DEL || keyCode == KeyEvent.KEYCODE_MOVE_END)) return true;
+
+        if (keyCode == KeyEvent.KEYCODE_F4 && event.isAltPressed() && !event.isCtrlPressed()) {
+            Window focusedWindow = xServer.windowManager.getFocusedWindow();
+            return focusedWindow == null || focusedWindow == xServer.windowManager.rootWindow || focusedWindow.isDesktopWindow();
+        }
+        return false;
+    }
+
+    private void showPowerMenu() {
+        // The menu takes the keyboard: let go of the keys Wine still sees as held (Ctrl, Alt...)
+        final XKeycode[] heldKeys = {XKeycode.KEY_CTRL_L, XKeycode.KEY_CTRL_R, XKeycode.KEY_ALT_L, XKeycode.KEY_ALT_R,
+            XKeycode.KEY_SHIFT_L, XKeycode.KEY_SHIFT_R, XKeycode.KEY_DEL, XKeycode.KEY_END, XKeycode.KEY_F4};
+        for (XKeycode key : heldKeys) xServer.injectKeyRelease(key);
+
+        InputMethodManager imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+        if (imm != null) imm.hideSoftInputFromWindow(touchpadView.getWindowToken(), 0);
+        // A captured mouse only talks to Wine; release it so the menu can be clicked
+        if (touchpadView.hasPointerCapture()) touchpadView.releasePointerCapture();
+        if (inputControlsView.hasPointerCapture()) inputControlsView.releasePointerCapture();
+
+        powerMenu.show();
+    }
+
+    private PowerMenu.Listener createPowerMenuListener() {
+        return new PowerMenu.Listener() {
+            @Override
+            public void onShutdown() {
+                s11RestartRequested = false;
+                endWineSession();
+            }
+
+            @Override
+            public void onRestart() {
+                s11RestartRequested = true;
+                endWineSession();
+            }
+
+            @Override
+            public void onForceQuit() {
+                exit();
+            }
+
+            @Override
+            public void onOpenAppMenu() {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+
+            @Override
+            public void onHidden(boolean restoreInput) {
+                if (!restoreInput) return;
+                View captureView = inputControlsView.getVisibility() == View.VISIBLE ? inputControlsView : touchpadView;
+                if (captureView.requestFocus() && capturePointerOnExternalMouse) captureView.requestPointerCapture();
+            }
+        };
+    }
+
+    /**
+     * Shuts Wine down the way Windows does: programs get WM_QUERYENDSESSION and may offer to
+     * save first. Run through winhandler.exe so it happens inside this session's desktop. When
+     * the desktop process ends, the termination callback leaves (or restarts) the container.
+     */
+    private void endWineSession() {
+        winHandler.exec("C:\\windows\\system32\\wineboot.exe", "--end-session --shutdown");
+        powerMenu.showClosingStatus(s11RestartRequested);
+    }
+
+    /** Stops this container and starts the same container (or shortcut) again in a fresh process. */
+    private void restartContainer() {
+        winHandler.stop();
+        if (environment != null) environment.stopEnvironmentComponents();
+        ForegroundService.stopSession(this);
+
+        Intent intent = new Intent(getIntent());
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        Runtime.getRuntime().exit(0);
+    }
+
     private void exit() {
         winHandler.stop();
         if (environment != null) environment.stopEnvironmentComponents();
@@ -572,7 +660,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         }
 
         guestProgramLauncherComponent.setEnvVars(envVars);
-        guestProgramLauncherComponent.setTerminationCallback((status) -> exit());
+        guestProgramLauncherComponent.setTerminationCallback((status) -> {
+            if (s11RestartRequested) restartContainer();
+            else exit();
+        });
         environment.addComponent(guestProgramLauncherComponent);
 
         if (isGenerateWineprefix()) {
@@ -651,6 +742,9 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             touchpadView.setImeSession(new ImeSession(xServer, composingOverlay));
             touchpadView.requestFocus();
         }
+
+        // Winlator S11: Windows-style power menu (Ctrl+Alt+Del, or Alt+F4 on the desktop)
+        powerMenu = new PowerMenu(this, rootView, container != null ? container.getName() : "", createPowerMenuListener());
 
         if (MainActivity.DEBUG_MODE) rootView.addView(AppUtils.createDebugMsgTextView(this));
         AppUtils.observeSoftKeyboardVisibility(drawerLayout, renderer::setScreenOffsetYRelativeToCursor);
@@ -826,6 +920,14 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (powerMenu != null) {
+            // While the power menu is open it owns the keyboard (arrows, Tab, Enter, Esc)
+            if (powerMenu.isShowing()) return powerMenu.onKeyEvent(event) || super.dispatchKeyEvent(event);
+            if (isPowerMenuShortcut(event)) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) showPowerMenu();
+                return true;
+            }
+        }
         return (!inputControlsView.onKeyEvent(event) && !winHandler.onKeyEvent(event) && xServer.keyboard.onKeyEvent(event)) ||
                (!ExternalController.isGameController(event.getDevice()) && super.dispatchKeyEvent(event));
     }
