@@ -1522,6 +1522,53 @@ static void ensure_visible(int item)
     clamp_scroll();
 }
 
+/*
+ * A tile label on up to two lines, broken between words as Windows does for Korean too
+ * ("레지스트리 / 편집기"); Wine's DT_WORDBREAK breaks Hangul between any two syllables.
+ */
+static void draw_label(struct canvas *c, const WCHAR *text, const RECT *rc, HFONT font, COLORREF color)
+{
+    HDC dc = GetDC(taskbar);
+    HFONT old = SelectObject(dc, font);
+    int width = rc->right - rc->left, len = lstrlenW(text), split = -1, i;
+    SIZE size = {0};
+    TEXTMETRICW tm;
+    RECT line = *rc;
+
+    GetTextMetricsW(dc, &tm);
+    GetTextExtentPoint32W(dc, text, len, &size);
+    if (size.cx > width) {
+        for (i = len - 1; i > 0; i--) {
+            if (text[i] != ' ') continue;
+            GetTextExtentPoint32W(dc, text, i, &size);
+            if (size.cx <= width) {
+                split = i;
+                break;
+            }
+        }
+    }
+    SelectObject(dc, old);
+    ReleaseDC(taskbar, dc);
+
+    if (size.cx <= width && split < 0) {
+        draw_text(c, text, &line, font, color, DT_CENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+        return;
+    }
+    if (split < 0) {
+        draw_text(c, text, &line, font, color, DT_CENTER | DT_WORDBREAK | DT_END_ELLIPSIS | DT_EDITCONTROL);
+        return;
+    }
+    {
+        WCHAR first[128];
+        lstrcpynW(first, text, min(split + 1, ARRAY_SIZE(first)));
+        line.bottom = line.top + tm.tmHeight;
+        draw_text(c, first, &line, font, color, DT_CENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+        line.top = line.bottom;
+        line.bottom = line.top + tm.tmHeight;
+        draw_text(c, text + split + 1, &line, font, color, DT_CENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+    }
+}
+
 static void paint_menu(HDC hdc)
 {
     struct canvas c;
@@ -1588,7 +1635,7 @@ static void paint_menu(HDC hdc)
             load_app_icon(app);
             draw_icon(&c, app->icon ? app->icon : LoadIconW(NULL, (const WCHAR *)IDI_APPLICATION),
                       (tile.left + tile.right - icon_size) / 2, tile.top + SC(12), icon_size);
-            draw_text(&c, app->name, &label, small_font, pal.text, DT_CENTER | DT_WORDBREAK | DT_END_ELLIPSIS | DT_EDITCONTROL);
+            draw_label(&c, app->name, &label, small_font, pal.text);
         }
     }
     if (!n) {

@@ -23,26 +23,47 @@ import com.winlator.xserver.XServer;
  * composed text such as Hangul reaches Windows programs.
  *
  * The view that hosts the keyboard connection declares itself a text editor, so the
- * keyboard composes syllables and reports them through {@link InputConnection}. While a
- * syllable is being composed it is shown in a {@link ComposingOverlay}; committed text is
- * typed into Wine: ASCII through the matching physical keys, everything else as X11
+ * keyboard composes syllables and reports them through {@link InputConnection}. Text is
+ * typed into Wine as ASCII through the matching physical keys, everything else as X11
  * Unicode keysyms, which Wine turns into WM_CHAR.
+ *
+ * The syllable being composed goes into the Windows program right away, as with the
+ * Windows Korean IME: when the keyboard changes it (ㅎ, 하, 한), Backspace takes back what
+ * changed and the new text is typed. With that turned off it waits in a
+ * {@link ComposingOverlay} at the top of the screen until the keyboard commits it.
  */
 public class ImeSession {
     public static final String PREF_KEY = "s11_ime_input";
+    public static final String PREF_INLINE_KEY = "s11_ime_inline";
 
     private final XServer xServer;
     private final ComposingOverlay overlay;
+    private final boolean inline;
     private final KeyCharacterMap charMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
     private Connection connection;
 
-    public ImeSession(XServer xServer, ComposingOverlay overlay) {
+    public ImeSession(XServer xServer, ComposingOverlay overlay, boolean inline) {
         this.xServer = xServer;
         this.overlay = overlay;
+        this.inline = inline;
     }
 
     public static boolean isEnabled(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(PREF_KEY, true);
+    }
+
+    public static boolean isInline(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(PREF_INLINE_KEY, true);
+    }
+
+    /**
+     * A key the keyboard let through (arrows, Enter, a shortcut) ends the syllable being
+     * composed first, so it lands after the syllable and not inside it.
+     */
+    public void onKeyPassedThrough(View view, KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_DOWN && !KeyEvent.isModifierKey(event.getKeyCode())) {
+            commitPendingComposition(view);
+        }
     }
 
     public InputConnection createInputConnection(View view, EditorInfo outAttrs) {
@@ -81,6 +102,14 @@ public class ImeSession {
                 imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
             }, 400);
         }
+    }
+
+    /** The length of the start two strings share, not splitting a surrogate pair */
+    static int sharedPrefix(String a, String b) {
+        int common = 0, max = Math.min(a.length(), b.length());
+        while (common < max && a.charAt(common) == b.charAt(common)) common++;
+        if (common > 0 && Character.isHighSurrogate(a.charAt(common - 1))) common--;
+        return common;
     }
 
     private void typeText(CharSequence text) {
@@ -122,10 +151,13 @@ public class ImeSession {
     }
 
     /**
-     * Keeps its own buffer empty: everything committed is forwarded to Wine right away,
-     * and only the syllable being composed stays here (and on the overlay).
+     * Keeps its own buffer to the syllable being composed: committed text leaves it for
+     * Wine right away. Inline, Wine already shows the whole buffer (see {@link #mirror}).
      */
     private class Connection extends BaseInputConnection {
+        /** Inline: the text Wine shows for this buffer, typed after the Windows caret */
+        private String shown = "";
+
         Connection(View view) {
             super(view, true);
         }
@@ -136,27 +168,46 @@ public class ImeSession {
                     && getComposingSpanEnd(content) > getComposingSpanStart(content);
         }
 
+        /** Inline: Backspace over what changed since the last time, then type the rest. */
+        private void mirror() {
+            Editable content = getEditable();
+            String text = content != null ? content.toString() : "";
+            int common = sharedPrefix(shown, text);
+            int remove = shown.codePointCount(common, shown.length());
+            for (int i = 0; i < remove; i++) pressKey(XKeycode.KEY_BKSP);
+            typeText(text.substring(common));
+            shown = text;
+        }
+
+        private void showComposing() {
+            if (inline) mirror();
+            else {
+                Editable content = getEditable();
+                if (content != null) overlay.show(content.toString());
+            }
+        }
+
         private void flush() {
             Editable content = getEditable();
             if (content == null) return;
-            if (content.length() > 0) typeText(content.toString());
+            if (inline) mirror();
+            else if (content.length() > 0) typeText(content.toString());
             content.clear();
+            shown = "";
             overlay.hide();
         }
 
         @Override
         public boolean setComposingText(CharSequence text, int newCursorPosition) {
             super.setComposingText(text, newCursorPosition);
-            Editable content = getEditable();
-            if (content != null) overlay.show(content.toString());
+            showComposing();
             return true;
         }
 
         @Override
         public boolean setComposingRegion(int start, int end) {
             boolean result = super.setComposingRegion(start, end);
-            Editable content = getEditable();
-            if (content != null) overlay.show(content.toString());
+            showComposing();
             return result;
         }
 
@@ -177,7 +228,9 @@ public class ImeSession {
         @Override
         public boolean deleteSurroundingText(int beforeLength, int afterLength) {
             // Nothing before the cursor lives in this buffer, so deletions are meant for
-            // the Windows program. Samsung Keyboard may ask for several at once.
+            // the Windows program. Samsung Keyboard may ask for several at once. A syllable
+            // still being composed stays as it is.
+            if (hasComposingText()) flush();
             for (int i = 0; i < beforeLength; i++) pressKey(XKeycode.KEY_BKSP);
             for (int i = 0; i < afterLength; i++) pressKey(XKeycode.KEY_DEL);
             return true;

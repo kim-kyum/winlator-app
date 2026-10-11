@@ -300,6 +300,14 @@
                         android:layout_marginTop="8dp" />
 
                     <CheckBox
+                        android:id="@+id/CBS11ImeInline"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/s11_ime_inline"
+                        android:layout_marginStart="32dp"
+                        android:layout_marginTop="4dp" />
+
+                    <CheckBox
                         android:id="@+id/CBS11Shell"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

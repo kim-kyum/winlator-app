@@ -83,6 +83,10 @@ public class TouchpadView extends View implements View.OnCapturedPointerListener
         if (imeSession != null) setFocusableInTouchMode(true);
     }
 
+    public ImeSession getImeSession() {
+        return imeSession;
+    }
+
     @Override
     public boolean onCheckIsTextEditor() {
         return imeSession != null;

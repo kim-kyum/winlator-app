@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""The Winlator S11 mark: a blue-violet tile with two light ribbons, like the wallpaper.
+"""The Winlator S11 mark: three windows rising from the lower left to the upper right on a
+blue-violet tile (the colours of the wallpaper). The back two are see-through, the front
+one is solid with a title bar: Windows programs moving forward onto the tablet.
 
 Usage: python -I make_logo.py ico <out.ico>
        python -I make_logo.py png <size> <out.png> [--no-tile]
@@ -18,50 +20,36 @@ TOP_LEFT = (0x2F, 0x7B, 0xFF)
 BOTTOM_RIGHT = (0x7B, 0x5C, 0xFF)
 
 
-def bezier(p0, p1, p2, p3, steps=600):
-    points = []
-    for i in range(steps + 1):
-        t = i / steps
-        a, b, c, d = (1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t ** 2, t ** 3
-        points.append((a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1]))
-    return points
-
-
-def ribbon(layer, size, points, width, alpha):
-    """A round-capped stroke: stamp discs densely along the curve into a mask."""
-    mask = Image.new("L", layer.size, 0)
-    draw = ImageDraw.Draw(mask)
-    r = max(0.5, width * size / 2)
-    for x, y in points:
-        x, y = x * size, y * size
-        draw.ellipse([x - r, y - r, x + r, y + r], fill=255)
-    color = Image.new("RGBA", layer.size, (255, 255, 255, 0))
-    color.putalpha(mask.point(lambda v: v * alpha // 255))
-    layer.alpha_composite(color)
+# The panes in units of 1/100 of the tile: (left, top, right, bottom), opacity
+PANES = [
+    ((14, 44, 50, 84), 70),
+    ((28, 31, 66, 71), 140),
+    ((44, 16, 86, 58), 255),
+]
+PANE_RADIUS = 8
+TITLE_BAR = (11, 3.2)   # the gap under the front pane's title bar: offset from its top, height
 
 
 def render(size, tile=True):
     ss = 4
     big = size * ss
+    u = big / 100
     image = Image.new("RGBA", (big, big), (0, 0, 0, 0))
 
     if tile:
-        gradient = Image.new("RGBA", (big, big))
-        px = gradient.load()
-        for y in range(big):
-            for x in range(big):
-                t = (x + y) / (2 * (big - 1))
-                px[x, y] = tuple(round(TOP_LEFT[i] * (1 - t) + BOTTOM_RIGHT[i] * t) for i in range(3)) + (255,)
         mask = Image.new("L", (big, big), 0)
-        ImageDraw.Draw(mask).rounded_rectangle([0, 0, big - 1, big - 1], radius=round(big * 0.24), fill=255)
-        image.paste(gradient, (0, 0), mask)
+        ImageDraw.Draw(mask).rounded_rectangle([0, 0, big - 1, big - 1], radius=round(big * 0.23), fill=255)
+        image.paste(gradient_image(big), (0, 0), mask)
 
-    layer = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    ribbon(layer, big, bezier((0.18, 0.50), (0.42, 0.82), (0.60, 0.22), (0.82, 0.52)), 0.06, 179)
-    image = Image.alpha_composite(image, layer)
-    layer = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    ribbon(layer, big, bezier((0.18, 0.72), (0.40, 0.30), (0.58, 0.78), (0.82, 0.30)), 0.085, 255)
-    image = Image.alpha_composite(image, layer)
+    for i, ((left, top, right, bottom), alpha) in enumerate(PANES):
+        layer = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(layer)
+        draw.rounded_rectangle([left * u, top * u, right * u, bottom * u], radius=PANE_RADIUS * u,
+                               fill=(255, 255, 255, alpha))
+        if i == len(PANES) - 1:
+            y = top + TITLE_BAR[0]
+            draw.rectangle([left * u, y * u, right * u, (y + TITLE_BAR[1]) * u], fill=(0, 0, 0, 0))
+        image = Image.alpha_composite(image, layer)
     return image.resize((size, size), Image.LANCZOS)
 
 

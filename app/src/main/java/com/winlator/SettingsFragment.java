@@ -147,6 +147,10 @@ public class SettingsFragment extends Fragment {
 
         final CheckBox cbS11ImeInput = view.findViewById(R.id.CBS11ImeInput);
         cbS11ImeInput.setChecked(preferences.getBoolean(com.winlator.s11.ImeSession.PREF_KEY, true));
+        final CheckBox cbS11ImeInline = view.findViewById(R.id.CBS11ImeInline);
+        cbS11ImeInline.setChecked(preferences.getBoolean(com.winlator.s11.ImeSession.PREF_INLINE_KEY, true));
+        cbS11ImeInline.setEnabled(cbS11ImeInput.isChecked());
+        cbS11ImeInput.setOnCheckedChangeListener((button, checked) -> cbS11ImeInline.setEnabled(checked));
         final CheckBox cbS11Shell = view.findViewById(R.id.CBS11Shell);
         cbS11Shell.setChecked(preferences.getBoolean(com.winlator.s11.S11Shell.PREF_KEY, true));
 
@@ -243,6 +247,7 @@ public class SettingsFragment extends Fragment {
             editor.putBoolean("open_android_browser_from_wine", cbOpenAndroidBrowserFromWine.isChecked());
             editor.putBoolean("use_android_clipboard_on_wine", cbUseAndroidClipboardOnWine.isChecked());
             editor.putBoolean(com.winlator.s11.ImeSession.PREF_KEY, cbS11ImeInput.isChecked());
+            editor.putBoolean(com.winlator.s11.ImeSession.PREF_INLINE_KEY, cbS11ImeInline.isChecked());
             editor.putBoolean(com.winlator.s11.S11Shell.PREF_KEY, cbS11Shell.isChecked());
             editor.putBoolean("enable_background_protection", cbEnableBackgroundProtection.isChecked());
             editor.putBoolean("enable_background_wakelock", cbEnableBackgroundWakelock.isChecked());

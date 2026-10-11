@@ -828,7 +828,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         if (s11ImeEnabled) {
             ComposingOverlay composingOverlay = new ComposingOverlay(this);
             rootView.addView(composingOverlay);
-            touchpadView.setImeSession(new ImeSession(xServer, composingOverlay));
+            touchpadView.setImeSession(new ImeSession(xServer, composingOverlay, ImeSession.isInline(this)));
             touchpadView.requestFocus();
         }
 
@@ -1020,6 +1020,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             if (powerMenu.isShowing()) return powerMenu.onKeyEvent(event) || super.dispatchKeyEvent(event);
             if (handlePowerMenuShortcut(event)) return true;
         }
+        if (touchpadView != null && touchpadView.getImeSession() != null) touchpadView.getImeSession().onKeyPassedThrough(touchpadView, event);
         return (!inputControlsView.onKeyEvent(event) && !winHandler.onKeyEvent(event) && xServer.keyboard.onKeyEvent(event)) ||
                (!ExternalController.isGameController(event.getDevice()) && super.dispatchKeyEvent(event));
     }

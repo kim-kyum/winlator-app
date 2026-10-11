@@ -2,6 +2,7 @@
 <resources>
     <!-- Winlator S11. Strings not listed here fall back to English. -->
     <string name="s11_ime_input">안드로이드 키보드로 입력 (한글 조합 입력)</string>
+    <string name="s11_ime_inline">조합 중인 글자를 바로 입력 (끄면 다 쓸 때까지 화면 위쪽에 따로 표시)</string>
     <string name="s11_shell">Windows 11 스타일 작업 표시줄과 시작 메뉴</string>
     <!-- Winlator S11 power menu -->
     <string name="s11_power_title">컨테이너</string>
