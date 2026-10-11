@@ -18,9 +18,6 @@
     <string name="installing_system_files">시스템 파일을 설치하는 중...</string>
     <string name="updating_system_files">시스템 파일을 업데이트하는 중...</string>
     <string name="starting_up">작업 공간을 준비하는 중...</string>
-    <string name="s11_screenshot_saved">스크린샷을 %1$s에 저장했어요</string>
-    <string name="s11_screenshot_failed">스크린샷을 저장하지 못했어요.</string>
-    <string name="s11_screenshot_not_ready">아직 화면을 캡처할 수 없어요.</string>
     <string name="unable_to_install_system_files">시스템 파일을 설치하지 못했어요</string>
     <string name="keyboard">키보드</string>
     <string name="toggle_fullscreen">전체 화면 전환</string>
