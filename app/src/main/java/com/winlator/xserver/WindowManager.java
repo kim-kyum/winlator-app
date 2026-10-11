@@ -23,6 +23,12 @@ import java.util.List;
 
 public class WindowManager extends XResourceManager {
     public enum FocusRevertTo {NONE, POINTER_ROOT, PARENT}
+    /*
+     * Winlator S11: the taskbar, start menu and their popups (s11shell.exe) stay above the
+     * windows of programs, as the Windows taskbar does. Wine only restacks a window in X when
+     * it becomes the very top one, so new and activated windows would otherwise cover them.
+     */
+    private static final String KEEP_ABOVE_CLASS = "s11shell.exe";
     public final Window rootWindow;
     private final SparseArray<Window> windows = new SparseArray<>();
     public final DrawableManager drawableManager;
@@ -191,6 +197,7 @@ public class WindowManager extends XResourceManager {
         if (drawable != null) drawable.setOnDrawListener(() -> triggerOnUpdateWindowContent(window));
         windows.put(id, window);
         parent.addChild(window);
+        keepShellAbove(parent);
         triggerOnCreateResourceListener(window);
         return window;
     }
@@ -208,6 +215,12 @@ public class WindowManager extends XResourceManager {
             Drawable oldContent = window.getContent();
             drawableManager.removeDrawable(oldContent.id);
             Drawable newContent = drawableManager.createDrawable(oldContent.id, width, height, oldContent.visual);
+            // Winlator S11: keep what was on the window until the program paints the new size
+            // (an X server keeps the contents too), instead of showing black meanwhile.
+            if (oldContent.getData() != null && newContent.getData() != null) {
+                newContent.copyArea((short)0, (short)0, (short)0, (short)0, (short)Math.min(width, oldContent.width),
+                                    (short)Math.min(height, oldContent.height), oldContent);
+            }
             newContent.setOffscreenStorage(oldContent.isOffscreenStorage());
             newContent.setOnDrawListener(() -> triggerOnUpdateWindowContent(window));
             window.setContent(newContent);
@@ -236,7 +249,20 @@ public class WindowManager extends XResourceManager {
                 parent.moveChildBelow(window, sibling);
                 break;
         }
+        parent.raiseChildren(this::isKeepAbove);
         triggerOnChangeWindowZOrder(window);
+    }
+
+    private boolean isKeepAbove(Window window) {
+        return KEEP_ABOVE_CLASS.equals(window.getClassName());
+    }
+
+    /** Puts the S11 shell's windows back on top of their siblings (see KEEP_ABOVE_CLASS). */
+    private void keepShellAbove(Window parent) {
+        if (parent != null && parent.raiseChildren(this::isKeepAbove)) {
+            Window top = parent.getChildAt(parent.getChildCount() - 1);
+            if (top != null) triggerOnChangeWindowZOrder(top);
+        }
     }
 
     public void configureWindow(Window window, Bitmask valueMask, XInputStream inputStream) throws XRequestError {
@@ -296,6 +322,7 @@ public class WindowManager extends XResourceManager {
         Window oldParent = window.getParent();
         if (oldParent != null) oldParent.removeChild(window);
         newParent.addChild(window);
+        keepShellAbove(newParent);
     }
 
     public Window findPointWindow(short rootX, short rootY) {
@@ -357,6 +384,8 @@ public class WindowManager extends XResourceManager {
     }
 
     public void triggerOnModifyWindowProperty(Window window, Property property) {
+        // the class is set after the window is created
+        if (property != null && property.name == Atom.WM_CLASS) keepShellAbove(window.getParent());
         for (int i = onWindowModificationListeners.size()-1; i >= 0; i--) {
             onWindowModificationListeners.get(i).onModifyWindowProperty(window, property);
         }

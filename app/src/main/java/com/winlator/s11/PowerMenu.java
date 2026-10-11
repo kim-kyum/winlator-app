@@ -53,6 +53,8 @@ public class PowerMenu {
     private final Runnable statusTimeout;
     private boolean statusRestart;
     private int topInset = -1;
+    private boolean tabVisible = true;
+    private boolean tabWanted = true;
 
     public PowerMenu(Context context, FrameLayout parent, String containerName, Listener listener) {
         this.listener = listener;
@@ -138,7 +140,17 @@ public class PowerMenu {
 
     /** Hidden in picture-in-picture. */
     public void setTabVisible(boolean visible) {
-        tab.setVisibility(visible ? View.VISIBLE : View.GONE);
+        tabVisible = visible;
+        tab.setVisibility(visible && tabWanted ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * Not wanted on the S11 desktop: its start menu has shut down and restart. The menu itself
+     * stays on Ctrl+Alt+Del for force quit.
+     */
+    public void setTabWanted(boolean wanted) {
+        tabWanted = wanted;
+        setTabVisible(tabVisible);
     }
 
     public boolean isShowing() {

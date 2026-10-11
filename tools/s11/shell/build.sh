@@ -19,7 +19,7 @@ build() {  # name, extra libraries
     "$WINE/bin/wrc" --nostdinc $INC -I"$HERE" -o "$TMP/$name.res" "$HERE/$name.rc"
     clang --target=x86_64-w64-mingw32 $INC -D_WIN32_WINNT=0x0A00 -DUNICODE -D_UNICODE -O2 -Wall \
           -Wno-missing-braces -fno-stack-protector -mno-stack-arg-probe -c "$HERE/$name.c" -o "$TMP/$name.o"
-    clang --target=x86_64-w64-mingw32 -nostdlib -fuse-ld=lld -Wl,--entry=entry -Wl,--subsystem,windows \
+    clang --target=x86_64-w64-mingw32 -nostdlib -fuse-ld=lld -Wl,--entry=entry -Wl,--subsystem,windows -Wl,--no-insert-timestamp \
           "$TMP/$name.o" "$TMP/$name.res" -L"$LIBS" $COMMON_LIBS "$@" -o "$OUT/$name.exe"
     echo "$OUT/$name.exe: $(stat -c %s "$OUT/$name.exe") bytes"
 }

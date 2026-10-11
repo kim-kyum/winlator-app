@@ -20,8 +20,8 @@
 #include "s11ui.h"
 
 static HINSTANCE instance;
-static HWND taskbar, start_menu, search_edit, tooltip;
-static HFONT ui_font, small_font, menu_title_font, search_font;
+static HWND taskbar, start_menu, search_edit, tooltip, hover_window, calendar;
+static HFONT ui_font, small_font, menu_title_font, search_font, calendar_title_font;
 static ULONG_PTR gdiplus_token;
 
 
@@ -31,6 +31,7 @@ static ULONG_PTR gdiplus_token;
 #define WM_APP_APPBAR (WM_APP + 4)
 #define WM_APP_FILES (WM_APP + 5)
 #define WM_APP_SETTINGS (WM_APP + 6)
+#define WM_APP_TASK_MANAGER (WM_APP + 7)
 
 static UINT settings_changed_msg;   /* "WinlatorS11SettingsChanged", posted by s11settings.exe */
 static BOOL align_left;             /* taskbar icons on the left instead of in the middle */
@@ -48,6 +49,7 @@ static void read_settings(void)
 #define TIMER_CLOCK 2
 #define TIMER_TIP 3
 #define TIMER_ANNOUNCE 4
+#define TIMER_HOVER 5
 
 /* ---------------------------------------------------------------------------------------- */
 /* Windows on the taskbar                                                                   */
@@ -73,7 +75,7 @@ static BOOL fullscreen_app;
 static BOOL is_shell_window(HWND hwnd)
 {
     WCHAR cls[64];
-    if (hwnd == taskbar || hwnd == start_menu || hwnd == tooltip) return TRUE;
+    if (hwnd == taskbar || hwnd == start_menu || hwnd == tooltip || hwnd == hover_window || hwnd == calendar) return TRUE;
     if (!GetClassNameW(hwnd, cls, ARRAY_SIZE(cls))) return TRUE;
     return !lstrcmpW(cls, L"Shell_TrayWnd") || !lstrcmpW(cls, L"Progman") || !lstrcmpW(cls, L"#32769") ||
            !lstrcmpW(cls, L"WorkerW") || !lstrcmpW(cls, L"tooltips_class32") || !lstrcmpW(cls, L"#32768");
@@ -252,6 +254,37 @@ static int screen_w, screen_h, bar_h;
  * Wine's virtual desktop reports the whole screen as the work area, so maximized windows
  * would slide under the taskbar. Pull their bottom edge up instead.
  */
+/* Windows we fitted lately: a program that maximizes itself again each time is left alone */
+#define MAX_FITTED 16
+static struct { HWND hwnd; DWORD first; int count; } fitted[MAX_FITTED];
+
+static BOOL may_fit(HWND hwnd)
+{
+    DWORD now = GetTickCount();
+    int i, slot = -1, oldest = 0;
+    for (i = 0; i < MAX_FITTED; i++) {
+        if (fitted[i].hwnd == hwnd) {
+            slot = i;
+            break;
+        }
+        if (!fitted[i].hwnd) {
+            if (fitted[oldest].hwnd) oldest = i;      /* a free slot first */
+        }
+        else if (fitted[oldest].hwnd && now - fitted[i].first > now - fitted[oldest].first) oldest = i;
+    }
+    if (slot < 0) {
+        slot = oldest;
+        fitted[slot].hwnd = hwnd;
+        fitted[slot].first = now;
+        fitted[slot].count = 0;
+    }
+    else if (now - fitted[slot].first > 10000) {      /* a new round */
+        fitted[slot].first = now;
+        fitted[slot].count = 0;
+    }
+    return ++fitted[slot].count <= 3;
+}
+
 static void fit_maximized_windows(void)
 {
     int i;
@@ -265,6 +298,7 @@ static void fit_maximized_windows(void)
         GetWindowRect(hwnd, &rc);
         if (rc.bottom <= screen_h - bar_h + SC(8)) continue;
         if (rc.bottom < screen_h - SC(2)) continue;  /* not a full-height maximized window */
+        if (!may_fit(hwnd)) continue;
         SetWindowPos(hwnd, NULL, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top - bar_h,
                      SWP_NOZORDER | SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS);
     }
@@ -688,6 +722,448 @@ static LRESULT CALLBACK tooltip_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         return 0;
     }
     if (msg == WM_NCHITTEST) return HTTRANSPARENT;
+    return DefWindowProcW(hwnd, msg, wp, lp);
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Title bar buttons: a highlight under the mouse, as in Windows 10 and 11                  */
+/* ---------------------------------------------------------------------------------------- */
+
+/*
+ * Wine draws the minimize, maximize and close buttons as glyphs only and doesn't track the
+ * mouse over them. A small window of ours covers the button under the mouse: gray (red for
+ * close), with the same glyph. It is layered and transparent, so clicks go through to the
+ * program's title bar.
+ */
+static HWND hover_target;
+static int hover_code;              /* HTMINBUTTON, HTMAXBUTTON, HTCLOSE */
+static BOOL hover_pressed, hover_restore;
+static RECT hover_cell, hover_glyph; /* screen; the glyph's square as Wine sizes it */
+static POINT hover_last = {-100000, -100000};
+static BOOL hover_last_down;
+static COLORREF hover_caption;      /* title bar colour behind */
+
+static void hide_hover(void)
+{
+    hover_target = NULL;
+    hover_code = 0;
+    if (IsWindowVisible(hover_window)) ShowWindow(hover_window, SW_HIDE);
+}
+
+/* The frame thickness Wine takes off the window rectangle (win32u, get_inside_rect) */
+static int frame_size(LONG style, LONG ex_style, BOOL vertical)
+{
+    BOOL thick = (style & WS_THICKFRAME) && (style & (WS_DLGFRAME | WS_BORDER)) != WS_DLGFRAME;
+    BOOL dialog = (ex_style & WS_EX_DLGMODALFRAME) || ((style & WS_DLGFRAME) && !(style & WS_THICKFRAME));
+    BOOL thin = (style & WS_BORDER) || !(style & (WS_CHILD | WS_POPUP));
+    if (thick) return GetSystemMetrics(vertical ? SM_CYFRAME : SM_CXFRAME);
+    if (dialog) return GetSystemMetrics(vertical ? SM_CYDLGFRAME : SM_CXDLGFRAME);
+    if (thin) return GetSystemMetrics(vertical ? SM_CYBORDER : SM_CXBORDER);
+    return 0;
+}
+
+/* The button's cell (full caption height) and the square Wine draws its glyph in */
+static BOOL caption_button_rects(HWND hwnd, int code, RECT *cell, RECT *glyph)
+{
+    LONG style = GetWindowLongW(hwnd, GWL_STYLE), ex_style = GetWindowLongW(hwnd, GWL_EXSTYLE);
+    int cx = GetSystemMetrics(SM_CXSIZE), cy = GetSystemMetrics(SM_CYSIZE);
+    int right, top, n, side;
+    RECT wr, r;
+
+    if ((style & WS_CAPTION) != WS_CAPTION || !(style & WS_SYSMENU)) return FALSE;
+    if (ex_style & (WS_EX_TOOLWINDOW | WS_EX_LAYOUTRTL)) return FALSE;
+    if (code == HTMAXBUTTON && !(style & WS_MAXIMIZEBOX)) return FALSE;   /* grayed */
+    if (code == HTMINBUTTON && !(style & WS_MINIMIZEBOX)) return FALSE;
+    GetWindowRect(hwnd, &wr);
+    right = wr.right - frame_size(style, ex_style, FALSE);
+    top = wr.top + frame_size(style, ex_style, TRUE);
+    n = code == HTCLOSE ? 1 : code == HTMAXBUTTON ? 2 : 3;
+    SetRect(cell, right - n * cx, top, right - (n - 1) * cx, top + GetSystemMetrics(SM_CYCAPTION) - 1);
+
+    /* draw_close_button / draw_max_button / draw_min_button, then make_square_rect */
+    r.right = right - (n - 1) * cx;
+    if (code == HTMINBUTTON) r.right += 2;
+    r.left = r.right - cx;
+    r.top = top + 2;
+    r.bottom = top + cy - 2;
+    r.right -= 2;
+    side = min(r.right - r.left, r.bottom - r.top);
+    if (r.right - r.left > side) r.left += (r.right - r.left - side) / 2;
+    else r.top += (r.bottom - r.top - side) / 2;
+    SetRect(glyph, r.left, r.top, r.left + side, r.top + side);
+    return TRUE;
+}
+
+static void poll_hover(void)
+{
+    POINT pt;
+    BOOL down = GetAsyncKeyState(GetSystemMetrics(SM_SWAPBUTTON) ? VK_RBUTTON : VK_LBUTTON) < 0;
+    DWORD_PTR hit = 0;
+    HWND hwnd;
+    RECT cell, glyph;
+    BOOL pressed, restore;
+
+    if (!GetCursorPos(&pt)) return;
+    if (pt.x == hover_last.x && pt.y == hover_last.y && down == hover_last_down &&
+        (!hover_target || IsWindow(hover_target)))
+        return;
+    hover_last = pt;
+    hover_last_down = down;
+
+    hwnd = WindowFromPoint(pt);   /* passes over the highlight: it is transparent */
+    if (hwnd) hwnd = GetAncestor(hwnd, GA_ROOT);
+    if (!hwnd || is_shell_window(hwnd) || GetDpiForWindow(hwnd) != dpi ||
+        !SendMessageTimeoutW(hwnd, WM_NCHITTEST, 0, MAKELPARAM(pt.x, pt.y), SMTO_ABORTIFHUNG, 40, &hit) ||
+        (hit != HTMINBUTTON && hit != HTMAXBUTTON && hit != HTCLOSE) ||
+        !caption_button_rects(hwnd, (int)hit, &cell, &glyph)) {
+        hide_hover();
+        return;
+    }
+
+    /* pressed: the button went down on this very button */
+    pressed = down && hover_target == hwnd && hover_code == (int)hit;
+    restore = (GetWindowLongW(hwnd, GWL_STYLE) & WS_MAXIMIZE) != 0;
+    if (hwnd == hover_target && hit == hover_code && pressed == hover_pressed && restore == hover_restore &&
+        EqualRect(&cell, &hover_cell) && IsWindowVisible(hover_window))
+        return;
+
+    hover_target = hwnd;
+    hover_code = (int)hit;
+    hover_pressed = pressed;
+    hover_restore = restore;
+    hover_cell = cell;
+    hover_glyph = glyph;
+    hover_caption = GetSysColor(GetForegroundWindow() == hwnd ? COLOR_ACTIVECAPTION : COLOR_INACTIVECAPTION);
+    SetWindowPos(hover_window, HWND_TOPMOST, cell.left, cell.top, cell.right - cell.left, cell.bottom - cell.top,
+                 SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    InvalidateRect(hover_window, NULL, FALSE);
+}
+
+static COLORREF mix(COLORREF a, COLORREF b, int alpha /* of b, 0-255 */)
+{
+    return RGB((GetRValue(a) * (255 - alpha) + GetRValue(b) * alpha) / 255,
+               (GetGValue(a) * (255 - alpha) + GetGValue(b) * alpha) / 255,
+               (GetBValue(a) * (255 - alpha) + GetBValue(b) * alpha) / 255);
+}
+
+/* The S11 Marlett glyphs (tools/s11/theme/build_marlett.py): 760/2048 of the em, 92/2048 strokes */
+static void paint_hover(HDC hdc)
+{
+    struct canvas c;
+    RECT rc;
+    COLORREF back, ink;
+    BOOL dark_caption = (GetRValue(hover_caption) * 299 + GetGValue(hover_caption) * 587 +
+                         GetBValue(hover_caption) * 114) / 1000 < 128;
+    float em, half, stroke, xc, yc;
+    GpPen *pen;
+    GpSolidFill *brush;
+
+    GetClientRect(hover_window, &rc);
+    if (!canvas_begin(&c, hdc, rc.right, rc.bottom)) return;
+    if (hover_code == HTCLOSE) {
+        back = hover_pressed ? RGB(148, 30, 20) : RGB(196, 43, 28);
+        ink = RGB(255, 255, 255);
+    }
+    else {
+        back = mix(hover_caption, dark_caption ? RGB(255, 255, 255) : RGB(0, 0, 0), hover_pressed ? 40 : 22);
+        ink = GetSysColor(COLOR_BTNTEXT);
+    }
+    fill_rect(&c, 0, 0, rc.right, rc.bottom, argb(back, 255));
+
+    /* Wine's font height is the square's side less 2; the glyph is centred in the square */
+    em = (float)(hover_glyph.right - hover_glyph.left - 2);
+    half = em * 380 / 2048;
+    stroke = max(1.0f, em * 92 / 2048);
+    xc = (float)((hover_glyph.left + hover_glyph.right) / 2 - hover_cell.left);
+    yc = (float)((hover_glyph.top + hover_glyph.bottom) / 2 - hover_cell.top);
+    GdipCreatePen1(argb(ink, 255), stroke, UnitPixel, &pen);
+    GdipCreateSolidFill(argb(ink, 255), &brush);
+    switch (hover_code) {
+    case HTMINBUTTON:
+        GdipFillRectangle(c.g, (GpBrush *)brush, xc - half, yc - stroke / 2, half * 2, stroke);
+        break;
+    case HTMAXBUTTON:
+        if (!hover_restore)
+            GdipDrawRectangle(c.g, pen, xc - half + stroke / 2, yc - half + stroke / 2, half * 2 - stroke, half * 2 - stroke);
+        else {
+            float off = em * 152 / 2048, side = half * 2 - off;
+            /* the front window lower left, the back one's top and right edges upper right */
+            GdipDrawRectangle(c.g, pen, xc - half + stroke / 2, yc - half + off + stroke / 2, side - stroke, side - stroke);
+            GdipDrawLine(c.g, pen, xc - half + off + stroke / 2, yc - half + off, xc - half + off + stroke / 2, yc - half + stroke / 2);
+            GdipDrawLine(c.g, pen, xc - half + off, yc - half + stroke / 2, xc + half - stroke / 2, yc - half + stroke / 2);
+            GdipDrawLine(c.g, pen, xc + half - stroke / 2, yc - half, xc + half - stroke / 2, yc + half - off - stroke / 2);
+            GdipDrawLine(c.g, pen, xc + half - off, yc + half - off - stroke / 2, xc + half - stroke / 2, yc + half - off - stroke / 2);
+        }
+        break;
+    case HTCLOSE:
+        GdipDeletePen(pen);
+        GdipCreatePen1(argb(ink, 255), stroke * 1.05f, UnitPixel, &pen);
+        GdipDrawLine(c.g, pen, xc - half, yc - half, xc + half, yc + half);
+        GdipDrawLine(c.g, pen, xc - half, yc + half, xc + half, yc - half);
+        break;
+    }
+    GdipDeletePen(pen);
+    GdipDeleteBrush((GpBrush *)brush);
+    canvas_end(&c, hdc, 0, 0);
+}
+
+static LRESULT CALLBACK hover_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+    switch (msg) {
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        paint_hover(hdc);
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
+    case WM_ERASEBKGND:
+        return 1;
+    case WM_NCHITTEST:
+        return HTTRANSPARENT;
+    case WM_MOUSEACTIVATE:
+        return MA_NOACTIVATE;
+    }
+    return DefWindowProcW(hwnd, msg, wp, lp);
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Calendar (the clock opens it)                                                             */
+/* ---------------------------------------------------------------------------------------- */
+
+static int cal_year, cal_month;     /* the month shown */
+static int cal_hot = -1;            /* CAL_PREV, CAL_NEXT or a day cell 0-41 */
+static DWORD cal_hidden_tick;
+#define CAL_PREV 100
+#define CAL_NEXT 101
+
+static int days_in_month(int year, int month)
+{
+    static const int days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    BOOL leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+    return month == 2 && leap ? 29 : days[month - 1];
+}
+
+/* 0 = Sunday */
+static int day_of_week(int year, int month, int day)
+{
+    static const int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+    if (month < 3) year--;
+    return (year + year / 4 - year / 100 + year / 400 + t[month - 1] + day) % 7;
+}
+
+static int first_day_of_week(void)   /* 0 = Sunday */
+{
+    WCHAR value[4] = L"6";
+    GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_IFIRSTDAYOFWEEK, value, ARRAY_SIZE(value));
+    return (_wtoi(value) + 1) % 7;    /* the locale counts from Monday */
+}
+
+static int cal_w(void) { return SC(360); }
+static int cal_h(void) { return SC(446); }
+static int cal_cell(void) { return SC(44); }
+
+static void cal_grid_origin(int *x, int *y)
+{
+    *x = (cal_w() - 7 * cal_cell()) / 2;
+    *y = SC(150);
+}
+
+static void cal_arrow_rect(int which, RECT *rc)
+{
+    int right = cal_w() - SC(16) - (which == CAL_NEXT ? 0 : SC(44));
+    SetRect(rc, right - SC(40), SC(84), right, SC(120));
+}
+
+static int cal_hit(int x, int y)
+{
+    POINT pt = {x, y};
+    RECT rc;
+    int gx, gy, col, row;
+    cal_arrow_rect(CAL_PREV, &rc);
+    if (PtInRect(&rc, pt)) return CAL_PREV;
+    cal_arrow_rect(CAL_NEXT, &rc);
+    if (PtInRect(&rc, pt)) return CAL_NEXT;
+    cal_grid_origin(&gx, &gy);
+    gy += SC(36);
+    if (x < gx || y < gy) return -1;
+    col = (x - gx) / cal_cell();
+    row = (y - gy) / SC(40);
+    if (col > 6 || row > 5) return -1;
+    return row * 7 + col;
+}
+
+static void draw_chevron(struct canvas *c, float cx, float cy, float size, BOOL up, COLORREF color)
+{
+    GpPen *pen = make_pen(argb(color, 255), max(1.0f, size * 0.12f));
+    float h = size * 0.30f, v = size * 0.16f * (up ? -1 : 1);
+    GdipDrawLine(c->g, pen, cx - h, cy - v, cx, cy + v);
+    GdipDrawLine(c->g, pen, cx, cy + v, cx + h, cy - v);
+    GdipDeletePen(pen);
+}
+
+static void paint_calendar(HDC hdc)
+{
+    static const WCHAR *const ko_days[] = {L"일", L"월", L"화", L"수", L"목", L"금", L"토"};
+    struct canvas c;
+    RECT client, rc;
+    SYSTEMTIME now;
+    WCHAR text[96];
+    int i, gx, gy, first, start, prev_days, days, fdw = first_day_of_week();
+
+    GetLocalTime(&now);
+    GetClientRect(calendar, &client);
+    if (!canvas_begin(&c, hdc, client.right, client.bottom)) return;
+    fill_rect(&c, 0, 0, client.right, client.bottom, argb(pal.menu, 255));
+    stroke_round_rect(&c, &client, 0, argb(pal.menu_border, 255), 1);
+
+    /* today */
+    if (korean) wsprintfW(text, L"%d월 %d일 %s요일", now.wMonth, now.wDay, ko_days[now.wDayOfWeek]);
+    else GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &now, L"dddd, MMMM d", text, ARRAY_SIZE(text), NULL);
+    SetRect(&rc, SC(20), SC(16), client.right - SC(20), SC(56));
+    draw_text(&c, text, &rc, calendar_title_font, pal.text, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    fill_rect(&c, 0, SC(68), client.right, 1, argb(pal.menu_border, 255));
+
+    /* month and the arrows */
+    if (korean) wsprintfW(text, L"%d년 %d월", cal_year, cal_month);
+    else {
+        SYSTEMTIME first_day = {0};
+        first_day.wYear = (WORD)cal_year;
+        first_day.wMonth = (WORD)cal_month;
+        first_day.wDay = 1;
+        GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &first_day, L"MMMM yyyy", text, ARRAY_SIZE(text), NULL);
+    }
+    SetRect(&rc, SC(24), SC(84), client.right - SC(120), SC(120));
+    draw_text(&c, text, &rc, menu_title_font, pal.text, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    for (i = CAL_PREV; i <= CAL_NEXT; i++) {
+        cal_arrow_rect(i, &rc);
+        if (cal_hot == i) fill_round_rect(&c, &rc, (float)SC(4), pal.hover);
+        draw_chevron(&c, (rc.left + rc.right) / 2.0f, (rc.top + rc.bottom) / 2.0f, (float)SC(22), i == CAL_PREV, pal.text);
+    }
+
+    /* the days of the week, then six weeks */
+    cal_grid_origin(&gx, &gy);
+    for (i = 0; i < 7; i++) {
+        int day = (fdw + i) % 7;
+        WCHAR name[16];
+        if (korean) lstrcpyW(name, ko_days[day]);
+        else GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SSHORTESTDAYNAME1 + (day + 6) % 7, name, ARRAY_SIZE(name));
+        SetRect(&rc, gx + i * cal_cell(), gy, gx + (i + 1) * cal_cell(), gy + SC(32));
+        draw_text(&c, name, &rc, small_font, pal.text_dim, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    }
+    gy += SC(36);
+    first = day_of_week(cal_year, cal_month, 1);
+    start = (first - fdw + 7) % 7;               /* cells before the 1st */
+    days = days_in_month(cal_year, cal_month);
+    prev_days = days_in_month(cal_month == 1 ? cal_year - 1 : cal_year, cal_month == 1 ? 12 : cal_month - 1);
+    for (i = 0; i < 42; i++) {
+        int day = i - start + 1;
+        BOOL inside = day >= 1 && day <= days;
+        BOOL today = inside && cal_year == now.wYear && cal_month == now.wMonth && day == now.wDay;
+        RECT cell = {gx + (i % 7) * cal_cell(), gy + (i / 7) * SC(40), gx + (i % 7 + 1) * cal_cell(), gy + (i / 7 + 1) * SC(40)};
+        RECT dot = cell;
+        int shown = inside ? day : day < 1 ? prev_days + day : day - days;
+        InflateRect(&dot, -(cal_cell() - SC(36)) / 2, -SC(2));
+        if (today) {
+            GpSolidFill *accent;
+            GdipCreateSolidFill(argb(pal.accent, 255), &accent);
+            GdipFillEllipse(c.g, (GpBrush *)accent, (float)dot.left, (float)dot.top, (float)(dot.right - dot.left),
+                            (float)(dot.bottom - dot.top));
+            GdipDeleteBrush((GpBrush *)accent);
+        }
+        else if (cal_hot == i) {
+            GpSolidFill *hover;
+            GdipCreateSolidFill(pal.hover, &hover);
+            GdipFillEllipse(c.g, (GpBrush *)hover, (float)dot.left, (float)dot.top, (float)(dot.right - dot.left),
+                            (float)(dot.bottom - dot.top));
+            GdipDeleteBrush((GpBrush *)hover);
+        }
+        wsprintfW(text, L"%d", shown);
+        draw_text(&c, text, &cell, small_font, today ? RGB(255, 255, 255) : inside ? pal.text : pal.text_dim,
+                  DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    }
+    canvas_end(&c, hdc, 0, 0);
+}
+
+static void hide_calendar(void)
+{
+    if (!IsWindowVisible(calendar)) return;
+    ShowWindow(calendar, SW_HIDE);
+    cal_hidden_tick = GetTickCount();
+}
+
+static void toggle_calendar(void)
+{
+    SYSTEMTIME now;
+    if (IsWindowVisible(calendar)) {
+        hide_calendar();
+        return;
+    }
+    if (GetTickCount() - cal_hidden_tick < 250) return;   /* the click that closed it */
+    hide_tip();
+    choose_palette();
+    GetLocalTime(&now);
+    cal_year = now.wYear;
+    cal_month = now.wMonth;
+    cal_hot = -1;
+    SetWindowPos(calendar, HWND_TOPMOST, screen_w - cal_w() - SC(12), screen_h - bar_h - cal_h() - SC(12), cal_w(), cal_h(),
+                 SWP_SHOWWINDOW);
+    SetForegroundWindow(calendar);
+    InvalidateRect(calendar, NULL, FALSE);
+}
+
+static void calendar_step(int delta)
+{
+    cal_month += delta;
+    if (cal_month < 1) { cal_month = 12; cal_year--; }
+    if (cal_month > 12) { cal_month = 1; cal_year++; }
+    InvalidateRect(calendar, NULL, FALSE);
+}
+
+static LRESULT CALLBACK calendar_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+    switch (msg) {
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        paint_calendar(hdc);
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
+    case WM_ERASEBKGND:
+        return 1;
+    case WM_ACTIVATE:
+        if (LOWORD(wp) == WA_INACTIVE) hide_calendar();
+        return 0;
+    case WM_KEYDOWN:
+        if (wp == VK_ESCAPE) hide_calendar();
+        else if (wp == VK_UP || wp == VK_PRIOR) calendar_step(-1);
+        else if (wp == VK_DOWN || wp == VK_NEXT) calendar_step(1);
+        return 0;
+    case WM_MOUSEWHEEL:
+        calendar_step(GET_WHEEL_DELTA_WPARAM(wp) > 0 ? -1 : 1);
+        return 0;
+    case WM_MOUSEMOVE: {
+        int hot = cal_hit(GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
+        if (hot != cal_hot) {
+            TRACKMOUSEEVENT tme = {sizeof(tme), TME_LEAVE, hwnd, 0};
+            cal_hot = hot;
+            TrackMouseEvent(&tme);
+            InvalidateRect(hwnd, NULL, FALSE);
+        }
+        return 0;
+    }
+    case WM_MOUSELEAVE:
+        cal_hot = -1;
+        InvalidateRect(hwnd, NULL, FALSE);
+        return 0;
+    case WM_LBUTTONUP: {
+        int hit = cal_hit(GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
+        if (hit == CAL_PREV) calendar_step(-1);
+        else if (hit == CAL_NEXT) calendar_step(1);
+        return 0;
+    }
+    }
     return DefWindowProcW(hwnd, msg, wp, lp);
 }
 
@@ -1463,6 +1939,9 @@ static void click_part(int index)
     case PART_DESKTOP:
         toggle_show_desktop();
         break;
+    case PART_CLOCK:
+        toggle_calendar();
+        break;
     default:
         break;
     }
@@ -1536,6 +2015,9 @@ static LRESULT CALLBACK taskbar_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             KillTimer(hwnd, TIMER_TIP);
             if (hot_part >= 0 && pressed_part < 0) show_tip(hot_part);
             break;
+        case TIMER_HOVER:
+            poll_hover();
+            break;
         case TIMER_ANNOUNCE:
             KillTimer(hwnd, TIMER_ANNOUNCE);
             /* programs started before us put their icons in explorer's tray: ask again */
@@ -1596,6 +2078,9 @@ static LRESULT CALLBACK taskbar_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_APP_SETTINGS:
         open_settings(NULL);
         return 0;
+    case WM_APP_TASK_MANAGER:
+        run(L"taskmgr.exe", NULL);
+        return 0;
     case WM_APP_RUN:
         run(L"rundll32.exe", L"shell32.dll,Control_RunDLL");
         return 0;
@@ -1641,6 +2126,12 @@ static LRESULT CALLBACK keyboard_hook(int code, WPARAM wp, LPARAM lp)
                 if (win_down && !win_combo) PostMessageW(taskbar, WM_APP_TOGGLE_START, 0, 0);
                 win_down = FALSE;
             }
+        }
+        else if (down && key->vkCode == VK_ESCAPE && GetAsyncKeyState(VK_CONTROL) < 0 && GetAsyncKeyState(VK_MENU) >= 0) {
+            /* Ctrl+Shift+Esc: Task Manager; Ctrl+Esc: Start (when the Windows key can't be used) */
+            if (GetAsyncKeyState(VK_SHIFT) < 0) PostMessageW(taskbar, WM_APP_TASK_MANAGER, 0, 0);
+            else PostMessageW(taskbar, WM_APP_TOGGLE_START, 0, 0);
+            return 1;
         }
         else if (down && win_down) {
             win_combo = TRUE;
@@ -1694,12 +2185,27 @@ static void create_windows(void)
     wc.style = 0;
     RegisterClassExW(&wc);
 
+    wc.lpfnWndProc = hover_proc;
+    wc.lpszClassName = L"S11CaptionHover";
+    RegisterClassExW(&wc);
+
+    wc.lpfnWndProc = calendar_proc;
+    wc.lpszClassName = L"S11Calendar";
+    wc.style = CS_DROPSHADOW;
+    RegisterClassExW(&wc);
+
     taskbar = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOACTIVATE, L"Shell_TrayWnd", L"",
                               WS_POPUP | WS_CLIPCHILDREN, 0, 0, 100, 10, NULL, NULL, instance, NULL);
     start_menu = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST, L"S11StartMenu", TR(L"시작", L"Start"),
                                  WS_POPUP | WS_CLIPCHILDREN, 0, 0, 100, 100, NULL, NULL, instance, NULL);
     tooltip = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT,
                               L"S11Tooltip", L"", WS_POPUP, 0, 0, 10, 10, NULL, NULL, instance, NULL);
+    /* layered + transparent: Wine passes clicks to the window below */
+    hover_window = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT | WS_EX_LAYERED,
+                                   L"S11CaptionHover", L"", WS_POPUP, 0, 0, 10, 10, NULL, NULL, instance, NULL);
+    SetLayeredWindowAttributes(hover_window, 0, 255, LWA_ALPHA);
+    calendar = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST, L"S11Calendar", TR(L"달력", L"Calendar"),
+                               WS_POPUP | WS_CLIPCHILDREN, 0, 0, 100, 100, NULL, NULL, instance, NULL);
     search_edit = CreateWindowExW(0, WC_EDITW, L"", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
                                   0, 0, 100, 20, start_menu, (HMENU)1, instance, NULL);
     SendMessageW(search_edit, WM_SETFONT, (WPARAM)search_font, FALSE);
@@ -1730,6 +2236,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
     small_font = make_font(90, FW_NORMAL);
     menu_title_font = make_font(105, FW_SEMIBOLD);
     search_font = make_font(105, FW_NORMAL);
+    calendar_title_font = make_font(120, FW_SEMIBOLD);
 
     settings_changed_msg = RegisterWindowMessageW(L"WinlatorS11SettingsChanged");
     read_settings();
@@ -1741,6 +2248,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
     SetTimer(taskbar, TIMER_POLL, 250, NULL);
     SetTimer(taskbar, TIMER_CLOCK, 1000, NULL);
     SetTimer(taskbar, TIMER_ANNOUNCE, 400, NULL);
+    SetTimer(taskbar, TIMER_HOVER, 40, NULL);
     SetWindowsHookExW(WH_KEYBOARD_LL, keyboard_hook, inst, 0);
 
     session_end = make_system_process();

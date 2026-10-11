@@ -286,6 +286,25 @@ public class Window extends XResource {
         else children.add(0, child);
     }
 
+    /**
+     * Winlator S11: moves the children that match to the top of the stack, keeping their
+     * order and the order of the others. Returns true when the stack changed.
+     */
+    public boolean raiseChildren(java.util.function.Predicate<Window> filter) {
+        ArrayList<Window> raised = new ArrayList<>();
+        int firstRaised = -1;
+        for (int i = 0; i < children.size(); i++) {
+            if (filter.test(children.get(i))) {
+                if (firstRaised < 0) firstRaised = i;
+                raised.add(children.get(i));
+            }
+        }
+        if (raised.isEmpty() || firstRaised == children.size() - raised.size()) return false;
+        children.removeAll(raised);
+        children.addAll(raised);
+        return true;
+    }
+
     public List<Window> getChildren() {
         return immutableChildren;
     }

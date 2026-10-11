@@ -100,11 +100,13 @@ import com.winlator.s11.ComposingOverlay;
 import com.winlator.s11.ImeSession;
 import com.winlator.s11.KoreanFonts;
 import com.winlator.s11.LegacyBrowserCleanup;
+import com.winlator.s11.MetaKeyCapture;
 import com.winlator.s11.ModernLook;
 import com.winlator.s11.PowerMenu;
 import com.winlator.s11.RootfsOverlay;
 import com.winlator.s11.S11Settings;
 import com.winlator.s11.S11Shell;
+import com.winlator.s11.TimeZones;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -315,6 +317,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
+        // Winlator S11: the Windows key goes to the container while it is in front (Samsung)
+        MetaKeyCapture.request(this, hasFocus);
 
         if (hasFocus) {
             if (capturePointerOnExternalMouse && (powerMenu == null || !powerMenu.isShowing())) {
@@ -659,6 +663,11 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         // Winlator S11: our taskbar and start menu instead of explorer's
         s11ShellEnabled = S11Shell.isEnabled(preferences, rootFS.getRootDir());
         if (S11Shell.configure(container, rootFS.getRootDir(), s11ShellEnabled)) containerDataChanged = true;
+        // the S11 start menu shuts down and restarts, so the power tab is not needed there
+        final boolean s11Desktop = s11ShellEnabled && shortcut == null && !getIntent().hasExtra("exec_path");
+        runOnUiThread(() -> {
+            if (powerMenu != null) powerMenu.setTabWanted(!s11Desktop);
+        });
 
         if (containerDataChanged) container.saveData();
     }
@@ -681,13 +690,18 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         if (container != null) {
             if (container.getHUDMode() == FrameRating.Mode.FULL.ordinal()) envVars.put("X11_WND_GPU_INFO", "1");
 
-            String desktopName = shortcut != null || getIntent().hasExtra("exec_path") ? "nogui" : "shell";
+            // Winlator S11: our desktop has its own name, so explorer.exe keeps its taskbar off
+            // (on "shell" this Wine shows it whatever the registry says)
+            String desktopName = shortcut != null || getIntent().hasExtra("exec_path") ? "nogui" :
+                                 s11ShellEnabled ? S11Shell.DESKTOP_NAME : "shell";
             String guestExecutable = "wine explorer /desktop="+desktopName+","+xServer.screenInfo+" "+getWineStartCommand();
             guestProgramLauncherComponent.setGuestExecutable(guestExecutable);
 
             // Winlator S11: shown on the About page of the S11 Settings app
             envVars.put("S11_VERSION", AppUtils.getVersionName(this));
             envVars.put("S11_CONTAINER", container.getName());
+            // Winlator S11: the device's time zone (the rootfs has no zone database: UTC otherwise)
+            envVars.put("TZ", TimeZones.posixTz());
 
             envVars.putAll(container.getEnvVars());
             if (shortcut != null) envVars.putAll(shortcut.getExtra("envVars"));

@@ -28,7 +28,10 @@ The Wine desktop is set up to look like Windows 10/11 rather than Windows 95:
   unpainted as a black frame), thin Marlett glyphs
   (`tools/s11/theme/build_marlett.py`, installed as a newer Marlett in the overlay),
   and `CaptionButtons` turns off the raised push-button frame Wine draws around them
-  (one verified call in the bundled `win32u.so`).
+  (one verified call in the bundled `win32u.so`). It also fixes where clicks land: Wine's
+  hit test took the close button to be as wide as the title bar is tall, so with wide
+  buttons a click on × could maximize and one on □ minimize. The shell shows a gray (red
+  for close) highlight under the mouse, as Windows does.
 - **Fonts**: "Segoe UI" is served by S11 Sans, our build of Microsoft's Selawik
   (`tools/s11/fonts/build_s11sans.py`, SIL OFL; renamed as the OFL requires), and
   dialogs follow it. NanumGothic is linked behind the common Latin fonts for Hangul.
@@ -49,9 +52,23 @@ key opens it; Win+D shows the desktop, Win+E the file manager, Win+I the setting
 Maximized windows are kept above it, and it steps aside for fullscreen programs. The icons
 sit in the middle or on the left (Settings, Personalization).
 
-`S11Shell` switches explorer's taskbar off for the "shell" desktop and has winhandler.exe
-start the shell (Winlator's Wine shows explorer's taskbar on that desktop anyway, so the
-shell keeps it hidden); the app's Settings has a switch to go back to Wine's taskbar. The Windows keys now
+The desktop session is named "s11" instead of "shell": Winlator's Wine turns explorer's
+taskbar on for "shell" whatever EnableShell says, and it came up over ours. `S11Shell` sets
+the registry for both names and has winhandler.exe start the shell; the app's Settings has
+a switch to go back to Wine's taskbar.
+
+The X server keeps the shell's windows (WM_CLASS `s11shell.exe`) above the others: Wine
+only restacks a window in X when it becomes the very top one, so windows that opened later
+covered the taskbar. When a window is resized the X server now keeps its contents until the
+program repaints (it showed black meanwhile, flickering while resizing).
+
+The clock opens a calendar. Ctrl+Esc opens Start and Ctrl+Shift+Esc the Task Manager; on
+Samsung devices the Windows key itself reaches the container (`MetaKeyCapture`, One UI
+keeps it otherwise). The power tab at the top of the screen is gone on the S11 desktop (the
+start menu has shut down and restart); Ctrl+Alt+Del still opens the power menu.
+
+Wine gets the device's time zone as a POSIX TZ string (`TimeZones`): the rootfs has no
+zone database, so it ran on UTC. The Windows keys now
 reach Wine: Meta maps to Super_L/R, and the X server's keyboard mapping reply was fixed to
 cover keycodes above 131.
 
