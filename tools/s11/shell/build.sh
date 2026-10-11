@@ -26,3 +26,4 @@ build() {  # name, extra libraries
 
 build s11shell
 build s11settings -lcomdlg32 -luxtheme
+build s11explorer -luxtheme

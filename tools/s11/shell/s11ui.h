@@ -292,28 +292,42 @@ static void run(const WCHAR *file, const WCHAR *args)
     ShellExecuteW(NULL, NULL, file, args, NULL, SW_SHOWNORMAL);
 }
 
+/* Our programs sit next to s11shell.exe (Z:\usr\share\s11\shell in the rootfs) */
+static void sibling_exe(WCHAR *path, const WCHAR *name)
+{
+    WCHAR *slash;
+    GetModuleFileNameW(NULL, path, MAX_PATH);
+    slash = wcsrchr(path, '\\');
+    if (slash && (slash - path) + lstrlenW(name) + 2 < MAX_PATH) lstrcpyW(slash + 1, name);
+    if (GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES) wsprintfW(path, L"Z:\\usr\\share\\s11\\shell\\%s", name);
+}
+
+static const WCHAR *settings_exe(void)
+{
+    static WCHAR path[MAX_PATH];
+    if (!path[0]) sibling_exe(path, L"s11settings.exe");
+    return path;
+}
+
+static const WCHAR *explorer_exe(void)
+{
+    static WCHAR path[MAX_PATH];
+    if (!path[0]) sibling_exe(path, L"s11explorer.exe");
+    return path;
+}
+
+/* File Explorer: ours, else Winlator's file manager, else Wine's explorer */
 static void open_files(void)
 {
     WCHAR path[MAX_PATH];
+    if (GetFileAttributesW(explorer_exe()) != INVALID_FILE_ATTRIBUTES) {
+        run(explorer_exe(), NULL);
+        return;
+    }
     GetWindowsDirectoryW(path, MAX_PATH);
     lstrcatW(path, L"\\wfm.exe");
     if (GetFileAttributesW(path) != INVALID_FILE_ATTRIBUTES) run(path, NULL);
     else run(L"explorer.exe", NULL);
-}
-
-/* s11settings.exe sits next to s11shell.exe (Z:\usr\share\s11\shell in the rootfs) */
-static const WCHAR *settings_exe(void)
-{
-    static WCHAR path[MAX_PATH];
-    if (!path[0]) {
-        WCHAR *slash;
-        GetModuleFileNameW(NULL, path, MAX_PATH);
-        slash = wcsrchr(path, '\\');
-        if (slash && (slash - path) + 17 < MAX_PATH) lstrcpyW(slash + 1, L"s11settings.exe");
-        if (GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES)
-            lstrcpyW(path, L"Z:\\usr\\share\\s11\\shell\\s11settings.exe");
-    }
-    return path;
 }
 
 /* page: NULL, "system", "personalization", "apps", "fonts" or "about" */

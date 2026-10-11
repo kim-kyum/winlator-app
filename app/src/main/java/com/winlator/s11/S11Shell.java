@@ -26,7 +26,8 @@ public final class S11Shell {
     // what configure() wrote; a new value when the registry setup changes
     private static final String ENABLED_VERSION = "2";
     private static final String EXE_IN_ROOTFS = "usr/share/s11/shell/s11shell.exe";
-    public static final String EXE_DOS_PATH = "Z:\\usr\\share\\s11\\shell\\s11shell.exe";
+    public static final String EXE_DIR_DOS_PATH = "Z:\\usr\\share\\s11\\shell";
+    public static final String EXE_DOS_PATH = EXE_DIR_DOS_PATH + "\\s11shell.exe";
     private static final String DESKTOPS_KEY = "Software\\Wine\\Explorer\\Desktops\\";
 
     private S11Shell() {}

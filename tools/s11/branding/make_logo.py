@@ -5,6 +5,7 @@ Usage: python -I make_logo.py ico <out.ico>
        python -I make_logo.py png <size> <out.png> [--no-tile]
        python -I make_logo.py android <res dir> <bold font.ttf>
        python -I make_logo.py settings-ico <out.ico>   (the Settings app: a gear in the same colours)
+       python -I make_logo.py explorer-ico <out.ico>   (File Explorer: a yellow folder)
 The shell draws the same mark with GDI+ (draw_logo in tools/s11/shell/s11ui.h).
 """
 import math
@@ -112,6 +113,27 @@ def gear(size):
     return image.resize((size, size), Image.LANCZOS)
 
 
+def folder(size):
+    """The File Explorer icon: a yellow folder, the back sheet darker than the front."""
+    ss = 4
+    big = size * ss
+    image = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    r = big * 0.06
+    # back sheet with the tab
+    draw.rounded_rectangle([big * 0.06, big * 0.16, big * 0.48, big * 0.40], radius=r, fill=(0xE8, 0xA3, 0x2E, 255))
+    draw.rounded_rectangle([big * 0.06, big * 0.24, big * 0.94, big * 0.84], radius=r, fill=(0xE8, 0xA3, 0x2E, 255))
+    # front sheet
+    front = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+    fd = ImageDraw.Draw(front)
+    fd.rounded_rectangle([big * 0.06, big * 0.34, big * 0.94, big * 0.86], radius=r, fill=(0xFF, 0xC8, 0x3D, 255))
+    shade = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+    ImageDraw.Draw(shade).rectangle([0, big * 0.34, big, big * 0.38], fill=(255, 236, 170, 140))
+    front = Image.alpha_composite(front, Image.composite(shade, Image.new("RGBA", (big, big)), front.split()[3]))
+    image = Image.alpha_composite(image, front)
+    return image.resize((size, size), Image.LANCZOS)
+
+
 def circle(image):
     mask = Image.new("L", image.size, 0)
     ImageDraw.Draw(mask).ellipse([0, 0, image.size[0] - 1, image.size[1] - 1], fill=255)
@@ -177,10 +199,11 @@ def main():
         android(sys.argv[2], sys.argv[3])
         print("android icons written")
         return
-    if kind in ("ico", "settings-ico"):
+    if kind in ("ico", "settings-ico", "explorer-ico"):
         out = sys.argv[2]
         sizes = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]
-        images = [(gear if kind == "settings-ico" else render)(s) for s in sizes]
+        draw = {"ico": render, "settings-ico": gear, "explorer-ico": folder}[kind]
+        images = [draw(s) for s in sizes]
         images[-1].save(out, format="ICO", sizes=[(s, s) for s in sizes], append_images=images[:-1])
     else:
         size, out = int(sys.argv[2]), sys.argv[3]

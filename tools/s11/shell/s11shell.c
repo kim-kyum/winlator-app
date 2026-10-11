@@ -1323,6 +1323,9 @@ static void scan_folder(const WCHAR *dir, int depth)
             if (!resolve_link(path, target, icon_path, &icon_index, &has_args)) continue;
             /* a shortcut to a program that is gone (an uninstalled app, Internet Explorer) */
             if (target[0] && target[1] == ':' && GetFileAttributesW(target) == INVALID_FILE_ATTRIBUTES) continue;
+            /* Winlator's file manager: the S11 File Explorer takes its place */
+            if (!lstrcmpiW(file_part(target), L"wfm.exe") && GetFileAttributesW(explorer_exe()) != INVALID_FILE_ATTRIBUTES)
+                continue;
             if (!(app = new_app())) break;
             lstrcpyW(app->name, name);
             lstrcpyW(app->path, path);
@@ -1376,7 +1379,9 @@ static void scan_apps(void)
 
     GetWindowsDirectoryW(windir, MAX_PATH);
     wsprintfW(wfm, L"%s\\wfm.exe", windir);
-    if (GetFileAttributesW(wfm) != INVALID_FILE_ATTRIBUTES)
+    if (GetFileAttributesW(explorer_exe()) != INVALID_FILE_ATTRIBUTES)
+        add_builtin(TR(L"파일 탐색기", L"File Explorer"), explorer_exe(), NULL);
+    else if (GetFileAttributesW(wfm) != INVALID_FILE_ATTRIBUTES)
         add_builtin(TR(L"파일 탐색기", L"File Explorer"), wfm, NULL);
 
     add_builtin(TR(L"명령 프롬프트", L"Command Prompt"), L"cmd.exe", NULL);
@@ -2151,6 +2156,32 @@ static LRESULT CALLBACK keyboard_hook(int code, WPARAM wp, LPARAM lp)
 /* Startup                                                                                   */
 /* ---------------------------------------------------------------------------------------- */
 
+/*
+ * Folders that programs open (ShellExecute "open" or "explore", folder icons on the desktop)
+ * come to the S11 File Explorer instead of Wine's. Wine's HKEY_CLASSES_ROOT is the machine
+ * key alone, and its Folder class asks the "Folders" DDE server first, so that goes too.
+ */
+static void register_folder_handler(void)
+{
+    static const WCHAR *verbs[] = {L"open", L"explore"};
+    WCHAR command[MAX_PATH + 16], key[96], value[MAX_PATH + 16];
+    DWORD size;
+    int i;
+
+    if (GetFileAttributesW(explorer_exe()) == INVALID_FILE_ATTRIBUTES) return;
+    wsprintfW(command, L"\"%s\" \"%%1\"", explorer_exe());
+    for (i = 0; i < ARRAY_SIZE(verbs); i++) {
+        wsprintfW(key, L"Software\\Classes\\Folder\\shell\\%s\\command", verbs[i]);
+        size = sizeof(value);
+        if (!RegGetValueW(HKEY_LOCAL_MACHINE, key, NULL, RRF_RT_REG_SZ, NULL, value, &size) && !lstrcmpiW(value, command))
+            continue;
+        RegSetKeyValueW(HKEY_LOCAL_MACHINE, key, NULL, REG_SZ, command, (lstrlenW(command) + 1) * sizeof(WCHAR));
+        wsprintfW(key, L"Software\\Classes\\Folder\\shell\\%s\\ddeexec", verbs[i]);
+        RegDeleteTreeW(HKEY_LOCAL_MACHINE, key);
+        RegDeleteKeyW(HKEY_LOCAL_MACHINE, key);
+    }
+}
+
 static HANDLE make_system_process(void)
 {
     /* Like explorer and services: don't keep the session alive, and learn when it ends */
@@ -2240,6 +2271,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
 
     settings_changed_msg = RegisterWindowMessageW(L"WinlatorS11SettingsChanged");
     read_settings();
+    register_folder_handler();
     create_windows();
     update_clock_text();
     scan_windows();

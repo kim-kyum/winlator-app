@@ -1208,7 +1208,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             cmdArgs = "/dir "+StringUtils.escapeDOSPath(execDir)+" \""+filename+"\""+execArgs;
         }
 
-        if (cmdArgs.isEmpty()) cmdArgs = "/dir C:\\windows \"wfm.exe\"";
+        // Winlator S11: the desktop opens with just the taskbar, not Winlator's file manager
+        // (winhandler.exe starts wfm.exe when given no program, and wfm asks "exit?" on close)
+        if (cmdArgs.isEmpty()) cmdArgs = s11ShellEnabled ? "/dir "+S11Shell.EXE_DIR_DOS_PATH+" \"s11shell.exe\"" :
+                                                           "/dir C:\\windows \"wfm.exe\"";
 
         if (overrideEnvVars != null && overrideEnvVars.has("EXTRA_EXEC_ARGS")) {
             cmdArgs += " "+overrideEnvVars.get("EXTRA_EXEC_ARGS");
