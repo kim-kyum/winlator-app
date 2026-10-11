@@ -7,10 +7,6 @@
                 "path" : "Z:/opt/apps/7-Zip/7zFM.exe"
             },
             {
-                "name" : "Internet Explorer",
-                "path" : "C:/windows/system32/iexplore.exe"
-            },
-            {
                 "name" : "Notepad",
                 "path" : "C:/windows/notepad.exe"
             },

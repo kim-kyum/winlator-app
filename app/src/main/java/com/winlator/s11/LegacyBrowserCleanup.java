@@ -24,13 +24,22 @@ import java.nio.charset.StandardCharsets;
  * through winebrowser and winhandler.exe.
  */
 public final class LegacyBrowserCleanup {
-    private static final String VERSION = "1";
+    private static final String VERSION = "2";
     public static final String EXTRA_KEY = "s11LegacyBrowserCleanup";
 
     private static final String[] FOLDERS = {
         ".wine/drive_c/Program Files/Internet Explorer",
         ".wine/drive_c/Program Files (x86)/Internet Explorer"
     };
+
+    // Where shortcuts to it may sit (Winlator's own start menu used to add one)
+    private static final String[] SHORTCUT_DIRS = {
+        ".wine/drive_c/ProgramData/Microsoft/Windows/Start Menu",
+        ".wine/drive_c/users/xuser/AppData/Roaming/Microsoft/Windows/Start Menu",
+        ".wine/drive_c/users/xuser/Desktop",
+        ".wine/drive_c/users/Public/Desktop"
+    };
+    private static final String SHORTCUT_NAME = "internet explorer.lnk";
 
     // Each key is removed together with everything below it.
     private static final String[] REMOVED_KEYS = {
@@ -73,12 +82,23 @@ public final class LegacyBrowserCleanup {
         if (!prefixUpdated && !foldersPresent && VERSION.equals(container.getExtra(EXTRA_KEY))) return false;
 
         for (String folder : FOLDERS) FileUtils.delete(new File(rootDir, folder));
+        for (String dir : SHORTCUT_DIRS) removeShortcuts(new File(rootDir, dir), 0);
 
         File systemRegFile = new File(rootDir, ".wine/system.reg");
         if (systemRegFile.isFile() && !cleanRegistry(systemRegFile)) return false;
 
         container.putExtra(EXTRA_KEY, VERSION);
         return true;
+    }
+
+    private static void removeShortcuts(File dir, int depth) {
+        File[] files = dir.listFiles();
+        if (files == null || depth > 4) return;
+        for (File file : files) {
+            if (FileUtils.isSymlink(file)) continue;
+            if (file.isDirectory()) removeShortcuts(file, depth + 1);
+            else if (file.getName().toLowerCase().equals(SHORTCUT_NAME)) file.delete();
+        }
     }
 
     /**

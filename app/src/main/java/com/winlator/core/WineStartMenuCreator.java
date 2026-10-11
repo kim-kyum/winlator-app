@@ -12,6 +12,33 @@ import org.json.JSONObject;
 import java.io.File;
 
 public abstract class WineStartMenuCreator {
+    // Winlator S11: Korean names for the entries of wine_startmenu.json. "Programs" stays: it is
+    // the Windows folder of that name.
+    private static final String[][] KOREAN_NAMES = {
+        {"System Tools", "시스템 도구"}, {"Games", "게임"}, {"Installers", "설치 도구"},
+        {"Notepad", "메모장"}, {"Wordpad", "워드패드"}, {"WineMine", "지뢰 찾기"},
+        {"GPUInfo", "GPU 정보"}, {"Test Direct3D", "Direct3D 테스트"}, {"Computer", "파일 탐색기"},
+        {"Task Manager", "작업 관리자"}, {"Registry Editor", "레지스트리 편집기"},
+        {"Command Prompt", "명령 프롬프트"}, {"Wine Configuration", "Wine 설정"},
+        {"Wine Mono (.NET Framework)", "Wine Mono 설치 (.NET Framework)"},
+        {"Wine Gecko (For HTML Pages)", "Wine Gecko 설치 (HTML 표시)"},
+        {"Steam (Legacy)", "Steam 설치 (구버전)"}
+    };
+
+    private static void localize(JSONArray items) throws JSONException {
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject item = items.getJSONObject(i);
+            String name = item.getString("name");
+            for (String[] pair : KOREAN_NAMES) {
+                if (pair[0].equals(name)) {
+                    item.put("name", pair[1]);
+                    break;
+                }
+            }
+            if (item.has("children")) localize(item.getJSONArray("children"));
+        }
+    }
+
     private static int parseShowCommand(String value) {
         if (value.equals("SW_SHOWMAXIMIZED")) {
             return MSLink.SW_SHOWMAXIMIZED;
@@ -72,6 +99,8 @@ public abstract class WineStartMenuCreator {
 
         try {
             JSONArray data = new JSONArray(FileUtils.readString(context, "wine_startmenu.json"));
+            if (java.util.Locale.getDefault().getLanguage().equals("ko")) localize(data);
+            // what was created, so the next start can remove exactly that (names may be localized)
             FileUtils.writeString(containerStartMenuFile, data.toString());
             for (int i = 0; i < data.length(); i++) createMenuEntry(data.getJSONObject(i), startMenuDir);
         }

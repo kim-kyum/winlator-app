@@ -960,8 +960,12 @@ static LRESULT CALLBACK tooltip_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 
 struct app {
     WCHAR name[128];
-    WCHAR path[MAX_PATH];
+    WCHAR path[MAX_PATH];      /* what is started: a shortcut or a program */
     WCHAR args[64];
+    WCHAR target[MAX_PATH];    /* the program a shortcut starts (empty when unknown) */
+    BOOL target_args;          /* ...with arguments of its own (an installer, a control panel) */
+    WCHAR icon_path[MAX_PATH]; /* where the icon comes from */
+    int icon_index;
     HICON icon;
     BOOL icon_loaded;
 };
@@ -1016,6 +1020,64 @@ static BOOL skip_shortcut(const WCHAR *name)
     return FALSE;
 }
 
+/* COM ids used here (instead of linking all of libuuid) */
+static const CLSID clsid_shell_link = {0x00021401, 0, 0, {0xc0, 0, 0, 0, 0, 0, 0, 0x46}};
+static const IID iid_shell_link = {0x000214f9, 0, 0, {0xc0, 0, 0, 0, 0, 0, 0, 0x46}};
+static const IID iid_persist_file = {0x0000010b, 0, 0, {0xc0, 0, 0, 0, 0, 0, 0, 0x46}};
+
+/* Reads a shortcut's target and icon location. FALSE when the file is not a shortcut. */
+static BOOL resolve_link(const WCHAR *lnk, WCHAR *target, WCHAR *icon_path, int *icon_index, BOOL *has_args)
+{
+    IShellLinkW *link = NULL;
+    IPersistFile *file = NULL;
+    WIN32_FIND_DATAW fd;
+    WCHAR raw[MAX_PATH];
+    BOOL ok = FALSE;
+
+    target[0] = icon_path[0] = 0;
+    *icon_index = 0;
+    *has_args = FALSE;
+    if (FAILED(CoCreateInstance(&clsid_shell_link, NULL, CLSCTX_INPROC_SERVER, &iid_shell_link, (void **)&link)))
+        return FALSE;
+    if (SUCCEEDED(IShellLinkW_QueryInterface(link, &iid_persist_file, (void **)&file)) &&
+        SUCCEEDED(IPersistFile_Load(file, lnk, STGM_READ))) {
+        ok = TRUE;
+        raw[0] = 0;
+        if (SUCCEEDED(IShellLinkW_GetPath(link, raw, MAX_PATH, &fd, 0)) && raw[0])
+            ExpandEnvironmentStringsW(raw, target, MAX_PATH);
+        raw[0] = 0;
+        if (SUCCEEDED(IShellLinkW_GetArguments(link, raw, MAX_PATH)) && raw[0]) *has_args = TRUE;
+        raw[0] = 0;
+        if (SUCCEEDED(IShellLinkW_GetIconLocation(link, raw, MAX_PATH, icon_index)) && raw[0])
+            ExpandEnvironmentStringsW(raw, icon_path, MAX_PATH);
+        else {
+            lstrcpyW(icon_path, target);
+            *icon_index = 0;
+        }
+    }
+    if (file) IPersistFile_Release(file);
+    IShellLinkW_Release(link);
+    return ok;
+}
+
+static const WCHAR *file_part(const WCHAR *path)
+{
+    const WCHAR *slash = wcsrchr(path, '\\'), *fwd = wcsrchr(path, '/');
+    if (fwd > slash) slash = fwd;
+    return slash ? slash + 1 : path;
+}
+
+/* Is a program already in the list (through a shortcut to the same file name)? */
+static BOOL has_program(const WCHAR *file)
+{
+    int i;
+    for (i = 0; i < app_count; i++) {
+        if (apps[i].target[0] && !apps[i].target_args && !lstrcmpiW(file_part(apps[i].target), file_part(file)))
+            return TRUE;
+    }
+    return FALSE;
+}
+
 static void scan_folder(const WCHAR *dir, int depth)
 {
     WCHAR pattern[MAX_PATH];
@@ -1032,18 +1094,29 @@ static void scan_folder(const WCHAR *dir, int depth)
         if (lstrlenW(dir) + lstrlenW(fd.cFileName) + 2 >= MAX_PATH) continue;
         wsprintfW(path, L"%s\\%s", dir, fd.cFileName);
         if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            /* programs that start with Windows are not in the menu */
+            if (!lstrcmpiW(fd.cFileName, L"StartUp") || !lstrcmpiW(fd.cFileName, L"시작프로그램")) continue;
             scan_folder(path, depth + 1);
             continue;
         }
         len = lstrlenW(fd.cFileName);
         if (len > 4 && !lstrcmpiW(fd.cFileName + len - 4, L".lnk")) {
-            WCHAR name[128];
+            WCHAR name[128], target[MAX_PATH], icon_path[MAX_PATH];
+            int icon_index;
+            BOOL has_args;
             struct app *app;
             lstrcpynW(name, fd.cFileName, min(len - 4 + 1, ARRAY_SIZE(name)));
             if (skip_shortcut(name) || has_app(name)) continue;
+            if (!resolve_link(path, target, icon_path, &icon_index, &has_args)) continue;
+            /* a shortcut to a program that is gone (an uninstalled app, Internet Explorer) */
+            if (target[0] && target[1] == ':' && GetFileAttributesW(target) == INVALID_FILE_ATTRIBUTES) continue;
             if (!(app = new_app())) break;
             lstrcpyW(app->name, name);
             lstrcpyW(app->path, path);
+            lstrcpyW(app->target, target);
+            app->target_args = has_args;
+            lstrcpyW(app->icon_path, icon_path);
+            app->icon_index = icon_index;
         }
     } while (FindNextFileW(find, &fd));
     FindClose(find);
@@ -1054,11 +1127,13 @@ static void add_builtin(const WCHAR *name, const WCHAR *file, const WCHAR *args)
     WCHAR path[MAX_PATH];
     struct app *app;
 
-    if (has_app(name)) return;
+    if (has_app(name) || has_program(file)) return;
     if (!SearchPathW(NULL, file, NULL, MAX_PATH, path, NULL)) return;
     if (!(app = new_app())) return;
     lstrcpynW(app->name, name, ARRAY_SIZE(app->name));
     lstrcpyW(app->path, path);
+    lstrcpyW(app->target, path);
+    lstrcpyW(app->icon_path, path);
     if (args) lstrcpynW(app->args, args, ARRAY_SIZE(app->args));
 }
 
@@ -1080,13 +1155,14 @@ static void scan_apps(void)
     WCHAR dir[MAX_PATH], windir[MAX_PATH], wfm[MAX_PATH];
 
     free_apps();
+    /* the whole start menus: Winlator keeps its tools in "System Tools" next to "Programs" */
+    if (SHGetSpecialFolderPathW(NULL, dir, CSIDL_STARTMENU, FALSE)) scan_folder(dir, 0);
+    if (SHGetSpecialFolderPathW(NULL, dir, CSIDL_COMMON_STARTMENU, FALSE)) scan_folder(dir, 0);
+
     GetWindowsDirectoryW(windir, MAX_PATH);
     wsprintfW(wfm, L"%s\\wfm.exe", windir);
     if (GetFileAttributesW(wfm) != INVALID_FILE_ATTRIBUTES)
         add_builtin(TR(L"파일 탐색기", L"File Explorer"), wfm, NULL);
-
-    if (SHGetSpecialFolderPathW(NULL, dir, CSIDL_PROGRAMS, FALSE)) scan_folder(dir, 0);
-    if (SHGetSpecialFolderPathW(NULL, dir, CSIDL_COMMON_PROGRAMS, FALSE)) scan_folder(dir, 0);
 
     add_builtin(TR(L"명령 프롬프트", L"Command Prompt"), L"cmd.exe", NULL);
     add_builtin(TR(L"메모장", L"Notepad"), L"notepad.exe", NULL);
@@ -1098,53 +1174,19 @@ static void scan_apps(void)
     qsort(apps, app_count, sizeof(*apps), compare_apps);
 }
 
-/* COM ids used here (instead of linking all of libuuid) */
-static const CLSID clsid_shell_link = {0x00021401, 0, 0, {0xc0, 0, 0, 0, 0, 0, 0, 0x46}};
-static const IID iid_shell_link = {0x000214f9, 0, 0, {0xc0, 0, 0, 0, 0, 0, 0, 0x46}};
-static const IID iid_persist_file = {0x0000010b, 0, 0, {0xc0, 0, 0, 0, 0, 0, 0, 0x46}};
-
-/* The icon a shortcut shows (its own icon location, else its target's), without the arrow */
-static HICON link_icon(const WCHAR *lnk)
-{
-    IShellLinkW *link = NULL;
-    IPersistFile *file = NULL;
-    WCHAR location[MAX_PATH] = {0}, expanded[MAX_PATH];
-    int index = 0;
-    HICON icon = NULL;
-
-    if (FAILED(CoCreateInstance(&clsid_shell_link, NULL, CLSCTX_INPROC_SERVER, &iid_shell_link, (void **)&link)))
-        return NULL;
-    if (SUCCEEDED(IShellLinkW_QueryInterface(link, &iid_persist_file, (void **)&file)) &&
-        SUCCEEDED(IPersistFile_Load(file, lnk, STGM_READ))) {
-        if (FAILED(IShellLinkW_GetIconLocation(link, location, MAX_PATH, &index)) || !location[0]) {
-            WIN32_FIND_DATAW fd;
-            location[0] = 0;
-            index = 0;
-            IShellLinkW_GetPath(link, location, MAX_PATH, &fd, 0);
-        }
-    }
-    if (file) IPersistFile_Release(file);
-    IShellLinkW_Release(link);
-    if (!location[0]) return NULL;
-    ExpandEnvironmentStringsW(location, expanded, MAX_PATH);
-    PrivateExtractIconsW(expanded, index, SC(32), SC(32), &icon, NULL, 1, 0);
-    if (!icon) {
-        SHFILEINFOW info = {0};
-        if (SHGetFileInfoW(expanded, 0, &info, sizeof(info), SHGFI_ICON | SHGFI_LARGEICON)) icon = info.hIcon;
-    }
-    return icon;
-}
 
 static void load_app_icon(struct app *app)
 {
-    int len = lstrlenW(app->path);
     if (app->icon_loaded) return;
     app->icon_loaded = TRUE;
-    if (len > 4 && !lstrcmpiW(app->path + len - 4, L".lnk")) app->icon = link_icon(app->path);
-    if (!app->icon) PrivateExtractIconsW(app->path, 0, SC(32), SC(32), &app->icon, NULL, 1, 0);
+    /* the icon itself, not the shortcut overlay */
+    if (app->icon_path[0])
+        PrivateExtractIconsW(app->icon_path, app->icon_index, SC(32), SC(32), &app->icon, NULL, 1, 0);
+    if (!app->icon && app->target[0]) PrivateExtractIconsW(app->target, 0, SC(32), SC(32), &app->icon, NULL, 1, 0);
     if (!app->icon) {
         SHFILEINFOW info = {0};
-        if (SHGetFileInfoW(app->path, 0, &info, sizeof(info), SHGFI_ICON | SHGFI_LARGEICON)) app->icon = info.hIcon;
+        if (SHGetFileInfoW(app->target[0] ? app->target : app->path, 0, &info, sizeof(info), SHGFI_ICON | SHGFI_LARGEICON))
+            app->icon = info.hIcon;
     }
 }
 
