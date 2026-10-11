@@ -86,9 +86,10 @@ control panel. The overflow menu exposes notification icons marked hidden by the
 Windows applications.
 
 `Win+Shift+S` is detected both by the S11 shell hook and the Android Activity key dispatcher.
-PixelCopy saves to the active rootfs at `home/xuser/.wine/drive_c/S11/Screenshots` (guest path
-`C:\S11\Screenshots`); the leading slash in `RootFS.WINEPREFIX` must be removed before
-joining it to `rootFS.getRootDir()`.
+It opens a translucent drag-to-select overlay; PixelCopy copies only the selected rectangle
+from the guest surface and saves it to the active rootfs at
+`home/xuser/.wine/drive_c/S11/Screenshots` (guest path `C:\S11\Screenshots`). The leading
+slash in `RootFS.WINEPREFIX` must be removed before joining it to `rootFS.getRootDir()`.
 
 Wine gets the device's time zone as a POSIX TZ string (`TimeZones`): the rootfs has no
 zone database, so it ran on UTC. The Windows keys now
@@ -102,7 +103,8 @@ Windows 11 style Settings window, opened from the start menu (gear, or "설정" 
 Win+I, or the taskbar's menu:
 
 - **System**: display scale (LogPixels) and resolution.
-- **Wine**: the Windows version programs see and mouse acceleration. Advanced `winecfg.exe`
+- **Wine**: the Windows version programs see, mouse acceleration, and guest pointer speed
+  (1–20). The speed control does not alter a physical mouse sensor's DPI. Advanced `winecfg.exe`
   is no longer presented as a separate app; the supported everyday controls are exposed here.
 - **Connectivity**: buttons that open Android Wi-Fi and Bluetooth system settings.
 - **Personalization**: background (the two S11 pictures, your own picture, or a new one

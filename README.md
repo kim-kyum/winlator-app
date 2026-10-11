@@ -13,8 +13,8 @@
 - Windows 앱을 실행하는 Wine/Box64 기반 컨테이너
 - S11 Workspace 작업 표시줄, 시작 메뉴, 창 전환(Alt+Tab), 달력 및 알림 영역
 - 한국어 우선 UI, 설정 앱과 통일한 내장 앱 아이콘, S11 전용 파일 탐색기
-- 컨테이너 안에서 여는 설정 앱: 화면 해상도·배율(DPI), Wine 호환성·마우스 가속, 밝게/어둡게/시스템 테마, 배경화면, 앱·글꼴 관리
-- `Win+Shift+S` 화면 캡처와 컨테이너 안에서 캡처를 모아 보는 Gallery 앱 (`C:\S11\Screenshots`)
+- 컨테이너 안에서 여는 설정 앱: 화면 해상도·배율(DPI), Wine 호환성·마우스 가속·포인터 속도, 테마, 배경화면, 앱·글꼴 관리
+- `Win+Shift+S` 드래그 영역 캡처와 Gallery 앱 (`C:\S11\Screenshots`)
 - 작업 표시줄 Wi-Fi·Bluetooth 버튼과 설정 앱의 연결 페이지에서 Android 시스템 설정 열기
 - 명령 프롬프트를 `C:\`에서 시작
 - Android 기기의 기존 Winlator와 별도로 설치·실행

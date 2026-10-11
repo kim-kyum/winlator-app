@@ -34,7 +34,7 @@ enum page { PAGE_SYSTEM, PAGE_WINE, PAGE_CONNECTIVITY, PAGE_PERSONALIZE, PAGE_AP
 
 enum control_id {
     ID_SCALE = 100, ID_RESOLUTION, ID_WINVER, ID_RESTART, ID_MODE, ID_ALIGN, ID_MOUSE, ID_OPEN_WIFI, ID_OPEN_BLUETOOTH,
-    ID_APP_LIST, ID_UNINSTALL, ID_INSTALL, ID_FONT_LIST, ID_FONT_INSTALL, ID_BROWSE
+    ID_APP_LIST, ID_UNINSTALL, ID_INSTALL, ID_FONT_LIST, ID_FONT_INSTALL, ID_BROWSE, ID_MOUSE_SPEED
 };
 
 static HINSTANCE instance;
@@ -47,7 +47,7 @@ static BOOL restart_needed;
 static int scroll_y, content_bottom;
 
 /* controls of each page */
-static HWND scale_box, resolution_box, winver_box, restart_button, mode_box, align_box, mouse_box, browse_button;
+static HWND scale_box, resolution_box, winver_box, restart_button, mode_box, align_box, mouse_box, mouse_speed_box, browse_button;
 static HWND wifi_button, bluetooth_button;
 static HWND app_list, uninstall_button, install_button, font_list, font_install_button;
 static HIMAGELIST app_images, font_images;
@@ -215,6 +215,26 @@ static void fill_mouse_acceleration(void)
     SendMessageW(mouse_box, CB_ADDSTRING, 0, (LPARAM)TR(L"끄기", L"Off"));
     SendMessageW(mouse_box, CB_ADDSTRING, 0, (LPARAM)TR(L"켜기", L"On"));
     SendMessageW(mouse_box, CB_SETCURSEL, selected, 0);
+}
+
+static void fill_mouse_speed(void)
+{
+    WCHAR text[64], value[16] = L"";
+    int speed = 10, i;
+    if (!SystemParametersInfoW(SPI_GETMOUSESPEED, 0, &speed, 0)) {
+        if (reg_get_string(HKEY_CURRENT_USER, L"Control Panel\\Mouse", L"MouseSensitivity", value, ARRAY_SIZE(value)))
+            speed = (int)wcstol(value, NULL, 10);
+    }
+    speed = max(1, min(speed, 20));
+    SendMessageW(mouse_speed_box, CB_RESETCONTENT, 0, 0);
+    for (i = 1; i <= 20; i++) {
+        const WCHAR *hint = i == 1 ? TR(L" (느림)", L" (slow)") :
+                            i == 10 ? TR(L" (기본)", L" (default)") :
+                            i == 20 ? TR(L" (빠름)", L" (fast)") : L"";
+        wsprintfW(text, L"%d%s", i, hint);
+        SendMessageW(mouse_speed_box, CB_ADDSTRING, 0, (LPARAM)text);
+    }
+    SendMessageW(mouse_speed_box, CB_SETCURSEL, speed - 1, 0);
 }
 
 struct win_version {
@@ -868,6 +888,9 @@ static void build_rows(void)
     r = add_row(PAGE_WINE, TR(L"마우스 가속", L"Mouse acceleration"), &mouse_box);
     lstrcpyW(r->detail, TR(L"빠르게 움직일 때 포인터 속도를 높입니다. 바로 적용돼요.",
                            L"Increases pointer speed for faster movement. Applies immediately."));
+    r = add_row(PAGE_WINE, TR(L"마우스 포인터 속도", L"Mouse pointer speed"), &mouse_speed_box);
+    lstrcpyW(r->detail, TR(L"컨테이너 안 포인터 감도(1–20)예요. 실제 마우스 센서 DPI는 바꾸지 않아요.",
+                           L"Sets the guest pointer speed (1–20), not the mouse sensor's hardware DPI."));
 
     r = add_row(PAGE_CONNECTIVITY, TR(L"Wi-Fi 및 네트워크", L"Wi-Fi and network"), &wifi_button);
     lstrcpyW(r->detail, TR(L"Wi-Fi 설정은 Android가 관리하며, 버튼을 누르면 Android 설정이 열립니다.",
@@ -905,7 +928,7 @@ static void layout(void)
 {
     RECT client;
     int x, y, w, i;
-    HWND controls[] = {scale_box, resolution_box, winver_box, mode_box, align_box, mouse_box, wifi_button, bluetooth_button, browse_button, app_list,
+    HWND controls[] = {scale_box, resolution_box, winver_box, mode_box, align_box, mouse_box, mouse_speed_box, wifi_button, bluetooth_button, browse_button, app_list,
                        uninstall_button, install_button, font_list, font_install_button, restart_button};
 
     GetClientRect(main_window, &client);
@@ -1321,6 +1344,8 @@ static void create_controls(void)
     align_box = make_combo(ID_ALIGN);
     mouse_box = make_combo(ID_MOUSE);
     fill_mouse_acceleration();
+    mouse_speed_box = make_combo(ID_MOUSE_SPEED);
+    fill_mouse_speed();
     wifi_button = make_button(ID_OPEN_WIFI, TR(L"Wi-Fi 설정 열기", L"Open Wi-Fi settings"));
     bluetooth_button = make_button(ID_OPEN_BLUETOOTH, TR(L"Bluetooth 설정 열기", L"Open Bluetooth settings"));
     restart_button = make_button(ID_RESTART, TR(L"지금 다시 시작", L"Restart now"));
@@ -1537,6 +1562,14 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
                 SystemParametersInfoW(SPI_SETMOUSE, 0, values, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
                 SendMessageTimeoutW(HWND_BROADCAST, WM_SETTINGCHANGE, 0, (LPARAM)L"Control Panel\\Mouse",
                                     SMTO_ABORTIFHUNG, 1000, NULL);
+                break;
+            }
+            case ID_MOUSE_SPEED: {
+                int speed = sel + 1;
+                WCHAR value[16];
+                SystemParametersInfoW(SPI_SETMOUSESPEED, 0, &speed, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+                wsprintfW(value, L"%d", speed);
+                reg_set_string(HKEY_CURRENT_USER, L"Control Panel\\Mouse", L"MouseSensitivity", value);
                 break;
             }
             case ID_ALIGN:

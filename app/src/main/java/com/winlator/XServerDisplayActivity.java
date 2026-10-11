@@ -1,6 +1,7 @@
 package com.winlator;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.PictureInPictureParams;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -9,6 +10,14 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Build;
 import android.os.Handler;
@@ -21,6 +30,8 @@ import android.view.MotionEvent;
 import android.view.PixelCopy;
 import android.view.Surface;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
@@ -140,6 +151,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private final AtomicBoolean sessionTransitionStarted = new AtomicBoolean(false);
     private boolean s11ShellEnabled;
     private boolean s11ScreenshotKeyCaptured;
+    private Dialog s11RegionDialog;
     private XEnvironment environment;
     private DrawerLayout drawerLayout;
     private Container container;
@@ -601,54 +613,213 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         });
     }
 
-    /** Captures the guest desktop surface and stores it where C:\\S11\\Screenshots can see it. */
+    /** Starts a snipping-style region selection for the guest desktop. */
     public void captureS11Screenshot() {
-        runOnUiThread(() -> {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || xServerView == null || container == null || rootFS == null) {
-                Toast.makeText(this, R.string.s11_screenshot_not_ready, Toast.LENGTH_SHORT).show();
-                return;
-            }
-            Surface surface = xServerView.getHolder().getSurface();
-            int width = xServerView.getWidth(), height = xServerView.getHeight();
-            if (surface == null || !surface.isValid() || width <= 0 || height <= 0) {
-                Toast.makeText(this, R.string.s11_screenshot_not_ready, Toast.LENGTH_SHORT).show();
-                return;
-            }
-            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            PixelCopy.request(surface, bitmap, result -> {
-                if (result != PixelCopy.SUCCESS) {
-                    bitmap.recycle();
-                    Toast.makeText(this, R.string.s11_screenshot_failed, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                String filename = "Screenshot-" + new SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.US).format(new Date()) + ".png";
-                String winePrefix = RootFS.WINEPREFIX.startsWith("/") ? RootFS.WINEPREFIX.substring(1) : RootFS.WINEPREFIX;
-                File directory = new File(rootFS.getRootDir(), winePrefix + "/drive_c/S11/Screenshots");
-                Thread saveThread = new Thread(() -> {
-                    boolean saved = false;
-                    File output = new File(directory, filename);
-                    try {
-                        if (directory.isDirectory() || directory.mkdirs()) {
-                            try (FileOutputStream stream = new FileOutputStream(output)) {
-                                saved = bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                                stream.flush();
-                            }
-                        }
-                    }
-                    catch (Exception ignored) {
-                        output.delete();
-                    }
-                    finally {
-                        bitmap.recycle();
-                    }
-                    final boolean success = saved;
-                    runOnUiThread(() -> Toast.makeText(this,
-                            success ? getString(R.string.s11_screenshot_saved, "C:\\S11\\Screenshots") : getString(R.string.s11_screenshot_failed),
-                            Toast.LENGTH_SHORT).show());
-                }, "S11-Screenshot");
-                saveThread.start();
-            }, new Handler(Looper.getMainLooper()));
+        runOnUiThread(this::showS11RegionSelector);
+    }
+
+    private interface S11RegionSelectionListener {
+        void onSelected(Rect region);
+    }
+
+    private void showS11RegionSelector() {
+        if (isFinishing() || xServerView == null || container == null || rootFS == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            Toast.makeText(this, R.string.s11_screenshot_not_ready, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (s11RegionDialog != null && s11RegionDialog.isShowing()) return;
+
+        Dialog dialog = new Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
+        S11RegionSelectorView selector = new S11RegionSelectorView(region -> {
+            dialog.dismiss();
+            new Handler(Looper.getMainLooper()).postDelayed(() -> captureS11ScreenshotRegion(region), 80);
         });
+        dialog.setContentView(selector);
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.setOnKeyListener((d, keyCode, event) -> {
+            if (event.getAction() == KeyEvent.ACTION_UP &&
+                    (keyCode == KeyEvent.KEYCODE_ESCAPE || keyCode == KeyEvent.KEYCODE_BACK)) {
+                d.dismiss();
+                return true;
+            }
+            return false;
+        });
+        dialog.setOnDismissListener(d -> {
+            s11ScreenshotKeyCaptured = false;
+            if (s11RegionDialog == dialog) s11RegionDialog = null;
+        });
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+            window.setDimAmount(0f);
+        }
+        s11RegionDialog = dialog;
+        dialog.show();
+        window = dialog.getWindow();
+        if (window != null) window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+        selector.requestFocus();
+    }
+
+    private final class S11RegionSelectorView extends View {
+        private final Paint clearPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint instructionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final S11RegionSelectionListener listener;
+        private final RectF selection = new RectF();
+        private float startX, startY;
+        private boolean dragging;
+
+        S11RegionSelectorView(S11RegionSelectionListener listener) {
+            super(XServerDisplayActivity.this);
+            this.listener = listener;
+            setFocusable(true);
+            setFocusableInTouchMode(true);
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+            clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+            fillPaint.setColor(0x3355A7FF);
+            borderPaint.setColor(Color.WHITE);
+            borderPaint.setStyle(Paint.Style.STROKE);
+            borderPaint.setStrokeWidth(dp(2));
+            instructionPaint.setColor(Color.WHITE);
+            instructionPaint.setTextSize(getResources().getDisplayMetrics().scaledDensity * 16);
+            instructionPaint.setShadowLayer(dp(3), 0, dp(1), Color.BLACK);
+        }
+
+        private float dp(float value) {
+            return value * getResources().getDisplayMetrics().density;
+        }
+
+        private void updateSelection(float x, float y) {
+            float cx = Math.max(0, Math.min(getWidth(), x));
+            float cy = Math.max(0, Math.min(getHeight(), y));
+            selection.set(Math.min(startX, cx), Math.min(startY, cy), Math.max(startX, cx), Math.max(startY, cy));
+        }
+
+        private Rect mapSelectionToSurface() {
+            int[] overlayLocation = new int[2];
+            int[] surfaceLocation = new int[2];
+            getLocationOnScreen(overlayLocation);
+            xServerView.getLocationOnScreen(surfaceLocation);
+            int width = xServerView.getWidth(), height = xServerView.getHeight();
+            int left = (int)Math.floor(selection.left + overlayLocation[0] - surfaceLocation[0]);
+            int top = (int)Math.floor(selection.top + overlayLocation[1] - surfaceLocation[1]);
+            int right = (int)Math.ceil(selection.right + overlayLocation[0] - surfaceLocation[0]);
+            int bottom = (int)Math.ceil(selection.bottom + overlayLocation[1] - surfaceLocation[1]);
+            left = Math.max(0, Math.min(width, left));
+            top = Math.max(0, Math.min(height, top));
+            right = Math.max(left, Math.min(width, right));
+            bottom = Math.max(top, Math.min(height, bottom));
+            return new Rect(left, top, right, bottom);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            int layer = canvas.saveLayer(0, 0, getWidth(), getHeight(), null);
+            canvas.drawColor(0x77000000);
+            if (dragging && !selection.isEmpty()) canvas.drawRect(selection, clearPaint);
+            canvas.restoreToCount(layer);
+            if (!selection.isEmpty()) {
+                canvas.drawRect(selection, fillPaint);
+                canvas.drawRect(selection, borderPaint);
+            }
+            canvas.drawText("드래그하여 캡처할 영역을 선택하세요 · Esc 취소", dp(18), dp(38), instructionPaint);
+            if (dragging) {
+                String dimensions = String.format(Locale.US, "%d × %d", (int)selection.width(), (int)selection.height());
+                canvas.drawText(dimensions, selection.left + dp(6), Math.max(dp(60), selection.top - dp(8)), instructionPaint);
+            }
+        }
+
+        @Override
+        public boolean onTouchEvent(MotionEvent event) {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    startX = Math.max(0, Math.min(getWidth(), event.getX()));
+                    startY = Math.max(0, Math.min(getHeight(), event.getY()));
+                    selection.set(startX, startY, startX, startY);
+                    dragging = true;
+                    invalidate();
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    if (dragging) {
+                        updateSelection(event.getX(), event.getY());
+                        invalidate();
+                    }
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (dragging) {
+                        updateSelection(event.getX(), event.getY());
+                        dragging = false;
+                        Rect region = mapSelectionToSurface();
+                        float minimum = dp(4);
+                        if (region.width() >= minimum && region.height() >= minimum) listener.onSelected(region);
+                        else selection.setEmpty();
+                        invalidate();
+                    }
+                    return true;
+                case MotionEvent.ACTION_CANCEL:
+                    dragging = false;
+                    selection.setEmpty();
+                    invalidate();
+                    return true;
+            }
+            return true;
+        }
+    }
+
+    private void captureS11ScreenshotRegion(Rect requestedRegion) {
+        if (isFinishing() || xServerView == null || container == null || rootFS == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            Toast.makeText(this, R.string.s11_screenshot_not_ready, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Surface surface = xServerView.getHolder().getSurface();
+        int width = xServerView.getWidth(), height = xServerView.getHeight();
+        Rect region = new Rect(requestedRegion);
+        if (surface == null || !surface.isValid() || width <= 0 || height <= 0 || !region.intersect(0, 0, width, height)) {
+            Toast.makeText(this, R.string.s11_screenshot_not_ready, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Bitmap bitmap = Bitmap.createBitmap(region.width(), region.height(), Bitmap.Config.ARGB_8888);
+        PixelCopy.request(surface, region, bitmap, result -> {
+            if (result != PixelCopy.SUCCESS) {
+                bitmap.recycle();
+                Toast.makeText(this, R.string.s11_screenshot_failed, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            saveS11Screenshot(bitmap);
+        }, new Handler(Looper.getMainLooper()));
+    }
+
+    private void saveS11Screenshot(Bitmap bitmap) {
+        String filename = "Screenshot-" + new SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.US).format(new Date()) + ".png";
+        String winePrefix = RootFS.WINEPREFIX.startsWith("/") ? RootFS.WINEPREFIX.substring(1) : RootFS.WINEPREFIX;
+        File directory = new File(rootFS.getRootDir(), winePrefix + "/drive_c/S11/Screenshots");
+        Thread saveThread = new Thread(() -> {
+            boolean saved = false;
+            File output = new File(directory, filename);
+            try {
+                if (directory.isDirectory() || directory.mkdirs()) {
+                    try (FileOutputStream stream = new FileOutputStream(output)) {
+                        saved = bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                        stream.flush();
+                    }
+                }
+            }
+            catch (Exception ignored) {
+                output.delete();
+            }
+            finally {
+                bitmap.recycle();
+            }
+            final boolean success = saved;
+            runOnUiThread(() -> Toast.makeText(this,
+                    success ? getString(R.string.s11_screenshot_saved, "C:\\S11\\Screenshots") : getString(R.string.s11_screenshot_failed),
+                    Toast.LENGTH_SHORT).show());
+        }, "S11-Screenshot");
+        saveThread.start();
     }
 
     /**
