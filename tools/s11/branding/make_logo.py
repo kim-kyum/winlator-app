@@ -3,11 +3,13 @@
 
 Usage: python -I make_logo.py ico <out.ico>
        python -I make_logo.py png <size> <out.png> [--no-tile]
+       python -I make_logo.py android <res dir> <bold font.ttf>
 The shell draws the same mark with GDI+ (draw_logo in tools/s11/shell/s11shell.c).
 """
+import os
 import sys
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 TOP_LEFT = (0x2F, 0x7B, 0xFF)
 BOTTOM_RIGHT = (0x7B, 0x5C, 0xFF)
@@ -60,8 +62,71 @@ def render(size, tile=True):
     return image.resize((size, size), Image.LANCZOS)
 
 
+def circle(image):
+    mask = Image.new("L", image.size, 0)
+    ImageDraw.Draw(mask).ellipse([0, 0, image.size[0] - 1, image.size[1] - 1], fill=255)
+    out = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    full = render_square(image.size[0])
+    out.paste(full, (0, 0), mask)
+    return out
+
+
+def render_square(size):
+    """The tile without rounded corners (for masks the launcher applies itself)."""
+    ss = 4
+    big = size * ss
+    tile = render(size * 2, tile=True).resize((big, big), Image.LANCZOS)
+    # fill the corners: draw the gradient full-bleed under the tile
+    gradient = Image.new("RGBA", (big, big))
+    px = gradient.load()
+    for y in range(big):
+        for x in range(big):
+            t = (x + y) / (2 * (big - 1))
+            px[x, y] = tuple(round(TOP_LEFT[i] * (1 - t) + BOTTOM_RIGHT[i] * t) for i in range(3)) + (255,)
+    gradient.alpha_composite(tile)
+    return gradient.resize((size, size), Image.LANCZOS)
+
+
+def android(res, font_path):
+    densities = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}
+    for name, scale in densities.items():
+        folder = os.path.join(res, "mipmap-" + name)
+        os.makedirs(folder, exist_ok=True)
+        legacy = round(48 * scale)
+        render(legacy).save(os.path.join(folder, "ic_launcher.png"))
+        circle(Image.new("RGBA", (legacy, legacy))).save(os.path.join(folder, "ic_launcher_round.png"))
+        # adaptive foreground: 108 dp canvas, the mark in the middle 72 dp
+        canvas = round(108 * scale)
+        inner = round(72 * scale)
+        foreground = Image.new("RGBA", (canvas, canvas), (0, 0, 0, 0))
+        art = render(inner, tile=False)
+        offset = (canvas - inner) // 2
+        foreground.paste(art, (offset, offset), art)
+        foreground.save(os.path.join(folder, "ic_launcher_foreground.png"))
+
+    # drawer header wordmark: the mark and "Winlator S11" in white
+    height = 208
+    mark = render(height)
+    font = ImageFont.truetype(font_path, round(height * 0.42))
+    text = "Winlator S11"
+    width = height + round(height * 0.22) + round(font.getlength(text)) + 8
+    logo = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    logo.paste(mark, (0, 0), mark)
+    draw = ImageDraw.Draw(logo)
+    bbox = draw.textbbox((0, 0), text, font=font)
+    y = (height - (bbox[3] - bbox[1])) // 2 - bbox[1]
+    draw.text((height + round(height * 0.22), y), text, font=font, fill=(255, 255, 255, 255))
+    folder = os.path.join(res, "drawable-xxhdpi")
+    os.makedirs(folder, exist_ok=True)
+    logo.save(os.path.join(folder, "logo.png"))
+
+
 def main():
     kind = sys.argv[1]
+    if kind == "android":
+        android(sys.argv[2], sys.argv[3])
+        print("android icons written")
+        return
     if kind == "ico":
         out = sys.argv[2]
         sizes = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]
