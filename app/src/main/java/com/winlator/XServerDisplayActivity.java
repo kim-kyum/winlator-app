@@ -576,7 +576,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     public void onS11StatusPanel(boolean bluetooth) {
         runOnUiThread(() -> {
             if (isFinishing()) return;
-            String panel = bluetooth ? Settings.Panel.ACTION_BLUETOOTH : Settings.Panel.ACTION_WIFI;
+            String panel = bluetooth ? Settings.ACTION_BLUETOOTH_SETTINGS : Settings.Panel.ACTION_WIFI;
             String fallback = bluetooth ? Settings.ACTION_BLUETOOTH_SETTINGS : Settings.ACTION_WIFI_SETTINGS;
             try {
                 startActivity(new Intent(panel));
