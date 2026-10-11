@@ -74,9 +74,11 @@ start menu has shut down and restart); Ctrl+Alt+Del still opens the power menu. 
 shell is enabled, the redundant Android power tab is hidden even when a program is launched
 from a shortcut. Session restart/exit transitions are guarded against duplicate callbacks.
 The Command Prompt starts in `C:\`.
-Wi-Fi and Bluetooth launch the Android system panels; the language indicator opens the
-Wine locale control panel. The overflow menu exposes notification icons marked hidden by
-their owning Windows applications.
+Wi-Fi and Bluetooth open Wine's network and Bluetooth control-panel entry points in the
+container rather than leaving the desktop for Android Settings; actual radio control remains
+subject to Wine's device passthrough support. The language indicator opens the Wine locale
+control panel. The overflow menu exposes notification icons marked hidden by their owning
+Windows applications.
 
 Wine gets the device's time zone as a POSIX TZ string (`TimeZones`): the rootfs has no
 zone database, so it ran on UTC. The Windows keys now
@@ -89,10 +91,10 @@ cover keycodes above 131.
 Windows 11 style Settings window, opened from the start menu (gear, or "설정" in the list),
 Win+I, or the taskbar's menu:
 
-- **System**: display scale (LogPixels), resolution, and the Windows version programs see
-  (the same registry values as the container settings).
+- **System**: display scale (LogPixels), resolution, the Windows version programs see,
+  mouse acceleration, and a button to open Wine Configuration (`winecfg.exe`).
 - **Personalization**: background (the two S11 pictures, your own picture, or a new one
-  from a file; applied at once), light or dark mode, taskbar alignment.
+  from a file; applied at once), light, dark or Android system-following mode, taskbar alignment.
 - **Apps**: installed programs from the Uninstall keys, with their icons; uninstall, or
   start an installer.
 - **Fonts**: installed scalable fonts with a preview; install .ttf/.otf/.ttc files.

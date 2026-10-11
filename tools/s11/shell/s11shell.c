@@ -1752,7 +1752,8 @@ static void launch_item(int item)
         struct app *app = &apps[shown[run_item ? item - 1 : item]];
         const WCHAR *exe = wcsrchr(app->path, L'\\');
         exe = exe ? exe + 1 : app->path;
-        if (!lstrcmpiW(exe, L"cmd.exe")) run_in_directory(app->path, NULL, L"C:\\");
+        /* ShellExecute's lpDirectory is ignored by Wine's winhandler delegation; use cmd itself. */
+        if (!lstrcmpiW(exe, L"cmd.exe")) run(app->path, L"/K cd /d C:\\");
         else run(app->path, app->args[0] ? app->args : NULL);
     }
 }
@@ -2072,10 +2073,10 @@ static void click_part(int index)
         break;
     }
     case PART_NETWORK:
-        send_winlator_request(WINLATOR_WIFI_PANEL);
+        run(L"control.exe", L"ncpa.cpl");
         break;
     case PART_BLUETOOTH:
-        send_winlator_request(WINLATOR_BLUETOOTH_PANEL);
+        run(L"control.exe", L"bthprops.cpl");
         break;
     default:
         break;
@@ -2396,8 +2397,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
 
     SetProcessDPIAware();
     dpi = GetDpiForSystem();
-    korean = PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_KOREAN ||
-             PRIMARYLANGID(LANGIDFROMLCID(GetUserDefaultLCID())) == LANG_KOREAN;
+    korean = TRUE; /* Product UI is Korean-first; Wine can still report an en-US UI locale. */
     choose_palette();
     GdiplusStartup(&gdiplus_token, &gdiplus_input, NULL);
     CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);

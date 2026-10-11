@@ -33,7 +33,7 @@
 enum page { PAGE_SYSTEM, PAGE_PERSONALIZE, PAGE_APPS, PAGE_FONTS, PAGE_ABOUT, PAGE_COUNT };
 
 enum control_id {
-    ID_SCALE = 100, ID_RESOLUTION, ID_WINVER, ID_RESTART, ID_MODE, ID_ALIGN,
+    ID_SCALE = 100, ID_RESOLUTION, ID_WINVER, ID_RESTART, ID_MODE, ID_ALIGN, ID_MOUSE, ID_WINECFG,
     ID_APP_LIST, ID_UNINSTALL, ID_INSTALL, ID_FONT_LIST, ID_FONT_INSTALL, ID_BROWSE
 };
 
@@ -47,7 +47,7 @@ static BOOL restart_needed;
 static int scroll_y, content_bottom;
 
 /* controls of each page */
-static HWND scale_box, resolution_box, winver_box, restart_button, mode_box, align_box, browse_button;
+static HWND scale_box, resolution_box, winver_box, restart_button, mode_box, align_box, mouse_box, winecfg_button, browse_button;
 static HWND app_list, uninstall_button, install_button, font_list, font_install_button;
 static HIMAGELIST app_images, font_images;
 
@@ -176,7 +176,7 @@ static const SIZE resolutions[] = {{1280, 800}, {1680, 1050}, {1920, 1200}, {256
 static int resolution_count;
 static SIZE resolution_items[8];
 static SIZE pending_screen;      /* chosen here, used from the next start */
-static int pending_mode = -1;    /* 0 light, 1 dark */
+static int pending_mode = -1;    /* 0 light, 1 dark, 2 system */
 
 /* The scale that keeps things the size they are at 1920x1200 and 150% */
 static int recommended_dpi(int width)
@@ -200,6 +200,18 @@ static void fill_scales(int width)
         if (scales[i] == dpi_now) selected = i;
     }
     SendMessageW(scale_box, CB_SETCURSEL, selected >= 0 ? selected : 2, 0);
+}
+
+static void fill_mouse_acceleration(void)
+{
+    WCHAR value[16] = L"";
+    int selected = 1;
+    reg_get_string(HKEY_CURRENT_USER, L"Control Panel\\Mouse", L"MouseSpeed", value, ARRAY_SIZE(value));
+    if (!lstrcmpW(value, L"0")) selected = 0;
+    SendMessageW(mouse_box, CB_RESETCONTENT, 0, 0);
+    SendMessageW(mouse_box, CB_ADDSTRING, 0, (LPARAM)TR(L"끄기", L"Off"));
+    SendMessageW(mouse_box, CB_ADDSTRING, 0, (LPARAM)TR(L"켜기", L"On"));
+    SendMessageW(mouse_box, CB_SETCURSEL, selected, 0);
 }
 
 struct win_version {
@@ -498,10 +510,14 @@ static void fill_personalize(void)
 {
     COLORREF face = GetSysColor(COLOR_BTNFACE);
     BOOL dark = (GetRValue(face) * 299 + GetGValue(face) * 587 + GetBValue(face) * 114) / 1000 < 128;
+    WCHAR theme_mode[16] = L"";
     SendMessageW(mode_box, CB_RESETCONTENT, 0, 0);
     SendMessageW(mode_box, CB_ADDSTRING, 0, (LPARAM)TR(L"밝게", L"Light"));
     SendMessageW(mode_box, CB_ADDSTRING, 0, (LPARAM)TR(L"어둡게", L"Dark"));
-    SendMessageW(mode_box, CB_SETCURSEL, pending_mode >= 0 ? pending_mode : dark ? 1 : 0, 0);
+    SendMessageW(mode_box, CB_ADDSTRING, 0, (LPARAM)TR(L"시스템 설정", L"System"));
+    reg_get_string(HKEY_CURRENT_USER, S11_KEY, L"ThemeMode", theme_mode, ARRAY_SIZE(theme_mode));
+    SendMessageW(mode_box, CB_SETCURSEL, pending_mode >= 0 ? pending_mode :
+                 !lstrcmpiW(theme_mode, L"SYSTEM") ? 2 : !lstrcmpiW(theme_mode, L"DARK") ? 1 : dark ? 1 : 0, 0);
 
     SendMessageW(align_box, CB_RESETCONTENT, 0, 0);
     SendMessageW(align_box, CB_ADDSTRING, 0, (LPARAM)TR(L"가운데", L"Center"));
@@ -846,13 +862,20 @@ static void build_rows(void)
     r = add_row(PAGE_SYSTEM, TR(L"Windows 버전", L"Windows version"), &winver_box);
     lstrcpyW(r->detail, TR(L"프로그램에 알려 줄 Windows 버전. 새로 여는 프로그램부터 적용돼요.",
                            L"The version programs see. Applies to programs you open next."));
+    r = add_row(PAGE_SYSTEM, TR(L"마우스 가속", L"Mouse acceleration"), &mouse_box);
+    lstrcpyW(r->detail, TR(L"빠르게 움직일 때 포인터 속도를 높입니다. 바로 적용돼요.",
+                           L"Increases pointer speed for faster movement. Applies immediately."));
+    r = add_row(PAGE_SYSTEM, TR(L"Wine 설정", L"Wine settings"), &winecfg_button);
+    lstrcpyW(r->detail, TR(L"Windows 버전, 라이브러리, 드라이브 등 고급 호환성 설정을 엽니다.",
+                           L"Open advanced compatibility options: Windows version, libraries and drives."));
 
     r = add_row(PAGE_PERSONALIZE, TR(L"배경", L"Background"), &browse_button);
     lstrcpyW(r->detail, TR(L"그림을 고르거나 내 사진을 쓰세요.", L"Pick a picture or use your own."));
     r->height = 220;
     r->wallpapers = TRUE;
     r = add_row(PAGE_PERSONALIZE, TR(L"모드", L"Mode"), &mode_box);
-    lstrcpyW(r->detail, TR(L"창과 메뉴의 밝기. 다시 시작하면 적용돼요.", L"Light or dark windows. Applies after a restart."));
+    lstrcpyW(r->detail, TR(L"밝게·어둡게 또는 Android 시스템 설정을 따릅니다. 다시 시작 후 적용돼요.",
+                           L"Choose light, dark or follow Android system. Applies after a restart."));
     r = add_row(PAGE_PERSONALIZE, TR(L"작업 표시줄 맞춤", L"Taskbar alignment"), &align_box);
     lstrcpyW(r->detail, TR(L"아이콘을 가운데 또는 왼쪽에 둡니다.", L"Icons in the middle or on the left."));
 
@@ -875,7 +898,7 @@ static void layout(void)
 {
     RECT client;
     int x, y, w, i;
-    HWND controls[] = {scale_box, resolution_box, winver_box, mode_box, align_box, browse_button, app_list,
+    HWND controls[] = {scale_box, resolution_box, winver_box, mode_box, align_box, mouse_box, winecfg_button, browse_button, app_list,
                        uninstall_button, install_button, font_list, font_install_button, restart_button};
 
     GetClientRect(main_window, &client);
@@ -1283,6 +1306,9 @@ static void create_controls(void)
     winver_box = make_combo(ID_WINVER);
     mode_box = make_combo(ID_MODE);
     align_box = make_combo(ID_ALIGN);
+    mouse_box = make_combo(ID_MOUSE);
+    fill_mouse_acceleration();
+    winecfg_button = make_button(ID_WINECFG, TR(L"Wine 설정 열기", L"Open Wine settings"));
     restart_button = make_button(ID_RESTART, TR(L"지금 다시 시작", L"Restart now"));
     browse_button = make_button(ID_BROWSE, TR(L"내 사진 찾기…", L"Browse photos…"));
     install_button = make_button(ID_INSTALL, TR(L"앱 설치…", L"Install an app…"));
@@ -1470,9 +1496,35 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
                 break;
             case ID_MODE:
                 pending_mode = sel;
-                send_winlator_value(WINLATOR_SET_THEME, sel ? "DARK" : "LIGHT");
+                if (sel == 2) {
+                    reg_set_string(HKEY_CURRENT_USER, S11_KEY, L"ThemeMode", L"SYSTEM");
+                    send_winlator_value(WINLATOR_SET_THEME, "SYSTEM");
+                }
+                else {
+                    reg_set_string(HKEY_CURRENT_USER, S11_KEY, L"ThemeMode", sel ? L"DARK" : L"LIGHT");
+                    send_winlator_value(WINLATOR_SET_THEME, sel ? "DARK" : "LIGHT");
+                }
                 need_restart();
                 break;
+            case ID_MOUSE: {
+                int values[3];
+                if (sel == 0) {
+                    values[0] = values[1] = values[2] = 0;
+                    reg_set_string(HKEY_CURRENT_USER, L"Control Panel\\Mouse", L"MouseSpeed", L"0");
+                    reg_set_string(HKEY_CURRENT_USER, L"Control Panel\\Mouse", L"MouseThreshold1", L"0");
+                    reg_set_string(HKEY_CURRENT_USER, L"Control Panel\\Mouse", L"MouseThreshold2", L"0");
+                }
+                else {
+                    values[0] = 6; values[1] = 10; values[2] = 1;
+                    reg_set_string(HKEY_CURRENT_USER, L"Control Panel\\Mouse", L"MouseSpeed", L"1");
+                    reg_set_string(HKEY_CURRENT_USER, L"Control Panel\\Mouse", L"MouseThreshold1", L"6");
+                    reg_set_string(HKEY_CURRENT_USER, L"Control Panel\\Mouse", L"MouseThreshold2", L"10");
+                }
+                SystemParametersInfoW(SPI_SETMOUSE, 0, values, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+                SendMessageTimeoutW(HWND_BROADCAST, WM_SETTINGCHANGE, 0, (LPARAM)L"Control Panel\\Mouse",
+                                    SMTO_ABORTIFHUNG, 1000, NULL);
+                break;
+            }
             case ID_ALIGN:
                 reg_set_dword(HKEY_CURRENT_USER, S11_KEY, L"TaskbarAlignment", sel);
                 PostMessageW(HWND_BROADCAST, RegisterWindowMessageW(L"WinlatorS11SettingsChanged"), 0, 0);
@@ -1483,6 +1535,9 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         switch (id) {
         case ID_RESTART:
             send_winlator_request(WINLATOR_RESTART);
+            break;
+        case ID_WINECFG:
+            ShellExecuteW(hwnd, NULL, L"C:\\windows\\system32\\winecfg.exe", NULL, NULL, SW_SHOWNORMAL);
             break;
         case ID_BROWSE:
             browse_wallpaper();
@@ -1533,8 +1588,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
 
     SetProcessDPIAware();
     dpi = GetDpiForSystem();
-    korean = PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_KOREAN ||
-             PRIMARYLANGID(LANGIDFROMLCID(GetUserDefaultLCID())) == LANG_KOREAN;
+    korean = TRUE; /* S11 is a Korean-first product, independent of Wine's UI language. */
     choose_palette();
     GdiplusStartup(&gdiplus_token, &gdiplus_input, NULL);
     CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);

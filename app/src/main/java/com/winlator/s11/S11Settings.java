@@ -1,6 +1,7 @@
 package com.winlator.s11;
 
 import android.content.Context;
+import android.content.res.Configuration;
 
 import com.winlator.container.Container;
 import com.winlator.core.WineThemeManager;
@@ -19,6 +20,7 @@ public final class S11Settings {
     public static final byte SET_SCREEN = 102;
     public static final byte SET_THEME = 103;
     public static final byte SET_WALLPAPER = 104;
+    private static final String THEME_MODE_EXTRA = "s11ThemeMode";
 
     private S11Settings() {}
 
@@ -34,8 +36,11 @@ public final class S11Settings {
                 container.setScreenSize(value);
                 return true;
             case SET_THEME:
-                if (!value.equals("LIGHT") && !value.equals("DARK")) return false;
-                return setDesktopTheme(container, value, null);
+                if (!value.equals("LIGHT") && !value.equals("DARK") && !value.equals("SYSTEM")) return false;
+                String oldMode = container.getExtra(THEME_MODE_EXTRA);
+                container.putExtra(THEME_MODE_EXTRA, value);
+                String resolved = value.equals("SYSTEM") ? systemTheme(context) : value;
+                return setDesktopTheme(container, resolved, null) || !value.equals(oldMode);
             case SET_WALLPAPER: {
                 String wallpaper;
                 if (value.equals(WineThemeManager.DEFAULT_WALLPAPER_ID)) wallpaper = "0";
@@ -52,6 +57,17 @@ public final class S11Settings {
             default:
                 return false;
         }
+    }
+
+    /** Re-resolve follow-system appearance whenever this container starts. */
+    public static boolean applySystemThemeIfNeeded(Context context, Container container) {
+        if (!"SYSTEM".equals(container.getExtra(THEME_MODE_EXTRA))) return false;
+        return setDesktopTheme(container, systemTheme(context), null);
+    }
+
+    private static String systemTheme(Context context) {
+        int mode = context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return mode == Configuration.UI_MODE_NIGHT_YES ? "DARK" : "LIGHT";
     }
 
     /** desktopTheme is "THEME,TYPE,#COLOR[,WALLPAPER]" (see ContainerDetailFragment.getDesktopTheme) */

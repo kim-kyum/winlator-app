@@ -39,8 +39,6 @@ static BOOL korean;
 #define WINLATOR_PORT 7947
 #define WINLATOR_SHUTDOWN 100
 #define WINLATOR_RESTART 101
-#define WINLATOR_WIFI_PANEL 105
-#define WINLATOR_BLUETOOTH_PANEL 106
 
 struct palette {
     COLORREF bar, bar_border, text, text_dim, accent, indicator;

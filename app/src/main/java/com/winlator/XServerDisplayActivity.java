@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -572,21 +571,6 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             if (S11Settings.apply(this, container, code, value)) container.saveData();
         });
     }
-    /** Opens the matching Android system panel from the S11 taskbar status area. */
-    public void onS11StatusPanel(boolean bluetooth) {
-        runOnUiThread(() -> {
-            if (isFinishing()) return;
-            String panel = bluetooth ? Settings.ACTION_BLUETOOTH_SETTINGS : Settings.Panel.ACTION_WIFI;
-            String fallback = bluetooth ? Settings.ACTION_BLUETOOTH_SETTINGS : Settings.ACTION_WIFI_SETTINGS;
-            try {
-                startActivity(new Intent(panel));
-            }
-            catch (Exception e) {
-                try { startActivity(new Intent(fallback)); }
-                catch (Exception ignored) {}
-            }
-        });
-    }
 
     /**
      * Shuts Wine down the way Windows does: programs get WM_QUERYENDSESSION and may offer to
@@ -657,6 +641,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             containerDataChanged = true;
         }
 
+        if (S11Settings.applySystemThemeIfNeeded(this, container)) containerDataChanged = true;
         String desktopTheme = container.getDesktopTheme();
         if (!(desktopTheme+","+xServer.screenInfo).equals(container.getExtra("desktopTheme"))) {
             WineThemeManager.apply(this, new WineThemeManager.ThemeInfo(desktopTheme), xServer.screenInfo);

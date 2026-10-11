@@ -15,6 +15,7 @@
  */
 #include "s11ui.h"
 #include <shobjidl.h>
+#include <uxtheme.h>
 
 #define WM_APP_NAVIGATED (WM_APP + 30)
 
@@ -139,6 +140,24 @@ static HWND view_list(void)
     return hwnd ? FindWindowExW(hwnd, NULL, WC_LISTVIEWW, NULL) : NULL;
 }
 
+/* Keep Wine's working shell view, but give its inner list/header the same S11 treatment. */
+static void style_shell_view(void)
+{
+    HWND view = view_window(), list = view_list(), header;
+    if (view) SetWindowTheme(view, L"Explorer", NULL);
+    if (!list) return;
+    SetWindowTheme(list, L"Explorer", NULL);
+    SendMessageW(list, WM_SETFONT, (WPARAM)ui_font, TRUE);
+    SendMessageW(list, LVM_SETBKCOLOR, 0, pal.menu);
+    SendMessageW(list, LVM_SETTEXTBKCOLOR, 0, pal.menu);
+    SendMessageW(list, LVM_SETTEXTCOLOR, 0, pal.text);
+    header = (HWND)SendMessageW(list, LVM_GETHEADER, 0, 0);
+    if (header) {
+        SetWindowTheme(header, L"Explorer", NULL);
+        SendMessageW(header, WM_SETFONT, (WPARAM)small_font, TRUE);
+    }
+}
+
 static void item_counts(UINT *all, UINT *selected)
 {
     HWND list = view_list();
@@ -211,11 +230,14 @@ static void fit_columns(BOOL grow_only)
         column.pszText = text;
         column.cchTextMax = ARRAY_SIZE(text);
         SendMessageW(list, LVM_GETCOLUMNW, i, (LPARAM)&column);
-        if (i == 0 && current_path[0]) {
-            lstrcpyW(text, TR(L"이름", L"Name"));
+        if (korean) {
+            if (i == 0) lstrcpyW(text, L"이름");
+            else if (i == 1 && (!lstrcmpiW(text, L"Size") || !lstrcmpiW(text, L"Total size"))) lstrcpyW(text, L"크기");
+            else if (i == 2 && !lstrcmpiW(text, L"Type")) lstrcpyW(text, L"유형");
+            else if (i == 3 && (!lstrcmpiW(text, L"Date Modified") || !lstrcmpiW(text, L"Modified"))) lstrcpyW(text, L"수정한 날짜");
             column.mask = LVCF_TEXT;
             column.pszText = text;
-            SendMessageW(list, LVM_SETCOLUMNW, 0, (LPARAM)&column);
+            SendMessageW(list, LVM_SETCOLUMNW, i, (LPARAM)&column);
         }
         title = (int)SendMessageW(list, LVM_GETSTRINGWIDTHW, 0, (LPARAM)text) + SC(28);
         SendMessageW(list, LVM_SETCOLUMNWIDTH, i, LVSCW_AUTOSIZE);
@@ -387,7 +409,7 @@ static void drive_label(int index, WCHAR *name, int size)
         return;
     }
     if (index == 'Z' - 'A') {
-        lstrcpynW(name, L"Linux (Z:)", size);
+        lstrcpynW(name, TR(L"Linux 시스템 (Z:)", L"Linux (Z:)"), size);
         return;
     }
     {
@@ -1007,6 +1029,7 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         HWND focus = GetFocus();
         folder_path(current, current_path);
         build_crumbs();
+        style_shell_view();
         layout_crumbs(dc);
         ReleaseDC(hwnd, dc);
         hide_address_edit();
@@ -1078,6 +1101,7 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_SETTINGCHANGE:
     case WM_SYSCOLORCHANGE:
         choose_palette();
+        style_shell_view();
         InvalidateRect(hwnd, NULL, FALSE);
         return 0;
     case WM_DESTROY:
@@ -1140,8 +1164,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
     instance = inst;
     SetProcessDPIAware();
     dpi = GetDpiForSystem();
-    korean = PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_KOREAN ||
-             PRIMARYLANGID(LANGIDFROMLCID(GetUserDefaultLCID())) == LANG_KOREAN;
+    korean = TRUE; /* S11 is a Korean-first workspace even if Wine's UI locale remains en-US. */
     choose_palette();
     GdiplusStartup(&gdiplus_token, &gdiplus_input, NULL);
     OleInitialize(NULL);
