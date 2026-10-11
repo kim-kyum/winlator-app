@@ -79,11 +79,16 @@ start menu has shut down and restart); Ctrl+Alt+Del still opens the power menu. 
 shell is enabled, the redundant Android power tab is hidden even when a program is launched
 from a shortcut. Session restart/exit transitions are guarded against duplicate callbacks.
 The Command Prompt starts in `C:\`.
-Wi-Fi and Bluetooth open the in-container S11 Connectivity page. The actual radio settings
-are managed by Android and the page routes to the corresponding system controls; Wine cannot
-directly change those protected device radios. The language indicator opens the Wine locale
+The taskbar Wi-Fi and Bluetooth buttons, and the buttons in the S11 Connectivity page, request
+the corresponding Android system settings directly. Wine cannot change those protected device
+radios. The language indicator opens the Wine locale
 control panel. The overflow menu exposes notification icons marked hidden by their owning
 Windows applications.
+
+`Win+Shift+S` is detected both by the S11 shell hook and the Android Activity key dispatcher.
+PixelCopy saves to the active rootfs at `home/xuser/.wine/drive_c/S11/Screenshots` (guest path
+`C:\S11\Screenshots`); the leading slash in `RootFS.WINEPREFIX` must be removed before
+joining it to `rootFS.getRootDir()`.
 
 Wine gets the device's time zone as a POSIX TZ string (`TimeZones`): the rootfs has no
 zone database, so it ran on UTC. The Windows keys now
@@ -99,7 +104,7 @@ Win+I, or the taskbar's menu:
 - **System**: display scale (LogPixels) and resolution.
 - **Wine**: the Windows version programs see and mouse acceleration. Advanced `winecfg.exe`
   is no longer presented as a separate app; the supported everyday controls are exposed here.
-- **Connectivity**: internal entry points for Wi-Fi and Bluetooth system controls.
+- **Connectivity**: buttons that open Android Wi-Fi and Bluetooth system settings.
 - **Personalization**: background (the two S11 pictures, your own picture, or a new one
   from a file; applied at once), light, dark or Android system-following mode, taskbar alignment.
 - **Apps**: installed programs from the Uninstall keys, with their icons; uninstall, or

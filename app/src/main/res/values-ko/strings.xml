@@ -359,4 +359,5 @@
     <string name="s11_screenshot_saved">캡처를 저장했어요: %1$s</string>
     <string name="s11_screenshot_failed">캡처를 저장하지 못했어요.</string>
     <string name="s11_screenshot_not_ready">화면이 준비된 뒤 다시 시도해 주세요.</string>
+    <string name="s11_connectivity_unavailable">기기 연결 설정을 열지 못했어요.</string>
 </resources>

@@ -139,6 +139,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private volatile boolean s11RestartRequested;
     private final AtomicBoolean sessionTransitionStarted = new AtomicBoolean(false);
     private boolean s11ShellEnabled;
+    private boolean s11ScreenshotKeyCaptured;
     private XEnvironment environment;
     private DrawerLayout drawerLayout;
     private Container container;
@@ -589,12 +590,13 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     public void onS11StatusPanel(boolean bluetooth) {
         runOnUiThread(() -> {
             if (isFinishing()) return;
-            String action = bluetooth ? Settings.ACTION_BLUETOOTH_SETTINGS : Settings.Panel.ACTION_WIFI;
-            String fallback = bluetooth ? Settings.ACTION_BLUETOOTH_SETTINGS : Settings.ACTION_WIFI_SETTINGS;
+            String action = bluetooth ? Settings.ACTION_BLUETOOTH_SETTINGS : Settings.ACTION_WIFI_SETTINGS;
             try { startActivity(new Intent(action)); }
             catch (Exception e) {
-                try { startActivity(new Intent(fallback)); }
-                catch (Exception ignored) {}
+                try { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
+                catch (Exception ignored) {
+                    Toast.makeText(this, R.string.s11_connectivity_unavailable, Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -620,7 +622,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
                     return;
                 }
                 String filename = "Screenshot-" + new SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.US).format(new Date()) + ".png";
-                File directory = new File(rootFS.getRootDir(), RootFS.WINEPREFIX + "/drive_c/S11/Screenshots");
+                String winePrefix = RootFS.WINEPREFIX.startsWith("/") ? RootFS.WINEPREFIX.substring(1) : RootFS.WINEPREFIX;
+                File directory = new File(rootFS.getRootDir(), winePrefix + "/drive_c/S11/Screenshots");
                 Thread saveThread = new Thread(() -> {
                     boolean saved = false;
                     File output = new File(directory, filename);
@@ -1106,6 +1109,16 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             // While the power menu is open it owns the keyboard (arrows, Tab, Enter, Esc)
             if (powerMenu.isShowing()) return powerMenu.onKeyEvent(event) || super.dispatchKeyEvent(event);
             if (handlePowerMenuShortcut(event)) return true;
+        }
+        if (event.getKeyCode() == KeyEvent.KEYCODE_S && s11ScreenshotKeyCaptured) {
+            if (event.getAction() == KeyEvent.ACTION_UP) s11ScreenshotKeyCaptured = false;
+            return true;
+        }
+        if (s11ShellEnabled && event.getKeyCode() == KeyEvent.KEYCODE_S && event.getAction() == KeyEvent.ACTION_DOWN &&
+                event.getRepeatCount() == 0 && event.isMetaPressed() && event.isShiftPressed()) {
+            s11ScreenshotKeyCaptured = true;
+            captureS11Screenshot();
+            return true;
         }
         if (touchpadView != null && touchpadView.getImeSession() != null) touchpadView.getImeSession().onKeyPassedThrough(touchpadView, event);
         return (!inputControlsView.onKeyEvent(event) && !winHandler.onKeyEvent(event) && xServer.keyboard.onKeyEvent(event)) ||

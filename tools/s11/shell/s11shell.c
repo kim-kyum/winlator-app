@@ -61,6 +61,7 @@ static void read_settings(void)
 struct task {
     HWND hwnd;
     HICON icon;          /* belongs to the window or its class; not ours to destroy */
+    int icon_kind;
     WCHAR title[256];
     DWORD icon_tick;
     BOOL seen;
@@ -106,8 +107,9 @@ static BOOL is_task_window(HWND hwnd)
 #define MAX_EXE_ICONS 64
 static struct { WCHAR path[MAX_PATH]; HICON icon; } exe_icons[MAX_EXE_ICONS];
 static int exe_icon_count;
+static int app_icon_kind(const WCHAR *path);
 
-static HICON program_icon(HWND hwnd)
+static HICON program_icon(HWND hwnd, int *icon_kind)
 {
     DWORD pid = 0, size = MAX_PATH;
     WCHAR path[MAX_PATH];
@@ -115,11 +117,13 @@ static HICON program_icon(HWND hwnd)
     HICON icon = NULL;
     int i;
 
+    if (icon_kind) *icon_kind = S11_ICON_DEFAULT;
     GetWindowThreadProcessId(hwnd, &pid);
     if (!pid || !(process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid))) return NULL;
     if (!QueryFullProcessImageNameW(process, 0, path, &size)) path[0] = 0;
     CloseHandle(process);
     if (!path[0]) return NULL;
+    if (icon_kind) *icon_kind = app_icon_kind(path);
 
     for (i = 0; i < exe_icon_count; i++) if (!lstrcmpiW(exe_icons[i].path, path)) return exe_icons[i].icon;
     PrivateExtractIconsW(path, 0, SC(32), SC(32), &icon, NULL, 1, 0);
@@ -130,12 +134,13 @@ static HICON program_icon(HWND hwnd)
     return icon;
 }
 
-static HICON window_icon(HWND hwnd)
+static HICON window_icon(HWND hwnd, int *icon_kind)
 {
     DWORD_PTR result = 0;
     HICON icon;
+    if (icon_kind) *icon_kind = S11_ICON_DEFAULT;
     /* Wine often supplies its generic legacy icon even when the executable has a newer one. */
-    if ((icon = program_icon(hwnd))) return icon;
+    if ((icon = program_icon(hwnd, icon_kind))) return icon;
     if (SendMessageTimeoutW(hwnd, WM_GETICON, ICON_BIG, 0, SMTO_ABORTIFHUNG, 150, &result) && result)
         return (HICON)result;
     if (SendMessageTimeoutW(hwnd, WM_GETICON, ICON_SMALL2, 0, SMTO_ABORTIFHUNG, 150, &result) && result)
@@ -174,10 +179,12 @@ static BOOL CALLBACK collect_window(HWND hwnd, LPARAM param)
         task->icon_tick = 0;
         *changed = TRUE;
     }
-    if (!task->icon || GetTickCount() - task->icon_tick > 3000) {
-        HICON icon = window_icon(hwnd);
-        if (icon != task->icon) *changed = TRUE;
+    if ((!task->icon && task->icon_kind == S11_ICON_DEFAULT) || GetTickCount() - task->icon_tick > 3000) {
+        int icon_kind = S11_ICON_DEFAULT;
+        HICON icon = window_icon(hwnd, &icon_kind);
+        if (icon != task->icon || icon_kind != task->icon_kind) *changed = TRUE;
         task->icon = icon;
+        task->icon_kind = icon_kind;
         task->icon_tick = GetTickCount();
     }
     return TRUE;
@@ -634,7 +641,8 @@ static void paint_taskbar(HDC hdc)
             struct task *t = &tasks[p->index];
             int box_size = SC(32), icon_size = SC(20);
             RECT bar;
-            draw_s11_app_icon(&c, t->icon, cx - box_size / 2, cy - box_size / 2 - SC(1), box_size, icon_size);
+            draw_s11_app_icon(&c, t->icon, cx - box_size / 2, cy - box_size / 2 - SC(1),
+                              box_size, icon_size, t->icon_kind);
             if (active) SetRect(&bar, cx - SC(8), rc.bottom - SC(3), cx + SC(8), rc.bottom);
             else SetRect(&bar, cx - SC(3), rc.bottom - SC(3), cx + SC(3), rc.bottom);
             fill_round_rect(&c, &bar, SC(3) / 2.0f, argb(active ? pal.accent : pal.indicator, 255));
@@ -1322,6 +1330,19 @@ static const WCHAR *file_part(const WCHAR *path)
     return slash ? slash + 1 : path;
 }
 
+static int app_icon_kind(const WCHAR *path)
+{
+    const WCHAR *exe = file_part(path);
+    if (!lstrcmpiW(exe, L"s11settings.exe")) return S11_ICON_SETTINGS;
+    if (!lstrcmpiW(exe, L"s11explorer.exe") || !lstrcmpiW(exe, L"wfm.exe")) return S11_ICON_EXPLORER;
+    if (!lstrcmpiW(exe, L"s11gallery.exe")) return S11_ICON_GALLERY;
+    if (!lstrcmpiW(exe, L"cmd.exe")) return S11_ICON_TERMINAL;
+    if (!lstrcmpiW(exe, L"notepad.exe")) return S11_ICON_NOTEPAD;
+    if (!lstrcmpiW(exe, L"taskmgr.exe")) return S11_ICON_TASK_MANAGER;
+    if (!lstrcmpiW(exe, L"regedit.exe")) return S11_ICON_REGISTRY;
+    return S11_ICON_DEFAULT;
+}
+
 /* Is a program already in the list (through a shortcut to the same file name)? */
 static BOOL has_program(const WCHAR *file)
 {
@@ -1667,7 +1688,8 @@ static void paint_menu(HDC hdc)
         if (is_run) {
             WCHAR text[160];
             draw_s11_app_icon(&c, LoadIconW(NULL, (const WCHAR *)IDI_APPLICATION),
-                              (tile.left + tile.right - box_size) / 2, tile.top + SC(4), box_size, icon_size);
+                              (tile.left + tile.right - box_size) / 2, tile.top + SC(4), box_size, icon_size,
+                              S11_ICON_DEFAULT);
             wsprintfW(text, TR(L"실행: %s", L"Run: %s"), query);
             draw_text(&c, text, &label, small_font, pal.text, DT_CENTER | DT_WORDBREAK | DT_END_ELLIPSIS | DT_EDITCONTROL);
         }
@@ -1675,7 +1697,8 @@ static void paint_menu(HDC hdc)
             struct app *app = &apps[shown[app_index]];
             load_app_icon(app);
             draw_s11_app_icon(&c, app->icon ? app->icon : LoadIconW(NULL, (const WCHAR *)IDI_APPLICATION),
-                              (tile.left + tile.right - box_size) / 2, tile.top + SC(4), box_size, icon_size);
+                              (tile.left + tile.right - box_size) / 2, tile.top + SC(4), box_size, icon_size,
+                              app_icon_kind(app->target[0] ? app->target : app->path));
             draw_label(&c, app->name, &label, small_font, pal.text);
         }
     }
@@ -2072,9 +2095,10 @@ static void click_part(int index)
         break;
     }
     case PART_NETWORK:
+        send_winlator_request(WINLATOR_OPEN_WIFI);
+        break;
     case PART_BLUETOOTH:
-        /* Wine doesn't ship these Windows control panels; keep the entry in S11 Settings. */
-        open_settings(L"connectivity");
+        send_winlator_request(WINLATOR_OPEN_BLUETOOTH);
         break;
     default:
         break;
@@ -2247,7 +2271,7 @@ static LRESULT CALLBACK taskbar_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 /* Windows key                                                                               */
 /* ---------------------------------------------------------------------------------------- */
 
-static BOOL win_down, win_combo;
+static BOOL win_down, win_combo, shift_down, screenshot_s_down;
 
 static LRESULT CALLBACK keyboard_hook(int code, WPARAM wp, LPARAM lp)
 {
@@ -2255,6 +2279,14 @@ static LRESULT CALLBACK keyboard_hook(int code, WPARAM wp, LPARAM lp)
         const KBDLLHOOKSTRUCT *key = (const KBDLLHOOKSTRUCT *)lp;
         BOOL down = wp == WM_KEYDOWN || wp == WM_SYSKEYDOWN;
 
+        if (key->vkCode == VK_SHIFT || key->vkCode == VK_LSHIFT || key->vkCode == VK_RSHIFT) {
+            shift_down = down;
+            return CallNextHookEx(NULL, code, wp, lp);
+        }
+        if (key->vkCode == 'S' && screenshot_s_down) {
+            if (!down) screenshot_s_down = FALSE;
+            return 1;
+        }
         if (key->vkCode == VK_LWIN || key->vkCode == VK_RWIN) {
             if (down) {
                 if (!win_down) win_combo = FALSE;
@@ -2267,18 +2299,19 @@ static LRESULT CALLBACK keyboard_hook(int code, WPARAM wp, LPARAM lp)
         }
         else if (down && key->vkCode == VK_ESCAPE && GetAsyncKeyState(VK_CONTROL) < 0 && GetAsyncKeyState(VK_MENU) >= 0) {
             /* Ctrl+Shift+Esc: Task Manager; Ctrl+Esc: Start (when the Windows key can't be used) */
-            if (GetAsyncKeyState(VK_SHIFT) < 0) PostMessageW(taskbar, WM_APP_TASK_MANAGER, 0, 0);
+            if (shift_down) PostMessageW(taskbar, WM_APP_TASK_MANAGER, 0, 0);
             else PostMessageW(taskbar, WM_APP_TOGGLE_START, 0, 0);
             return 1;
         }
         else if (key->vkCode == VK_TAB && GetAsyncKeyState(VK_MENU) < 0) {
             if (down) PostMessageW(taskbar, WM_APP_SWITCH_TASK,
-                                   GetAsyncKeyState(VK_SHIFT) < 0 ? (WPARAM)-1 : (WPARAM)1, 0);
+                                   shift_down ? (WPARAM)-1 : (WPARAM)1, 0);
             return 1;
         }
         else if (down && win_down) {
             win_combo = TRUE;
-            if (key->vkCode == 'S' && GetAsyncKeyState(VK_SHIFT) < 0) {
+            if (key->vkCode == 'S' && (shift_down || GetAsyncKeyState(VK_SHIFT) < 0)) {
+                screenshot_s_down = TRUE;
                 hide_start_menu();
                 send_winlator_request(WINLATOR_SCREENSHOT);
                 return 1;

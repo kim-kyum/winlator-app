@@ -12,10 +12,10 @@
 
 - Windows 앱을 실행하는 Wine/Box64 기반 컨테이너
 - S11 Workspace 작업 표시줄, 시작 메뉴, 창 전환(Alt+Tab), 달력 및 알림 영역
-- 한국어 우선 UI, 둥근 S11 앱 아이콘, S11 전용 파일 탐색기
+- 한국어 우선 UI, 설정 앱과 통일한 내장 앱 아이콘, S11 전용 파일 탐색기
 - 컨테이너 안에서 여는 설정 앱: 화면 해상도·배율(DPI), Wine 호환성·마우스 가속, 밝게/어둡게/시스템 테마, 배경화면, 앱·글꼴 관리
-- `Win+Shift+S` 캡처와 컨테이너 안에서 캡처를 모아 보는 Gallery 앱
-- 설정 앱의 연결 페이지에서 Wi-Fi·Bluetooth 기기 제어로 이동
+- `Win+Shift+S` 화면 캡처와 컨테이너 안에서 캡처를 모아 보는 Gallery 앱 (`C:\S11\Screenshots`)
+- 작업 표시줄 Wi-Fi·Bluetooth 버튼과 설정 앱의 연결 페이지에서 Android 시스템 설정 열기
 - 명령 프롬프트를 `C:\`에서 시작
 - Android 기기의 기존 Winlator와 별도로 설치·실행
 
@@ -35,7 +35,7 @@ S11 Workspace는 원본 Winlator와 다른 Android 애플리케이션 ID를 사�
 - Direct3D 경로는 API에 따라 다릅니다. WineD3D는 OpenGL 경로, DXVK는 Vulkan 기반 D3D9/10/11 경로, VKD3D는 D3D12 경로에 해당합니다. 드라이버가 필요한 기능을 지원하지 않거나 앱이 다른 API를 요구하면 렌더링 실패·검은 화면이 생길 수 있습니다.
 - 브라우저와 무거운 x86/x64 앱은 ARM 기기에서 CPU 변환과 호환성 계층 때문에 느릴 수 있습니다.
 - Autodesk Fusion 360 설치·실행을 비롯해 모든 Windows 앱의 호환성이 검증된 것은 아닙니다. 그래픽·전문 앱은 특히 기기 및 컨테이너 설정별 확인이 필요합니다.
-- Wi‑Fi·Bluetooth 상태는 Android가 관리합니다. S11 설정의 연결 페이지에서 해당 시스템 제어 화면을 열며, Wine에서 무선 라디오를 직접 켜고 끄지는 않습니다.
+- Wi‑Fi·Bluetooth 상태는 Android가 관리합니다. 작업 표시줄 버튼과 S11 설정의 연결 페이지에서 Android 시스템 설정을 열며, Wine에서 무선 라디오를 직접 켜고 끄지는 않습니다.
 
 ## 소스에서 빌드
 

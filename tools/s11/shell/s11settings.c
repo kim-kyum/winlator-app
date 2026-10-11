@@ -870,11 +870,11 @@ static void build_rows(void)
                            L"Increases pointer speed for faster movement. Applies immediately."));
 
     r = add_row(PAGE_CONNECTIVITY, TR(L"Wi-Fi 및 네트워크", L"Wi-Fi and network"), &wifi_button);
-    lstrcpyW(r->detail, TR(L"기기 연결은 Android가 관리합니다. 여기서 네트워크 제어를 열 수 있어요.",
-                           L"Android manages device connectivity. Open its network controls here."));
+    lstrcpyW(r->detail, TR(L"Wi-Fi 설정은 Android가 관리하며, 버튼을 누르면 Android 설정이 열립니다.",
+                           L"Android manages Wi-Fi. The button opens Android Wi-Fi settings."));
     r = add_row(PAGE_CONNECTIVITY, TR(L"Bluetooth", L"Bluetooth"), &bluetooth_button);
-    lstrcpyW(r->detail, TR(L"주변 기기를 연결하거나 Bluetooth 설정을 관리합니다.",
-                           L"Connect nearby devices or manage Bluetooth settings."));
+    lstrcpyW(r->detail, TR(L"Bluetooth 설정은 Android가 관리하며, 버튼을 누르면 Android 설정이 열립니다.",
+                           L"Android manages Bluetooth. The button opens Android Bluetooth settings."));
 
     r = add_row(PAGE_PERSONALIZE, TR(L"배경", L"Background"), &browse_button);
     lstrcpyW(r->detail, TR(L"그림을 고르거나 내 사진을 쓰세요.", L"Pick a picture or use your own."));
@@ -1321,7 +1321,7 @@ static void create_controls(void)
     align_box = make_combo(ID_ALIGN);
     mouse_box = make_combo(ID_MOUSE);
     fill_mouse_acceleration();
-    wifi_button = make_button(ID_OPEN_WIFI, TR(L"네트워크 제어 열기", L"Open network controls"));
+    wifi_button = make_button(ID_OPEN_WIFI, TR(L"Wi-Fi 설정 열기", L"Open Wi-Fi settings"));
     bluetooth_button = make_button(ID_OPEN_BLUETOOTH, TR(L"Bluetooth 설정 열기", L"Open Bluetooth settings"));
     restart_button = make_button(ID_RESTART, TR(L"지금 다시 시작", L"Restart now"));
     browse_button = make_button(ID_BROWSE, TR(L"내 사진 찾기…", L"Browse photos…"));

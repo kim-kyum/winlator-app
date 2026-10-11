@@ -310,13 +310,116 @@ static void draw_icon(struct canvas *c, HICON icon, int x, int y, int size)
     DrawIconEx(c->dc, x, y, icon, size, size, 0, NULL, DI_NORMAL);
 }
 
-/* App icons share the soft, rounded surface used by S11 Settings. */
-static void draw_s11_app_icon(struct canvas *c, HICON icon, int x, int y, int box_size, int icon_size)
+enum s11_builtin_icon {
+    S11_ICON_DEFAULT = 0,
+    S11_ICON_SETTINGS,
+    S11_ICON_EXPLORER,
+    S11_ICON_GALLERY,
+    S11_ICON_TERMINAL,
+    S11_ICON_NOTEPAD,
+    S11_ICON_TASK_MANAGER,
+    S11_ICON_REGISTRY
+};
+
+/* Minimal line-art symbols keep built-in apps distinct but visually related. */
+static void draw_s11_builtin_glyph(struct canvas *c, int kind, int x, int y, int size)
+{
+    float l = (float)x, t = (float)y, s = (float)size;
+    float cx = l + s / 2, cy = t + s / 2;
+    GpPen *pen;
+    GpSolidFill *brush;
+
+    switch (kind) {
+    case S11_ICON_SETTINGS:
+        draw_gear_glyph(c, cx, cy, s * 0.76f, pal.accent);
+        break;
+    case S11_ICON_EXPLORER:
+        draw_folder_glyph(c, cx, cy, s * 0.78f, pal.accent);
+        break;
+    case S11_ICON_GALLERY: {
+        RECT frame = {x + size / 6, y + size / 6, x + size - size / 6, y + size - size / 6};
+        GpPointF mountain[] = {
+            {l + s * 0.23f, t + s * 0.69f}, {l + s * 0.43f, t + s * 0.48f},
+            {l + s * 0.56f, t + s * 0.59f}, {l + s * 0.70f, t + s * 0.43f},
+            {l + s * 0.80f, t + s * 0.69f}
+        };
+        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.075f));
+        GdipDrawRectangle(c->g, pen, (float)frame.left, (float)frame.top,
+                          (float)(frame.right - frame.left), (float)(frame.bottom - frame.top));
+        GdipDrawEllipse(c->g, pen, l + s * 0.62f, t + s * 0.26f, s * 0.11f, s * 0.11f);
+        GdipDrawLines(c->g, pen, mountain, ARRAY_SIZE(mountain));
+        GdipDeletePen(pen);
+        break;
+    }
+    case S11_ICON_TERMINAL: {
+        RECT screen = {x + size / 7, y + size / 5, x + size - size / 7, y + size - size / 5};
+        stroke_round_rect(c, &screen, (float)SC(3), argb(pal.accent, 255), max(1.0f, s * 0.075f));
+        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.08f));
+        GdipDrawLine(c->g, pen, l + s * 0.29f, cy - s * 0.10f, l + s * 0.42f, cy);
+        GdipDrawLine(c->g, pen, l + s * 0.42f, cy, l + s * 0.29f, cy + s * 0.10f);
+        GdipDrawLine(c->g, pen, l + s * 0.49f, cy + s * 0.11f, l + s * 0.67f, cy + s * 0.11f);
+        GdipDeletePen(pen);
+        break;
+    }
+    case S11_ICON_NOTEPAD: {
+        RECT page = {x + size / 5, y + size / 7, x + size - size / 5, y + size - size / 7};
+        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.075f));
+        GdipDrawRectangle(c->g, pen, (float)page.left, (float)page.top,
+                          (float)(page.right - page.left), (float)(page.bottom - page.top));
+        GdipDrawLine(c->g, pen, l + s * 0.32f, t + s * 0.42f, l + s * 0.68f, t + s * 0.42f);
+        GdipDrawLine(c->g, pen, l + s * 0.32f, t + s * 0.54f, l + s * 0.68f, t + s * 0.54f);
+        GdipDrawLine(c->g, pen, l + s * 0.32f, t + s * 0.66f, l + s * 0.60f, t + s * 0.66f);
+        GdipDeletePen(pen);
+        break;
+    }
+    case S11_ICON_TASK_MANAGER:
+        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.07f));
+        GdipDrawLine(c->g, pen, l + s * 0.22f, t + s * 0.76f, l + s * 0.78f, t + s * 0.76f);
+        GdipDeletePen(pen);
+        GdipCreateSolidFill(argb(pal.accent, 255), &brush);
+        GdipFillRectangle(c->g, (GpBrush *)brush, l + s * 0.29f, t + s * 0.55f, s * 0.11f, s * 0.21f);
+        GdipFillRectangle(c->g, (GpBrush *)brush, l + s * 0.46f, t + s * 0.37f, s * 0.11f, s * 0.39f);
+        GdipFillRectangle(c->g, (GpBrush *)brush, l + s * 0.63f, t + s * 0.25f, s * 0.11f, s * 0.51f);
+        GdipDeleteBrush((GpBrush *)brush);
+        break;
+    case S11_ICON_REGISTRY: {
+        float r = s * 0.095f;
+        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.07f));
+        GdipDrawLine(c->g, pen, cx, t + s * 0.31f, l + s * 0.31f, t + s * 0.57f);
+        GdipDrawLine(c->g, pen, cx, t + s * 0.31f, l + s * 0.69f, t + s * 0.57f);
+        GdipDrawLine(c->g, pen, l + s * 0.31f, t + s * 0.57f, l + s * 0.31f, t + s * 0.76f);
+        GdipDrawLine(c->g, pen, l + s * 0.69f, t + s * 0.57f, l + s * 0.69f, t + s * 0.76f);
+        GdipDeletePen(pen);
+        GdipCreateSolidFill(argb(pal.field, 255), &brush);
+        GdipFillEllipse(c->g, (GpBrush *)brush, cx - r, t + s * 0.22f, r * 2, r * 2);
+        GdipFillEllipse(c->g, (GpBrush *)brush, l + s * 0.22f, t + s * 0.49f, r * 2, r * 2);
+        GdipFillEllipse(c->g, (GpBrush *)brush, l + s * 0.60f, t + s * 0.49f, r * 2, r * 2);
+        GdipFillEllipse(c->g, (GpBrush *)brush, l + s * 0.22f, t + s * 0.68f, r * 2, r * 2);
+        GdipFillEllipse(c->g, (GpBrush *)brush, l + s * 0.60f, t + s * 0.68f, r * 2, r * 2);
+        GdipDeleteBrush((GpBrush *)brush);
+        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.07f));
+        GdipDrawEllipse(c->g, pen, cx - r, t + s * 0.22f, r * 2, r * 2);
+        GdipDrawEllipse(c->g, pen, l + s * 0.22f, t + s * 0.49f, r * 2, r * 2);
+        GdipDrawEllipse(c->g, pen, l + s * 0.60f, t + s * 0.49f, r * 2, r * 2);
+        GdipDrawEllipse(c->g, pen, l + s * 0.22f, t + s * 0.68f, r * 2, r * 2);
+        GdipDrawEllipse(c->g, pen, l + s * 0.60f, t + s * 0.68f, r * 2, r * 2);
+        GdipDeletePen(pen);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+/* App icons share the soft, rounded surface and accent line art of S11 Settings. */
+static void draw_s11_app_icon(struct canvas *c, HICON icon, int x, int y, int box_size, int icon_size, int kind)
 {
     RECT box = {x, y, x + box_size, y + box_size};
     fill_round_rect(c, &box, (float)SC(9), argb(pal.field, 255));
     stroke_round_rect(c, &box, (float)SC(9), argb(pal.field_border, 190), 1);
-    draw_icon(c, icon, x + (box_size - icon_size) / 2, y + (box_size - icon_size) / 2, icon_size);
+    if (kind != S11_ICON_DEFAULT)
+        draw_s11_builtin_glyph(c, kind, x + (box_size - icon_size) / 2, y + (box_size - icon_size) / 2, icon_size);
+    else draw_icon(c, icon, x + (box_size - icon_size) / 2, y + (box_size - icon_size) / 2, icon_size);
 }
 
 /* ---------------------------------------------------------------------------------------- */
