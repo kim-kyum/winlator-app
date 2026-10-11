@@ -28,6 +28,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.winlator.container.Container;
 import com.winlator.container.ContainerManager;
+import com.winlator.container.DXWrappers;
+import com.winlator.container.GraphicsDrivers;
 import com.winlator.contentdialog.ContentDialog;
 import com.winlator.contentdialog.StorageInfoDialog;
 import com.winlator.core.PreloaderDialog;
@@ -65,10 +67,7 @@ public class ContainersFragment extends Fragment {
         Context context = recyclerView.getContext();
         emptyTextView = frameLayout.findViewById(R.id.TVEmptyText);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
-
-        DividerItemDecoration itemDecoration = new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL);
-        itemDecoration.setDrawable(ContextCompat.getDrawable(context, R.drawable.list_item_divider));
-        recyclerView.addItemDecoration(itemDecoration);
+        // Winlator S11: cards, no dividers
         return frameLayout;
     }
 
@@ -101,15 +100,17 @@ public class ContainersFragment extends Fragment {
         private final List<Container> data;
 
         private class ViewHolder extends RecyclerView.ViewHolder {
-            private final ImageView runButton;
-            private final ImageView menuButton;
+            private final View runButton;
+            private final View menuButton;
             private final ImageView imageView;
             private final TextView title;
+            private final TextView subtitle;
 
             private ViewHolder(View view) {
                 super(view);
                 this.imageView = view.findViewById(R.id.ImageView);
                 this.title = view.findViewById(R.id.TVTitle);
+                this.subtitle = view.findViewById(R.id.TVSubtitle);
                 this.runButton = view.findViewById(R.id.BTRun);
                 this.menuButton = view.findViewById(R.id.BTMenu);
             }
@@ -129,6 +130,7 @@ public class ContainersFragment extends Fragment {
             final Container item = data.get(position);
             holder.imageView.setImageResource(R.drawable.icon_container);
             holder.title.setText(item.getName());
+            holder.subtitle.setText(describe(item));
             holder.runButton.setOnClickListener((view) -> runContainer(item));
             holder.menuButton.setOnClickListener((view) -> showListItemMenu(view, item));
         }
@@ -136,6 +138,15 @@ public class ContainersFragment extends Fragment {
         @Override
         public final int getItemCount() {
             return data.size();
+        }
+
+        /** Winlator S11: "1920×1200 · Vortek · DXVK" */
+        private String describe(Container container) {
+            String screenSize = container.getScreenSize();
+            screenSize = screenSize.equals("native") ? getString(R.string.native_resolution) : screenSize.replace("x", "×");
+            String[] drivers = GraphicsDrivers.parseIdentifiers(container.getGraphicsDriver());
+            String dxwrapper = DXWrappers.getName(DXWrappers.parseIdentifier(container.getDXWrapper()));
+            return screenSize + "  ·  " + GraphicsDrivers.getName(drivers[0]) + "  ·  " + dxwrapper;
         }
 
         private void showListItemMenu(View anchorView, Container container) {

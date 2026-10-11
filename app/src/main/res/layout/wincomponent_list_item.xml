@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Winlator S11: a Windows component as a row: its name, and builtin or native -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="wrap_content"
+    android:minHeight="56dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
 
     <TextView
         android:id="@+id/TextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginRight="12dp" />
 
     <Spinner
         android:id="@+id/Spinner"
         style="@style/ComboBox"
-        android:layout_width="match_parent"
+        android:layout_width="220dp"
         android:entries="@array/wincomponent_entries" />
 </LinearLayout>

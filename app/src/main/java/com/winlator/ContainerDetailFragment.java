@@ -9,6 +9,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.graphics.Typeface;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.SubMenu;
@@ -71,8 +75,20 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public class ContainerDetailFragment extends Fragment {
+    private static final String[] MOUSE_WARP_OVERRIDE_VALUES = {"disable", "enable", "force"};
+    // Winlator S11: the pages of the settings: section view, title, icon
+    private static final int[][] PAGES = {
+        {R.id.LLSectionGeneral, R.string.general, R.drawable.s11_ic_general},
+        {R.id.LLSectionGraphics, R.string.s11_cs_graphics, R.drawable.s11_ic_graphics},
+        {R.id.LLTabWineConfiguration, R.string.desktop, R.drawable.s11_ic_desktop},
+        {R.id.LLTabWinComponents, R.string.s11_cs_components, R.drawable.s11_ic_components},
+        {R.id.LLTabDrives, R.string.drives, R.drawable.s11_ic_drives},
+        {R.id.LLTabEnvVars, R.string.environment_variables, R.drawable.s11_ic_env},
+        {R.id.LLTabAdvanced, R.string.advanced, R.drawable.s11_ic_advanced},
+    };
     private ContainerManager manager;
     private final int containerId;
     private Container container;
@@ -178,9 +194,29 @@ public class ContainerDetailFragment extends Fragment {
         createWinComponentsTab(view, isEditMode() ? container.getWinComponents() : Container.DEFAULT_WINCOMPONENTS);
         createDrivesTab(view);
 
-        AppUtils.setupTabLayout(view, R.id.TabLayout, (tabResId) -> {
-            if (tabResId == R.id.LLTabAdvanced) if ((byte)sWinVersion.getTag() == -1) WinVersions.loadSpinner(container, sWinVersion);
-        }, R.id.LLTabWineConfiguration, R.id.LLTabWinComponents, R.id.LLTabEnvVars, R.id.LLTabDrives, R.id.LLTabAdvanced);
+        // Winlator S11: pages instead of tabs; the Windows version is read when its page opens
+        setupPages(view, (sectionId) -> {
+            if (sectionId == R.id.LLTabAdvanced && (byte)sWinVersion.getTag() == -1) WinVersions.loadSpinner(container, sWinVersion);
+        });
+
+        final TextView tvNavTitle = view.findViewById(R.id.TVNavTitle);
+        tvNavTitle.setText(etName.getText());
+        ((TextView)view.findViewById(R.id.TVNavSubtitle)).setText(isEditMode() ? R.string.edit_container : R.string.new_container);
+        etName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence text, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence text, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable text) {
+                tvNavTitle.setText(text);
+            }
+        });
+
+        if (!isEditMode()) ((TextView)view.findViewById(R.id.BTConfirm)).setText(R.string.s11_cs_create);
+        view.findViewById(R.id.BTCancel).setOnClickListener((v) -> getActivity().onBackPressed());
 
         view.findViewById(R.id.BTConfirm).setOnClickListener((v) -> {
             try {
@@ -269,6 +305,81 @@ public class ContainerDetailFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Winlator S11: a list of pages on the left on wide screens (landscape tablets), a row of
+     * chips at the top otherwise; on narrow screens every setting puts its control under its
+     * title instead of next to it.
+     */
+    private void setupPages(final View view, final Callback<Integer> onPageShown) {
+        final Context context = getContext();
+        final float density = getResources().getDisplayMetrics().density;
+        int screenWidthDp = getResources().getConfiguration().screenWidthDp;
+        final boolean sideNav = screenWidthDp >= 960;
+        int contentWidthDp = screenWidthDp - (sideNav ? (int)(getResources().getDimension(R.dimen.s11_side_nav_width) / density) : 0) - 56;
+
+        view.findViewById(R.id.SVSideNav).setVisibility(sideNav ? View.VISIBLE : View.GONE);
+        view.findViewById(R.id.HSVTopNav).setVisibility(sideNav ? View.GONE : View.VISIBLE);
+        if (contentWidthDp < 600) {
+            stackRows(view.findViewById(R.id.LLContent), density);
+            view.findViewById(R.id.TVFooterHint).setVisibility(View.INVISIBLE);
+        }
+
+        final LinearLayout parent = view.findViewById(sideNav ? R.id.LLSideNavItems : R.id.LLTopNavItems);
+        final TextView[] items = new TextView[PAGES.length];
+        final View.OnClickListener select = (v) -> {
+            int index = (int)v.getTag();
+            for (int i = 0; i < PAGES.length; i++) {
+                items[i].setSelected(i == index);
+                items[i].setTypeface(null, i == index ? Typeface.BOLD : Typeface.NORMAL);
+                view.findViewById(PAGES[i][0]).setVisibility(i == index ? View.VISIBLE : View.GONE);
+            }
+            view.findViewById(R.id.SVContent).scrollTo(0, 0);
+            if (onPageShown != null) onPageShown.call(PAGES[index][0]);
+        };
+
+        for (int i = 0; i < PAGES.length; i++) {
+            TextView item = new TextView(context, null, 0, sideNav ? R.style.S11NavItem : R.style.S11Chip);
+            item.setText(PAGES[i][1]);
+            item.setTag(i);
+            LinearLayout.LayoutParams params;
+            if (sideNav) {
+                params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int)(48 * density));
+                params.bottomMargin = (int)(2 * density);
+                item.setCompoundDrawablesRelativeWithIntrinsicBounds(PAGES[i][2], 0, 0, 0);
+            }
+            else {
+                params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (int)(40 * density));
+                params.rightMargin = (int)(8 * density);
+            }
+            item.setLayoutParams(params);
+            item.setOnClickListener(select);
+            items[i] = item;
+            parent.addView(item);
+        }
+        select.onClick(items[0]);
+    }
+
+    /** Puts the control of every setting row under its title (narrow screens). */
+    private static void stackRows(ViewGroup group, float density) {
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View child = group.getChildAt(i);
+            if ("s11row".equals(child.getTag()) && child instanceof LinearLayout) {
+                LinearLayout row = (LinearLayout)child;
+                row.setOrientation(LinearLayout.VERTICAL);
+                row.setGravity(Gravity.START);
+                for (int j = 0; j < row.getChildCount(); j++) {
+                    View cell = row.getChildAt(j);
+                    LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)cell.getLayoutParams();
+                    params.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                    params.weight = 0;
+                    if (j > 0) params.topMargin = (int)(10 * density);
+                    cell.setLayoutParams(params);
+                }
+            }
+            else if (child instanceof ViewGroup) stackRows((ViewGroup)child, density);
+        }
+    }
+
     private void saveWineRegistryKeys(View view) {
         File userRegFile = new File(container.getRootDir(), ".wine/user.reg");
         try (WineRegistryEditor registryEditor = new WineRegistryEditor(userRegFile)) {
@@ -279,9 +390,7 @@ public class ContainerDetailFragment extends Fragment {
             registryEditor.setDwordValue("Control Panel\\Desktop", "LogPixels", (int)sbLogPixels.getValue());
 
             Spinner sMouseWarpOverride = view.findViewById(R.id.SMouseWarpOverride);
-
-            final String[] mouseWarpOverrideValues = new String[]{"disable", "enable", "force"};
-            registryEditor.setStringValue("Software\\Wine\\DirectInput", "MouseWarpOverride", mouseWarpOverrideValues[sMouseWarpOverride.getSelectedItemPosition()]);
+            registryEditor.setStringValue("Software\\Wine\\DirectInput", "MouseWarpOverride", MOUSE_WARP_OVERRIDE_VALUES[sMouseWarpOverride.getSelectedItemPosition()]);
 
             registryEditor.setStringValue("Software\\Wine\\Direct3D", "shader_backend", "glsl");
             registryEditor.setStringValue("Software\\Wine\\Direct3D", "UseGLSL", "enabled");
@@ -342,7 +451,10 @@ public class ContainerDetailFragment extends Fragment {
             List<String> mouseWarpOverrideList = Arrays.asList(context.getString(R.string.disable), context.getString(R.string.enable), context.getString(R.string.force));
             Spinner sMouseWarpOverride = view.findViewById(R.id.SMouseWarpOverride);
             sMouseWarpOverride.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, mouseWarpOverrideList));
-            AppUtils.setSpinnerSelectionFromValue(sMouseWarpOverride, registryEditor.getStringValue("Software\\Wine\\DirectInput", "MouseWarpOverride", "disable"));
+            // by value, not by the (translated) text
+            String mouseWarpOverride = registryEditor.getStringValue("Software\\Wine\\DirectInput", "MouseWarpOverride", "disable");
+            int mouseWarpOverrideIndex = Arrays.asList(MOUSE_WARP_OVERRIDE_VALUES).indexOf(mouseWarpOverride.toLowerCase(Locale.ENGLISH));
+            sMouseWarpOverride.setSelection(Math.max(0, mouseWarpOverrideIndex), false);
         }
     }
 

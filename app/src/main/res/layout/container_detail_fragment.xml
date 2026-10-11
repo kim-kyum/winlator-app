@@ -1,564 +1,776 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+    Winlator S11: container settings in the style of Windows 11 Settings. Pages on the left
+    (on narrow screens a row of chips at the top), one page at a time on the right, every
+    setting a row with a title, a line of explanation and its control. Save and cancel stay
+    at the bottom instead of a floating button over the content.
+    The ids of the original layout are kept: ContainerDetailFragment and the static helpers
+    that ShortcutSettingsDialog shares read the controls by id.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:orientation="vertical"
+    android:background="?attr/colorPrimarySurface">
 
-    <ScrollView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- Pages (wide screens) -->
+        <ScrollView
+            android:id="@+id/SVSideNav"
+            android:layout_width="@dimen/s11_side_nav_width"
+            android:layout_height="match_parent"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="16dp"
+                android:paddingRight="12dp"
+                android:paddingTop="20dp"
+                android:paddingBottom="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp"
+                    android:layout_marginBottom="20dp">
+
+                    <ImageView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_marginRight="12dp"
+                        android:src="@mipmap/ic_launcher" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/TVNavTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+
+                        <TextView
+                            android:id="@+id/TVNavSubtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="13sp"
+                            android:textColor="?attr/colorSecondaryText"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/LLSideNavItems"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </ScrollView>
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/name" />
-
-            <EditText
-                style="@style/EditText"
-                android:id="@+id/ETName"
-                android:inputType="textCapSentences" />
-
-            <LinearLayout
+            <!-- Pages (narrow screens) -->
+            <HorizontalScrollView
+                android:id="@+id/HSVTopNav"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:scrollbars="none"
+                android:visibility="gone">
 
                 <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/screen_size" />
-
-                    <Spinner
-                        style="@style/ComboBox"
-                        android:layout_width="match_parent"
-                        android:id="@+id/SScreenSize"
-                        android:entries="@array/screen_size_entries" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/LLCustomScreenSize"
+                    android:id="@+id/LLTopNavItems"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:visibility="gone">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/width" />
-
-                        <EditText
-                            style="@style/EditText"
-                            android:layout_width="78dp"
-                            android:id="@+id/ETScreenWidth"
-                            android:inputType="number" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textStyle="bold"
-                        android:textSize="18dp"
-                        android:layout_gravity="bottom"
-                        android:layout_marginLeft="2dp"
-                        android:layout_marginRight="2dp"
-                        android:layout_marginBottom="4dp"
-                        android:text="x" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/height" />
-
-                        <EditText
-                            style="@style/EditText"
-                            android:layout_width="78dp"
-                            android:id="@+id/ETScreenHeight"
-                            android:inputType="number" />
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/LLWineVersion"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/wine_version" />
-
-                <Spinner
-                    style="@style/ComboBox"
-                    android:layout_width="match_parent"
-                    android:id="@+id/SWineVersion" />
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/graphics_driver" />
-
-            <LinearLayout
-                android:id="@+id/LLGraphicsDriver"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/dxwrapper" />
-
-                <ImageView
-                    android:id="@+id/BTHelpDXWrapper"
-                    style="@style/HelpButton" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/LLDXWrapper"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/audio_driver" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <Spinner
-                    style="@style/ComboBox"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:id="@+id/SAudioDriver"
-                    android:entries="@array/audio_driver_entries" />
-
-                <ImageButton
-                    style="@style/ListMenuButton"
-                    android:id="@+id/BTAudioDriverConfig"
-                    android:src="@drawable/icon_audio_settings" />
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/hud_mode" />
-
-            <Spinner
-                style="@style/ComboBox"
-                android:id="@+id/SHUDMode"
-                android:layout_width="match_parent"
-                android:entries="@array/hud_mode_entries" />
-
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/TabLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="4dp"
-                android:background="@drawable/tab_layout_background"
-                app:tabTextColor="?attr/tabTextColor"
-                app:tabGravity="center"
-                app:tabMode="auto">
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/wine_configuration" />
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/win_components" />
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/environment_variables" />
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/drives" />
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/advanced" />
-            </com.google.android.material.tabs.TabLayout>
-
-            <LinearLayout
-                android:id="@+id/LLTabWineConfiguration"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp">
-
-                    <LinearLayout style="@style/FieldSet">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/theme" />
-
-                        <RadioGroup
-                            android:id="@+id/RGDesktopTheme"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <RadioButton
-                                android:id="@+id/RBLight"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/light" />
-
-                            <RadioButton
-                                android:id="@+id/RBDark"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/dark" />
-                        </RadioGroup>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/background" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-
-                            <Spinner
-                                android:id="@+id/SDesktopBackgroundType"
-                                style="@style/ComboBox"
-                                android:layout_width="0dp"
-                                android:layout_weight="1"
-                                android:entries="@array/desktop_background_type_entries" />
-
-                            <com.winlator.widget.ColorPickerView
-                                android:id="@+id/CPVDesktopBackgroundColor"
-                                android:layout_width="84dp"
-                                android:layout_height="wrap_content"
-                                android:visibility="gone" />
-
-                            <com.winlator.widget.ImagePickerView
-                                android:id="@+id/IPVDesktopBackgroundImage"
-                                android:layout_width="84dp"
-                                android:layout_height="wrap_content"
-                                android:visibility="gone" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/system_font" />
-
-                        <Spinner
-                            style="@style/ComboBox"
-                            android:id="@+id/SSystemFont"
-                            android:layout_width="match_parent"
-                            android:entries="@array/system_font_entries" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/dpi_font_size" />
-
-                        <com.winlator.widget.SeekBar
-                            android:id="@+id/SBLogPixels"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            app:suffix=" dpi"
-                            app:step="24"
-                            app:minValue="96"
-                            app:maxValue="240" />
-                    </LinearLayout>
-
-                    <TextView
-                        style="@style/FieldSetLabel"
-                        android:text="@string/desktop" />
-                </FrameLayout>
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp">
-
-                    <LinearLayout style="@style/FieldSet">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/mouse_warp_override" />
-
-                        <Spinner
-                            style="@style/ComboBox"
-                            android:id="@+id/SMouseWarpOverride"
-                            android:layout_width="match_parent" />
-                    </LinearLayout>
-
-                    <TextView
-                        style="@style/FieldSetLabel"
-                        android:text="@string/directinput" />
-                </FrameLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/LLTabWinComponents"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp">
-
-                    <LinearLayout
-                        style="@style/FieldSet"
-                        android:id="@+id/LLWinComponentsDirectX" />
-
-                    <TextView
-                        style="@style/FieldSetLabel"
-                        android:text="@string/directx" />
-                </FrameLayout>
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp">
-
-                    <LinearLayout
-                        style="@style/FieldSet"
-                        android:id="@+id/LLWinComponentsGeneral" />
-
-                    <TextView
-                        style="@style/FieldSetLabel"
-                        android:text="@string/general" />
-                </FrameLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/LLTabEnvVars"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <com.winlator.widget.EnvVarsView
-                    android:id="@+id/EnvVarsView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
                     android:paddingLeft="16dp"
-                    android:paddingRight="16dp"/>
+                    android:paddingRight="8dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="4dp" />
+            </HorizontalScrollView>
 
-                <View style="@style/HorizontalLine" />
-
-                <Button
-                    style="@style/ButtonNeutral"
-                    android:id="@+id/BTAddEnvVar"
-                    android:layout_width="160dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="@string/add" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/LLTabDrives"
+            <ScrollView
+                android:id="@+id/SVContent"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
+                android:layout_height="match_parent"
+                android:fillViewport="true">
 
                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingLeft="20dp"
-                    android:paddingRight="20dp"
-                    android:layout_marginBottom="4dp">
-
-                    <TextView
-                        android:layout_width="100dp"
-                        android:layout_height="wrap_content"
-                        android:text="@string/letter" />
-
-                    <TextView
-                        android:layout_width="100dp"
-                        android:layout_height="wrap_content"
-                        android:text="@string/target_path" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/LLDrives"
+                    android:id="@+id/LLContent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingLeft="16dp"
-                    android:paddingRight="16dp"/>
+                    android:paddingLeft="28dp"
+                    android:paddingRight="28dp"
+                    android:paddingTop="24dp"
+                    android:paddingBottom="32dp">
 
-                <TextView
-                    android:id="@+id/TVDrivesEmptyText"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:text="@string/no_items_to_display"
-                    android:padding="16dp"
-                    android:visibility="gone" />
+                    <!-- ============================== General ============================== -->
+                    <LinearLayout
+                        android:id="@+id/LLSectionGeneral"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
 
-                <View style="@style/HorizontalLine" />
-
-                <Button
-                    style="@style/ButtonNeutral"
-                    android:id="@+id/BTAddDrive"
-                    android:layout_width="160dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="@string/add" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/LLTabAdvanced"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp">
-
-                    <LinearLayout style="@style/FieldSet">
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/box64_preset" />
+                            style="@style/S11SectionTitle"
+                            android:text="@string/general" />
 
-                        <Spinner
-                            style="@style/ComboBox"
-                            android:id="@+id/SBox64Preset"
-                            android:layout_width="match_parent" />
+                        <LinearLayout style="@style/S11Card">
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/name" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_name_desc" />
+                                </LinearLayout>
+
+                                <EditText
+                                    style="@style/EditText"
+                                    android:id="@+id/ETName"
+                                    android:layout_width="@dimen/s11_control_width"
+                                    android:inputType="textCapSentences" />
+                            </LinearLayout>
+
+                            <View style="@style/S11RowDivider" />
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/screen_size" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_screen_size_desc" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="@dimen/s11_control_width"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+
+                                    <Spinner
+                                        style="@style/ComboBox"
+                                        android:layout_width="match_parent"
+                                        android:id="@+id/SScreenSize"
+                                        android:entries="@array/screen_size_entries" />
+
+                                    <LinearLayout
+                                        android:id="@+id/LLCustomScreenSize"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="8dp"
+                                        android:orientation="horizontal"
+                                        android:gravity="center_vertical"
+                                        android:visibility="gone">
+
+                                        <EditText
+                                            style="@style/EditText"
+                                            android:layout_width="0dp"
+                                            android:layout_weight="1"
+                                            android:id="@+id/ETScreenWidth"
+                                            android:hint="@string/width"
+                                            android:inputType="number" />
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:textSize="16sp"
+                                            android:textColor="?attr/colorSecondaryText"
+                                            android:layout_marginLeft="8dp"
+                                            android:layout_marginRight="8dp"
+                                            android:text="×" />
+
+                                        <EditText
+                                            style="@style/EditText"
+                                            android:layout_width="0dp"
+                                            android:layout_weight="1"
+                                            android:id="@+id/ETScreenHeight"
+                                            android:hint="@string/height"
+                                            android:inputType="number" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:id="@+id/LLWineVersion"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:visibility="gone">
+
+                                <View style="@style/S11RowDivider" />
+
+                                <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                    <LinearLayout style="@style/S11RowText">
+                                        <TextView style="@style/S11RowTitle" android:text="@string/wine_version" />
+                                        <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_wine_version_desc" />
+                                    </LinearLayout>
+
+                                    <Spinner
+                                        style="@style/ComboBox"
+                                        android:layout_width="@dimen/s11_control_width"
+                                        android:id="@+id/SWineVersion" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
                     </LinearLayout>
 
-                    <TextView
-                        style="@style/FieldSetLabel"
-                        android:text="@string/box64" />
-                </FrameLayout>
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp">
-
-                    <LinearLayout style="@style/FieldSet">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/startup_selection" />
-
-                        <Spinner
-                            style="@style/ComboBox"
-                            android:layout_width="match_parent"
-                            android:id="@+id/SStartupSelection"
-                            android:entries="@array/startup_selection_entries" />
+                    <!-- ============================== Graphics ============================== -->
+                    <LinearLayout
+                        android:id="@+id/LLSectionGraphics"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
 
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/windows_version" />
+                            style="@style/S11SectionTitle"
+                            android:text="@string/s11_cs_graphics" />
 
-                        <Spinner
-                            style="@style/ComboBox"
-                            android:layout_width="match_parent"
-                            android:id="@+id/SWinVersion" />
+                        <LinearLayout style="@style/S11Card">
+
+                            <LinearLayout style="@style/S11RowStacked">
+                                <LinearLayout style="@style/S11RowTextStacked">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/graphics_driver" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_graphics_driver_desc" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:id="@+id/LLGraphicsDriver"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical" />
+                            </LinearLayout>
+
+                            <View style="@style/S11RowDivider" />
+
+                            <LinearLayout style="@style/S11RowStacked">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:layout_marginBottom="10dp">
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:orientation="vertical">
+                                        <TextView style="@style/S11RowTitle" android:text="@string/s11_cs_dxwrapper" />
+                                        <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_dxwrapper_desc" />
+                                    </LinearLayout>
+
+                                    <ImageView
+                                        android:id="@+id/BTHelpDXWrapper"
+                                        android:layout_width="36dp"
+                                        android:layout_height="36dp"
+                                        android:padding="7dp"
+                                        android:background="?selectableItemBackgroundBorderless"
+                                        android:src="@drawable/icon_help"
+                                        app:tint="?attr/colorSecondaryText" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:id="@+id/LLDXWrapper"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical" />
+                            </LinearLayout>
+
+                            <View style="@style/S11RowDivider" />
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/hud_mode" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_hud_desc" />
+                                </LinearLayout>
+
+                                <Spinner
+                                    style="@style/ComboBox"
+                                    android:id="@+id/SHUDMode"
+                                    android:layout_width="@dimen/s11_control_width"
+                                    android:entries="@array/hud_mode_entries" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <TextView
+                            style="@style/S11GroupTitle"
+                            android:text="@string/audio" />
+
+                        <LinearLayout style="@style/S11Card">
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/audio_driver" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_audio_desc" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="@dimen/s11_control_width"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+
+                                    <Spinner
+                                        style="@style/ComboBox"
+                                        android:layout_width="0dp"
+                                        android:layout_weight="1"
+                                        android:id="@+id/SAudioDriver"
+                                        android:entries="@array/audio_driver_entries" />
+
+                                    <ImageButton
+                                        style="@style/ListMenuButton"
+                                        android:id="@+id/BTAudioDriverConfig"
+                                        android:layout_width="42dp"
+                                        android:layout_height="42dp"
+                                        android:layout_marginLeft="8dp"
+                                        android:layout_marginRight="0dp"
+                                        android:padding="8dp"
+                                        android:src="@drawable/icon_audio_settings" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
                     </LinearLayout>
 
-                    <TextView
-                        style="@style/FieldSetLabel"
-                        android:text="@string/system" />
-                </FrameLayout>
+                    <!-- ============================== Desktop ============================== -->
+                    <LinearLayout
+                        android:id="@+id/LLTabWineConfiguration"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/processor_affinity"
-                    android:layout_marginTop="8dp" />
+                        <TextView
+                            style="@style/S11SectionTitle"
+                            android:text="@string/desktop" />
 
-                <com.winlator.widget.CPUListView
-                    android:id="@+id/CPUListView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:layout_marginTop="4dp" />
+                        <LinearLayout style="@style/S11Card">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/processor_affinity_32_bit_apps"
-                    android:layout_marginTop="8dp" />
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/theme" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_theme_desc" />
+                                </LinearLayout>
 
-                <com.winlator.widget.CPUListView
-                    android:id="@+id/CPUListViewWoW64"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:layout_marginTop="4dp" />
-            </LinearLayout>
+                                <RadioGroup
+                                    android:id="@+id/RGDesktopTheme"
+                                    android:layout_width="@dimen/s11_control_width"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+
+                                    <RadioButton
+                                        android:id="@+id/RBLight"
+                                        android:layout_width="0dp"
+                                        android:layout_weight="1"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/light" />
+
+                                    <RadioButton
+                                        android:id="@+id/RBDark"
+                                        android:layout_width="0dp"
+                                        android:layout_weight="1"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/dark" />
+                                </RadioGroup>
+                            </LinearLayout>
+
+                            <View style="@style/S11RowDivider" />
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/background" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_background_desc" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="@dimen/s11_control_width"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+
+                                    <Spinner
+                                        android:id="@+id/SDesktopBackgroundType"
+                                        style="@style/ComboBox"
+                                        android:layout_width="0dp"
+                                        android:layout_weight="1"
+                                        android:entries="@array/desktop_background_type_entries" />
+
+                                    <com.winlator.widget.ColorPickerView
+                                        android:id="@+id/CPVDesktopBackgroundColor"
+                                        android:layout_width="84dp"
+                                        android:layout_height="42dp"
+                                        android:layout_marginLeft="8dp"
+                                        android:visibility="gone" />
+
+                                    <com.winlator.widget.ImagePickerView
+                                        android:id="@+id/IPVDesktopBackgroundImage"
+                                        android:layout_width="84dp"
+                                        android:layout_height="42dp"
+                                        android:layout_marginLeft="8dp"
+                                        android:visibility="gone" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <View style="@style/S11RowDivider" />
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/system_font" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_system_font_desc" />
+                                </LinearLayout>
+
+                                <Spinner
+                                    style="@style/ComboBox"
+                                    android:id="@+id/SSystemFont"
+                                    android:layout_width="@dimen/s11_control_width"
+                                    android:entries="@array/system_font_entries" />
+                            </LinearLayout>
+
+                            <View style="@style/S11RowDivider" />
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/dpi_font_size" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_dpi_desc" />
+                                </LinearLayout>
+
+                                <com.winlator.widget.SeekBar
+                                    android:id="@+id/SBLogPixels"
+                                    android:layout_width="@dimen/s11_control_width"
+                                    android:layout_height="wrap_content"
+                                    app:suffix=" dpi"
+                                    app:step="24"
+                                    app:minValue="96"
+                                    app:maxValue="240" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <TextView
+                            style="@style/S11GroupTitle"
+                            android:text="@string/mouse" />
+
+                        <LinearLayout style="@style/S11Card">
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/s11_cs_mouse_warp" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_mouse_warp_desc" />
+                                </LinearLayout>
+
+                                <Spinner
+                                    style="@style/ComboBox"
+                                    android:id="@+id/SMouseWarpOverride"
+                                    android:layout_width="@dimen/s11_control_width" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- ============================== Windows components ============================== -->
+                    <LinearLayout
+                        android:id="@+id/LLTabWinComponents"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/S11SectionTitle"
+                            android:text="@string/s11_cs_components" />
+
+                        <TextView
+                            style="@style/S11RowDescription"
+                            android:layout_marginTop="-8dp"
+                            android:layout_marginBottom="12dp"
+                            android:text="@string/s11_cs_components_desc" />
+
+                        <TextView
+                            style="@style/S11GroupTitle"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/directx" />
+
+                        <LinearLayout
+                            style="@style/S11Card"
+                            android:id="@+id/LLWinComponentsDirectX"
+                            android:paddingLeft="20dp"
+                            android:paddingRight="20dp"
+                            android:paddingTop="8dp"
+                            android:paddingBottom="12dp" />
+
+                        <TextView
+                            style="@style/S11GroupTitle"
+                            android:text="@string/general" />
+
+                        <LinearLayout
+                            style="@style/S11Card"
+                            android:id="@+id/LLWinComponentsGeneral"
+                            android:paddingLeft="20dp"
+                            android:paddingRight="20dp"
+                            android:paddingTop="8dp"
+                            android:paddingBottom="12dp" />
+                    </LinearLayout>
+
+                    <!-- ============================== Drives ============================== -->
+                    <LinearLayout
+                        android:id="@+id/LLTabDrives"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/S11SectionTitle"
+                            android:text="@string/drives" />
+
+                        <TextView
+                            style="@style/S11RowDescription"
+                            android:layout_marginTop="-8dp"
+                            android:layout_marginBottom="16dp"
+                            android:text="@string/s11_cs_drives_desc" />
+
+                        <LinearLayout
+                            style="@style/S11Card"
+                            android:paddingLeft="16dp"
+                            android:paddingRight="12dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:paddingLeft="4dp"
+                                android:layout_marginBottom="6dp">
+
+                                <TextView
+                                    android:layout_width="104dp"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="13sp"
+                                    android:textColor="?attr/colorSecondaryText"
+                                    android:text="@string/letter" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="13sp"
+                                    android:textColor="?attr/colorSecondaryText"
+                                    android:text="@string/target_path" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:id="@+id/LLDrives"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical" />
+
+                            <TextView
+                                android:id="@+id/TVDrivesEmptyText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:text="@string/no_items_to_display"
+                                android:textColor="?attr/colorSecondaryText"
+                                android:padding="16dp"
+                                android:visibility="gone" />
+                        </LinearLayout>
+
+                        <Button
+                            style="@style/ButtonNeutral"
+                            android:id="@+id/BTAddDrive"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginLeft="0dp"
+                            android:text="@string/s11_cs_add_drive" />
+                    </LinearLayout>
+
+                    <!-- ============================== Environment variables ============================== -->
+                    <LinearLayout
+                        android:id="@+id/LLTabEnvVars"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/S11SectionTitle"
+                            android:text="@string/environment_variables" />
+
+                        <TextView
+                            style="@style/S11RowDescription"
+                            android:layout_marginTop="-8dp"
+                            android:layout_marginBottom="16dp"
+                            android:text="@string/s11_cs_env_vars_desc" />
+
+                        <LinearLayout
+                            style="@style/S11Card"
+                            android:paddingLeft="20dp"
+                            android:paddingRight="12dp"
+                            android:paddingTop="8dp"
+                            android:paddingBottom="8dp">
+
+                            <com.winlator.widget.EnvVarsView
+                                android:id="@+id/EnvVarsView"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+
+                        <Button
+                            style="@style/ButtonNeutral"
+                            android:id="@+id/BTAddEnvVar"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginLeft="0dp"
+                            android:text="@string/s11_cs_add_env_var" />
+                    </LinearLayout>
+
+                    <!-- ============================== Advanced ============================== -->
+                    <LinearLayout
+                        android:id="@+id/LLTabAdvanced"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/S11SectionTitle"
+                            android:text="@string/advanced" />
+
+                        <LinearLayout style="@style/S11Card">
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/windows_version" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_windows_version_desc" />
+                                </LinearLayout>
+
+                                <Spinner
+                                    style="@style/ComboBox"
+                                    android:layout_width="@dimen/s11_control_width"
+                                    android:id="@+id/SWinVersion" />
+                            </LinearLayout>
+
+                            <View style="@style/S11RowDivider" />
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/startup_selection" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_startup_desc" />
+                                </LinearLayout>
+
+                                <Spinner
+                                    style="@style/ComboBox"
+                                    android:layout_width="@dimen/s11_control_width"
+                                    android:id="@+id/SStartupSelection"
+                                    android:entries="@array/startup_selection_entries" />
+                            </LinearLayout>
+
+                            <View style="@style/S11RowDivider" />
+
+                            <LinearLayout style="@style/S11Row" android:tag="s11row">
+                                <LinearLayout style="@style/S11RowText">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/box64_preset" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_box64_desc" />
+                                </LinearLayout>
+
+                                <Spinner
+                                    style="@style/ComboBox"
+                                    android:id="@+id/SBox64Preset"
+                                    android:layout_width="@dimen/s11_control_width" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <TextView
+                            style="@style/S11GroupTitle"
+                            android:text="@string/s11_cs_cpu" />
+
+                        <LinearLayout style="@style/S11Card">
+
+                            <LinearLayout style="@style/S11RowStacked">
+                                <LinearLayout style="@style/S11RowTextStacked">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/processor_affinity" />
+                                    <TextView style="@style/S11RowDescription" android:text="@string/s11_cs_cpu_desc" />
+                                </LinearLayout>
+
+                                <com.winlator.widget.CPUListView
+                                    android:id="@+id/CPUListView"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_horizontal" />
+                            </LinearLayout>
+
+                            <View style="@style/S11RowDivider" />
+
+                            <LinearLayout style="@style/S11RowStacked">
+                                <LinearLayout style="@style/S11RowTextStacked">
+                                    <TextView style="@style/S11RowTitle" android:text="@string/processor_affinity_32_bit_apps" />
+                                </LinearLayout>
+
+                                <com.winlator.widget.CPUListView
+                                    android:id="@+id/CPUListViewWoW64"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_horizontal" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
         </LinearLayout>
-    </ScrollView>
+    </LinearLayout>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/BTConfirm"
-        android:layout_width="wrap_content"
+    <!-- Save and cancel -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/s11CardBorder" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="right|bottom"
-        android:tint="#ffffff"
-        android:src="@drawable/icon_confirm"
-        android:layout_margin="16dp" />
-</FrameLayout>
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="?attr/colorSecondarySurface"
+        android:paddingLeft="20dp"
+        android:paddingRight="16dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
+
+        <TextView
+            android:id="@+id/TVFooterHint"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="13sp"
+            android:textColor="?attr/colorSecondaryText"
+            android:text="@string/s11_cs_footer_hint" />
+
+        <Button
+            style="@style/ButtonNeutral"
+            android:id="@+id/BTCancel"
+            android:minWidth="104dp"
+            android:text="@string/cancel" />
+
+        <Button
+            style="@style/ButtonPositive"
+            android:id="@+id/BTConfirm"
+            android:minWidth="104dp"
+            android:text="@string/s11_cs_save" />
+    </LinearLayout>
+</LinearLayout>

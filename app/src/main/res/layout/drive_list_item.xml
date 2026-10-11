@@ -3,13 +3,14 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginBottom="6dp"
     android:gravity="center_vertical">
 
     <Spinner
         style="@style/ComboBox"
         android:id="@+id/Spinner"
         android:layout_width="100dp"
-        android:layout_marginRight="4dp" />
+        android:layout_marginRight="6dp" />
 
     <EditText
         style="@style/EditText"
@@ -18,15 +19,20 @@
         android:layout_height="wrap_content"
         android:layout_weight="1" />
 
-    <LinearLayout style="@style/Toolbox">
-        <ImageButton
-            style="@style/ListMenuButton"
-            android:id="@+id/BTSearch"
-            android:src="@drawable/icon_folder_search" />
+    <ImageButton
+        style="@style/ListMenuButton"
+        android:id="@+id/BTSearch"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="6dp"
+        android:padding="8dp"
+        android:src="@drawable/icon_folder_search" />
 
-        <ImageButton
-            style="@style/ListMenuButton"
-            android:id="@+id/BTRemove"
-            android:src="@drawable/icon_remove" />
-    </LinearLayout>
+    <ImageButton
+        style="@style/ListMenuButton"
+        android:id="@+id/BTRemove"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="8dp"
+        android:src="@drawable/icon_remove" />
 </LinearLayout>

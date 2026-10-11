@@ -32,6 +32,8 @@ public class GraphicsDriverPicker {
                 final String graphicsDriver = StringUtils.parseIdentifier(taggedSelectionBox.getSelectedItem());
                 showGraphicsDriverConfigDialog(graphicsDriver, taggedSelectionBox);
             });
+            // Winlator S11: Zink and Gladio have no settings, so no button that does nothing
+            taggedSelectionBox.setHasSettings((item) -> hasConfigDialog(StringUtils.parseIdentifier(item)));
             container.addView(taggedSelectionBox);
         }
     }
@@ -54,6 +56,11 @@ public class GraphicsDriverPicker {
             graphicsDriverConfig.append(taggedSelectionBox.getTag().toString());
         }
         return graphicsDriverConfig.toString();
+    }
+
+    private static boolean hasConfigDialog(String graphicsDriver) {
+        return graphicsDriver.equals(GraphicsDrivers.TURNIP) || graphicsDriver.equals(GraphicsDrivers.VORTEK) ||
+               graphicsDriver.equals(GraphicsDrivers.VIRGL);
     }
 
     private static void showGraphicsDriverConfigDialog(String graphicsDriver, View anchor) {

@@ -126,7 +126,7 @@
                 android:id="@+id/BTCancel" />
 
             <Button
-                style="@style/ButtonNeutral"
+                style="@style/ButtonPositive"
                 android:text="@string/ok"
                 android:id="@+id/BTConfirm" />
         </LinearLayout>

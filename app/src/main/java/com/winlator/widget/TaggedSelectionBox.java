@@ -18,6 +18,8 @@ public class TaggedSelectionBox extends LinearLayout {
     private String[] items;
     private OnButtonClickListener onButtonClickListener;
     private OnItemSelectedListener onItemSelectedListener;
+    // Winlator S11: items that have nothing to configure hide the settings button
+    private java.util.function.Predicate<String> hasSettings;
 
     public interface OnButtonClickListener {
         void onClick();
@@ -57,6 +59,7 @@ public class TaggedSelectionBox extends LinearLayout {
 
             popupWindow.setOnItemClickListener((parent, view, position, id) -> {
                 ((TextView)findViewById(R.id.TVName)).setText(items[position]);
+                updateSettingsButton();
                 if (onItemSelectedListener != null) onItemSelectedListener.onItemSelected(items[position]);
                 popupWindow.dismiss();
             });
@@ -75,6 +78,22 @@ public class TaggedSelectionBox extends LinearLayout {
 
     public void setSelectedItem(String selectedItem) {
         ((TextView)findViewById(R.id.TVName)).setText(selectedItem);
+        updateSettingsButton();
+    }
+
+    /** Winlator S11: the settings button shows only for items this says have settings. */
+    public void setHasSettings(java.util.function.Predicate<String> hasSettings) {
+        this.hasSettings = hasSettings;
+        updateSettingsButton();
+    }
+
+    private void updateSettingsButton() {
+        View button = findViewById(R.id.BTSettings);
+        View displayBox = findViewById(R.id.LLDisplayBox);
+        if (button == null || displayBox == null) return;
+        boolean visible = hasSettings == null || hasSettings.test(getSelectedItem());
+        button.setVisibility(visible ? View.VISIBLE : View.GONE);
+        displayBox.setBackgroundResource(visible ? R.drawable.tagged_selection_box : R.drawable.s11_tagged_selection_box_full);
     }
 
     public void setLabel(String label) {

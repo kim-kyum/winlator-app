@@ -11,6 +11,14 @@
     <attr name="toolboxBackground" format="reference" />
     <attr name="preloaderBackground" format="reference" />
     <attr name="progressBarIndeterminateImage" format="reference" />
+    <!-- Winlator S11: fields, cards and navigation -->
+    <attr name="s11FieldBorder" format="color" />
+    <attr name="s11FieldPressed" format="color" />
+    <attr name="s11CardBorder" format="color" />
+    <attr name="s11NavSelected" format="color" />
+    <attr name="s11NeutralButton" format="color" />
+    <attr name="s11NeutralButtonPressed" format="color" />
+    <attr name="s11AccentPressed" format="color" />
     <declare-styleable name="NumberPicker">
         <attr name="value" />
         <attr name="minValue" />

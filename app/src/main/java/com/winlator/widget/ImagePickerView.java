@@ -48,7 +48,7 @@ public class ImagePickerView extends View implements View.OnClickListener {
 
         icon = BitmapFactory.decodeResource(context.getResources(), R.drawable.icon_image_picker);
 
-        setBackgroundResource(R.drawable.combo_box);
+        setBackgroundResource(R.drawable.s11_picker);
         setClickable(true);
         setFocusable(true);
         setOnClickListener(this);

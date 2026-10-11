@@ -381,4 +381,35 @@
     <string name="fgs_notification_content_else">Winlator is running in the background</string>
     <string name="save_mem_on_run_from_steam">Save memory on run from Steam</string>
     <string name="present_mode">Present Mode</string>
+    <!-- Winlator S11: container settings -->
+    <string name="s11_cs_save">Save</string>
+    <string name="s11_cs_create">Create</string>
+    <string name="s11_cs_footer_hint">Changes apply the next time this container starts.</string>
+    <string name="s11_cs_name_desc">Shown in the container list and on shortcuts.</string>
+    <string name="s11_cs_screen_size_desc">The size of the Windows desktop. Native uses the whole screen of this device.</string>
+    <string name="s11_cs_wine_version_desc">Chosen when the container is created.</string>
+    <string name="s11_cs_graphics">Graphics and sound</string>
+    <string name="s11_cs_graphics_driver_desc">How Vulkan and OpenGL reach the GPU. The default suits most programs.</string>
+    <string name="s11_cs_dxwrapper">DirectX</string>
+    <string name="s11_cs_dxwrapper_desc">What runs Direct3D for games and 3D programs.</string>
+    <string name="s11_cs_hud_desc">Frame rate and GPU load over the picture.</string>
+    <string name="s11_cs_audio_desc">PulseAudio works for most programs.</string>
+    <string name="s11_cs_theme_desc">Light or dark windows and menus.</string>
+    <string name="s11_cs_background_desc">A picture or a single colour behind the windows.</string>
+    <string name="s11_cs_system_font_desc">The font of title bars and menus.</string>
+    <string name="s11_cs_dpi_desc">Bigger text and controls in Windows programs. 144 dpi (150%) suits a tablet screen.</string>
+    <string name="s11_cs_mouse_warp">Mouse warp (DirectInput)</string>
+    <string name="s11_cs_mouse_warp_desc">For games that turn the camera with the mouse. Use Force if the view spins or stops.</string>
+    <string name="s11_cs_components">Windows components</string>
+    <string name="s11_cs_components_desc">Builtin uses Wine\'s own version, Native the one from Windows. Change these only when a program needs it.</string>
+    <string name="s11_cs_drives_desc">Android folders that appear as drives in Windows. C: is the container itself and Z: the Linux side.</string>
+    <string name="s11_cs_add_drive">Add drive</string>
+    <string name="s11_cs_env_vars_desc">Variables passed to every program in this container.</string>
+    <string name="s11_cs_add_env_var">Add variable</string>
+    <string name="s11_cs_windows_version_desc">The Windows version programs see.</string>
+    <string name="s11_cs_startup_desc">Fewer services start faster and use less memory.</string>
+    <string name="s11_cs_box64_desc">Speed against compatibility for running x86 programs.</string>
+    <string name="s11_cs_cpu">Processor</string>
+    <string name="s11_cs_cpu_desc">Cores the programs may run on.</string>
+    <string name="s11_containers_empty">No containers yet. Tap + at the top to make one.</string>
 </resources>

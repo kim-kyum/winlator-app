@@ -34,13 +34,13 @@ public class SeekBar extends AppCompatImageView {
     private float normalizedValue = 0;
     private OnValueChangeListener onValueChangeListener;
     private float textSize = UnitUtils.dpToPx(16);
-    private final int textColor = 0xff737373;
+    private final int textColor;
     private final float barHeight = UnitUtils.dpToPx(6);
     private final float thumbSize = UnitUtils.dpToPx(20);
     private final float thumbRadius;
     private final RectF rect = new RectF();
     private String suffix;
-    private final int colorPrimary = 0xffd7d7d7;
+    private final int colorPrimary;
     private final int colorSecondary;
     private LinearGradient glossyEffectGradient;
 
@@ -59,6 +59,9 @@ public class SeekBar extends AppCompatImageView {
     public SeekBar(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         colorSecondary = AppUtils.getThemeColor(context, R.attr.colorAccent);
+        // Winlator S11: the track and the value follow the light or dark theme
+        colorPrimary = AppUtils.getThemeColor(context, R.attr.colorSecondaryVariant);
+        textColor = AppUtils.getThemeColor(context, R.attr.colorPrimaryText);
 
         if (attrs != null) {
             TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.SeekBar, 0, 0);
@@ -205,17 +208,10 @@ public class SeekBar extends AppCompatImageView {
         paint.setColor(colorSecondary);
         canvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint);
 
-        rect.right = width - textWidth;
-        if (glossyEffectGradient == null) {
-            glossyEffectGradient = new LinearGradient(0, 0, 0, height, new int[]{0x33ffffff, 0x00000000}, new float[]{0.5f, 0.5f}, Shader.TileMode.CLAMP);
-        }
-        paint.setShader(glossyEffectGradient);
-        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint);
-        paint.setShader(null);
-
+        // Winlator S11: a flat thumb with a light centre, as in Windows 11
         canvas.drawCircle(screenCoord, centerY, thumbRadius, paint);
-        paint.setColor(getThumbHoleColor());
-        canvas.drawCircle(screenCoord, centerY, thumbRadius * 0.5f, paint);
+        paint.setColor(0xffffffff);
+        canvas.drawCircle(screenCoord, centerY, thumbRadius * 0.4f, paint);
     }
 
     private int getThumbHoleColor() {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Winlator S11: a tagged selection box without the settings button next to it -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true" android:drawable="@drawable/s11_combo_pressed" />
+    <item android:drawable="@drawable/s11_combo_normal" />
+</selector>

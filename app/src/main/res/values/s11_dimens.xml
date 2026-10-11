@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Winlator S11: settings pages -->
+    <dimen name="s11_control_width">320dp</dimen>
+    <dimen name="s11_side_nav_width">272dp</dimen>
+    <dimen name="s11_content_max_width">880dp</dimen>
+</resources>
