@@ -20,11 +20,11 @@ TOP_LEFT = (0x5C, 0xC0, 0xFF)
 BOTTOM_RIGHT = (0x56, 0x8C, 0xFF)
 
 
-# The panes in units of 1/100 of the tile: (left, top, right, bottom), opacity
+# The panes in units of 1/100 of the tile: (left, top, right, bottom), fill colour
 PANES = [
-    ((14, 44, 50, 84), 70),
-    ((28, 31, 66, 71), 140),
-    ((44, 16, 86, 58), 255),
+    ((14, 44, 50, 84), (0x55, 0xA7, 0xFF, 255)),
+    ((28, 31, 66, 71), (0x9A, 0xD5, 0xFF, 255)),
+    ((44, 16, 86, 58), (0xFF, 0xFF, 0xFF, 255)),
 ]
 PANE_RADIUS = 8
 TITLE_BAR = (11, 3.2)   # the gap under the front pane's title bar: offset from its top, height
@@ -41,11 +41,11 @@ def render(size, tile=True):
         ImageDraw.Draw(mask).rounded_rectangle([0, 0, big - 1, big - 1], radius=round(big * 0.23), fill=255)
         image.paste(gradient_image(big), (0, 0), mask)
 
-    for i, ((left, top, right, bottom), alpha) in enumerate(PANES):
+    for i, ((left, top, right, bottom), color) in enumerate(PANES):
         layer = Image.new("RGBA", (big, big), (0, 0, 0, 0))
         draw = ImageDraw.Draw(layer)
         draw.rounded_rectangle([left * u, top * u, right * u, bottom * u], radius=PANE_RADIUS * u,
-                               fill=(255, 255, 255, alpha))
+                               fill=color)
         if i == len(PANES) - 1:
             y = top + TITLE_BAR[0]
             draw.rectangle([left * u, y * u, right * u, (y + TITLE_BAR[1]) * u], fill=(0, 0, 0, 0))

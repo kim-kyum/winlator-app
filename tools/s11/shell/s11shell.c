@@ -502,7 +502,8 @@ static void notify_tray_owner(struct tray_icon *icon, UINT msg, POINT screen_pt)
 /* Taskbar layout and painting                                                              */
 /* ---------------------------------------------------------------------------------------- */
 
-enum part_kind { PART_START, PART_SEARCH, PART_TASK, PART_TRAY, PART_CLOCK, PART_DESKTOP };
+enum part_kind { PART_START, PART_SEARCH, PART_TASK, PART_TRAY, PART_CLOCK, PART_DESKTOP,
+                 PART_LANGUAGE, PART_OVERFLOW, PART_NETWORK, PART_BLUETOOTH };
 
 struct part {
     enum part_kind kind;
@@ -510,7 +511,7 @@ struct part {
     RECT rc;
 };
 
-#define MAX_PARTS (MAX_TASKS + MAX_TRAY + 8)
+#define MAX_PARTS (MAX_TASKS + MAX_TRAY + 12)
 static struct part parts[MAX_PARTS];
 static int part_count;
 static int hot_part = -1, pressed_part = -1;
@@ -566,6 +567,14 @@ static void layout_taskbar(void)
     clock_w = max(text_width(small_font, clock_time), text_width(small_font, clock_date)) + SC(20);
     add_part(PART_CLOCK, 0, x - clock_w, top, x, top + height);
     x -= clock_w + SC(2);
+    add_part(PART_BLUETOOTH, 0, x - SC(28), top, x, top + height);
+    x -= SC(28);
+    add_part(PART_NETWORK, 0, x - SC(28), top, x, top + height);
+    x -= SC(28);
+    add_part(PART_OVERFLOW, 0, x - SC(24), top, x, top + height);
+    x -= SC(24);
+    add_part(PART_LANGUAGE, 0, x - SC(34), top, x, top + height);
+    x -= SC(34);
     for (i = tray_count - 1; i >= 0; i--) {
         if (trays[i].hidden || !trays[i].icon) continue;
         add_part(PART_TRAY, i, x - SC(32), top, x, top + height);
@@ -644,6 +653,19 @@ static void paint_taskbar(HDC hdc)
             draw_text(&c, clock_date, &bottom_rc, small_font, pal.text, DT_CENTER | DT_TOP | DT_SINGLELINE);
             break;
         }
+        case PART_LANGUAGE:
+            draw_text(&c, korean ? L"한" : L"EN", &rc, small_font, pal.text,
+                      DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+            break;
+        case PART_OVERFLOW:
+            draw_overflow_glyph(&c, (float)cx, (float)cy, (float)SC(14), pal.text);
+            break;
+        case PART_NETWORK:
+            draw_wifi_glyph(&c, (float)cx, (float)cy, (float)SC(17), pal.text);
+            break;
+        case PART_BLUETOOTH:
+            draw_bluetooth_glyph(&c, (float)cx, (float)cy, (float)SC(17), pal.text);
+            break;
         case PART_DESKTOP:
             break;
         }
@@ -701,6 +723,10 @@ static void show_tip(int part)
         break;
     }
     case PART_DESKTOP: lstrcpyW(tip_text, TR(L"바탕 화면 보기", L"Show desktop")); break;
+    case PART_LANGUAGE: lstrcpyW(tip_text, TR(L"입력 언어", L"Input language")); break;
+    case PART_OVERFLOW: lstrcpyW(tip_text, TR(L"백그라운드 앱", L"Background apps")); break;
+    case PART_NETWORK: lstrcpyW(tip_text, TR(L"네트워크 설정", L"Network settings")); break;
+    case PART_BLUETOOTH: lstrcpyW(tip_text, TR(L"Bluetooth 설정", L"Bluetooth settings")); break;
     }
     if (!tip_text[0]) return;
 
@@ -1400,7 +1426,7 @@ static void scan_apps(void)
     else if (GetFileAttributesW(wfm) != INVALID_FILE_ATTRIBUTES)
         add_builtin(TR(L"파일 탐색기", L"File Explorer"), wfm, NULL);
 
-    add_builtin(TR(L"명령 프롬프트", L"Command Prompt"), L"cmd.exe", L"/k cd /d C:\\");
+    add_builtin(TR(L"명령 프롬프트", L"Command Prompt"), L"cmd.exe", NULL);
     add_builtin(TR(L"메모장", L"Notepad"), L"notepad.exe", NULL);
     add_builtin(TR(L"작업 관리자", L"Task Manager"), L"taskmgr.exe", NULL);
     add_builtin(TR(L"제어판", L"Control Panel"), L"control.exe", NULL);
@@ -1724,7 +1750,10 @@ static void launch_item(int item)
     }
     {
         struct app *app = &apps[shown[run_item ? item - 1 : item]];
-        run(app->path, app->args[0] ? app->args : NULL);
+        const WCHAR *exe = wcsrchr(app->path, L'\\');
+        exe = exe ? exe + 1 : app->path;
+        if (!lstrcmpiW(exe, L"cmd.exe")) run_in_directory(app->path, NULL, L"C:\\");
+        else run(app->path, app->args[0] ? app->args : NULL);
     }
 }
 
@@ -1991,6 +2020,29 @@ static void taskbar_menu(POINT screen_pt)
     else if (cmd == 3) open_settings(L"personalization");
 }
 
+static void show_hidden_trays(POINT screen_pt)
+{
+    HMENU menu = CreatePopupMenu();
+    int i, selected;
+    if (!menu) return;
+    for (i = 0; i < tray_count; i++) {
+        if (!trays[i].hidden || !trays[i].icon) continue;
+        AppendMenuW(menu, MF_STRING, (UINT_PTR)(i + 1),
+                    trays[i].tip[0] ? trays[i].tip : TR(L"백그라운드 앱", L"Background app"));
+    }
+    if (GetMenuItemCount(menu) == 0)
+        AppendMenuW(menu, MF_GRAYED | MF_STRING, 0, TR(L"숨겨진 앱이 없어요", L"No hidden apps"));
+    SetForegroundWindow(taskbar);
+    selected = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_BOTTOMALIGN | TPM_RIGHTALIGN,
+                              screen_pt.x, screen_pt.y, 0, taskbar, NULL);
+    PostMessageW(taskbar, WM_NULL, 0, 0);
+    DestroyMenu(menu);
+    if (selected > 0 && selected <= tray_count) {
+        struct tray_icon *icon = &trays[selected - 1];
+        notify_tray_owner(icon, NIN_SELECT, screen_pt);
+    }
+}
+
 static void click_part(int index)
 {
     struct part *p = &parts[index];
@@ -2009,6 +2061,21 @@ static void click_part(int index)
         break;
     case PART_CLOCK:
         toggle_calendar();
+        break;
+    case PART_LANGUAGE:
+        run(L"control.exe", L"intl.cpl");
+        break;
+    case PART_OVERFLOW: {
+        POINT pt = {parts[index].rc.right, parts[index].rc.top};
+        ClientToScreen(taskbar, &pt);
+        show_hidden_trays(pt);
+        break;
+    }
+    case PART_NETWORK:
+        send_winlator_request(WINLATOR_WIFI_PANEL);
+        break;
+    case PART_BLUETOOTH:
+        send_winlator_request(WINLATOR_BLUETOOTH_PANEL);
         break;
     default:
         break;

@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -341,6 +342,11 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     @Override
     public void onResume() {
         super.onResume();
+        // Samsung may restore the activity without issuing a fresh focus callback. Re-arm the
+        // system Meta-key route after resume as well, once the decor window is attached.
+        getWindow().getDecorView().post(() -> {
+            if (!isFinishing() && hasWindowFocus()) MetaKeyCapture.request(this, true);
+        });
         if (environment != null) {
             xServerView.onResume();
             environment.onResume();
@@ -564,6 +570,21 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         runOnUiThread(() -> {
             if (container == null || isFinishing()) return;
             if (S11Settings.apply(this, container, code, value)) container.saveData();
+        });
+    }
+    /** Opens the matching Android system panel from the S11 taskbar status area. */
+    public void onS11StatusPanel(boolean bluetooth) {
+        runOnUiThread(() -> {
+            if (isFinishing()) return;
+            String panel = bluetooth ? Settings.Panel.ACTION_BLUETOOTH : Settings.Panel.ACTION_WIFI;
+            String fallback = bluetooth ? Settings.ACTION_BLUETOOTH_SETTINGS : Settings.ACTION_WIFI_SETTINGS;
+            try {
+                startActivity(new Intent(panel));
+            }
+            catch (Exception e) {
+                try { startActivity(new Intent(fallback)); }
+                catch (Exception ignored) {}
+            }
         });
     }
 

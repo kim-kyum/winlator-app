@@ -39,6 +39,8 @@ static BOOL korean;
 #define WINLATOR_PORT 7947
 #define WINLATOR_SHUTDOWN 100
 #define WINLATOR_RESTART 101
+#define WINLATOR_WIFI_PANEL 105
+#define WINLATOR_BLUETOOTH_PANEL 106
 
 struct palette {
     COLORREF bar, bar_border, text, text_dim, accent, indicator;
@@ -182,8 +184,8 @@ static GpPen *make_pen(ARGB color, float width)
 /* The S11 mark (tools/s11/branding/make_logo.py): three windows rising to the upper right */
 static void draw_logo(struct canvas *c, float cx, float cy, float size)
 {
-    static const struct { float left, top, right, bottom; BYTE alpha; } panes[] = {
-        {14, 44, 50, 84, 70}, {28, 31, 66, 71, 140}, {44, 16, 86, 58, 255},
+    static const struct { float left, top, right, bottom; ARGB color; } panes[] = {
+        {14, 44, 50, 84, 0xff55a7ff}, {28, 31, 66, 71, 0xff9ad5ff}, {44, 16, 86, 58, 0xffffffff},
     };
     float x = cx - size / 2, y = cy - size / 2, u = size / 100;
     GpPointF p1 = {x, y}, p2 = {x + size, y + size};
@@ -197,7 +199,7 @@ static void draw_logo(struct canvas *c, float cx, float cy, float size)
 
     for (i = 0; i < ARRAY_SIZE(panes); i++) {
         GpSolidFill *brush;
-        GdipCreateSolidFill(((ARGB)panes[i].alpha << 24) | 0xffffff, &brush);
+        GdipCreateSolidFill(panes[i].color, &brush);
         path = round_rect_path(x + panes[i].left * u, y + panes[i].top * u, (panes[i].right - panes[i].left) * u,
                                (panes[i].bottom - panes[i].top) * u, 8 * u);
         GdipFillPath(c->g, (GpBrush *)brush, path);
@@ -254,6 +256,42 @@ static void draw_folder_glyph(struct canvas *c, float cx, float cy, float size, 
     GdipDeletePen(pen);
 }
 
+static void draw_wifi_glyph(struct canvas *c, float cx, float cy, float size, COLORREF color)
+{
+    GpPen *pen = make_pen(argb(color, 255), size * 0.10f);
+    float r = size * 0.43f;
+    GdipDrawArc(c->g, pen, cx - r, cy - r * 0.62f, r * 2, r * 1.55f, 220, 100);
+    r = size * 0.27f;
+    GdipDrawArc(c->g, pen, cx - r, cy - r * 0.38f, r * 2, r * 1.10f, 220, 100);
+    GdipDeletePen(pen);
+    {
+        GpSolidFill *brush;
+        float d = size * 0.14f;
+        GdipCreateSolidFill(argb(color, 255), &brush);
+        GdipFillEllipse(c->g, (GpBrush *)brush, cx - d / 2, cy + size * 0.27f, d, d);
+        GdipDeleteBrush((GpBrush *)brush);
+    }
+}
+
+static void draw_bluetooth_glyph(struct canvas *c, float cx, float cy, float size, COLORREF color)
+{
+    GpPen *pen = make_pen(argb(color, 255), size * 0.10f);
+    GdipDrawLine(c->g, pen, cx, cy - size * 0.46f, cx, cy + size * 0.46f);
+    GdipDrawLine(c->g, pen, cx, cy - size * 0.46f, cx + size * 0.32f, cy - size * 0.16f);
+    GdipDrawLine(c->g, pen, cx + size * 0.32f, cy - size * 0.16f, cx - size * 0.30f, cy + size * 0.34f);
+    GdipDrawLine(c->g, pen, cx - size * 0.30f, cy - size * 0.34f, cx + size * 0.32f, cy + size * 0.16f);
+    GdipDrawLine(c->g, pen, cx + size * 0.32f, cy + size * 0.16f, cx, cy + size * 0.46f);
+    GdipDeletePen(pen);
+}
+
+static void draw_overflow_glyph(struct canvas *c, float cx, float cy, float size, COLORREF color)
+{
+    GpPen *pen = make_pen(argb(color, 255), size * 0.11f);
+    GdipDrawLine(c->g, pen, cx - size * 0.30f, cy - size * 0.06f, cx, cy + size * 0.20f);
+    GdipDrawLine(c->g, pen, cx, cy + size * 0.20f, cx + size * 0.30f, cy - size * 0.06f);
+    GdipDeletePen(pen);
+}
+
 static void draw_text(struct canvas *c, const WCHAR *text, RECT *rc, HFONT font, COLORREF color, UINT flags)
 {
     HFONT old;
@@ -296,6 +334,11 @@ static void send_winlator_request(BYTE code)
 static void run(const WCHAR *file, const WCHAR *args)
 {
     ShellExecuteW(NULL, NULL, file, args, NULL, SW_SHOWNORMAL);
+}
+
+static void run_in_directory(const WCHAR *file, const WCHAR *args, const WCHAR *directory)
+{
+    ShellExecuteW(NULL, NULL, file, args, directory, SW_SHOWNORMAL);
 }
 
 /* Our programs sit next to s11shell.exe (Z:\usr\share\s11\shell in the rootfs) */

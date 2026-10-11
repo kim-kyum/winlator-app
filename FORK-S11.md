@@ -49,7 +49,8 @@ The Wine desktop is set up to look like Windows 10/11 rather than Windows 95:
 headers, `build.sh`; the exe ships in the rootfs overlay) that replaces explorer.exe's
 taskbar on the desktop session: centred program buttons with icons and tooltips, the
 notification area (it answers Wine's `Shell_NotifyIcon` messages as `Shell_TrayWnd`), a
-clock, and a start menu with every installed program, search (Hangul initial consonants
+clock, input-language indicator and quick links for hidden background icons, Wi-Fi and
+Bluetooth, and a start menu with every installed program, search (Hangul initial consonants
 too) and Shut down / Restart, which go to the app over winhandler's UDP port. The Windows
 key opens it; Win+D shows the desktop, Win+E the file manager, Win+I the settings.
 Maximized windows are kept above it, and it steps aside for fullscreen programs. The icons
@@ -73,6 +74,9 @@ start menu has shut down and restart); Ctrl+Alt+Del still opens the power menu. 
 shell is enabled, the redundant Android power tab is hidden even when a program is launched
 from a shortcut. Session restart/exit transitions are guarded against duplicate callbacks.
 The Command Prompt starts in `C:\`.
+Wi-Fi and Bluetooth launch the Android system panels; the language indicator opens the
+Wine locale control panel. The overflow menu exposes notification icons marked hidden by
+their owning Windows applications.
 
 Wine gets the device's time zone as a POSIX TZ string (`TimeZones`): the rootfs has no
 zone database, so it ran on UTC. The Windows keys now
