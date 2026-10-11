@@ -7,17 +7,17 @@
     android:clickable="false"
     android:focusable="false">
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingTop="22dp"
-        android:paddingBottom="22dp"
-        android:paddingLeft="32dp"
-        android:paddingRight="32dp"
-        android:layout_gravity="center"
-        android:gravity="right"
-        android:background="?attr/preloaderBackground">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="22dp"
+            android:paddingBottom="22dp"
+            android:paddingLeft="32dp"
+            android:paddingRight="32dp"
+            android:layout_gravity="center"
+            android:gravity="right"
+            android:background="@drawable/s11_card">
 
         <LinearLayout
             android:layout_width="wrap_content"

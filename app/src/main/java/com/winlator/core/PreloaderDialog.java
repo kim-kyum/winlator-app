@@ -2,6 +2,7 @@ package com.winlator.core;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.view.LayoutInflater;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -18,16 +19,23 @@ public class PreloaderDialog {
 
     private void create() {
         if (dialog != null) return;
-        dialog = new Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
+        // Inherit the activity's current S11 light/dark theme instead of forcing
+        // Android's old translucent fullscreen dialog theme.
+        dialog = new Dialog(activity);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
-        dialog.setContentView(R.layout.preloader_dialog);
+        dialog.setContentView(LayoutInflater.from(activity).inflate(R.layout.preloader_dialog, null));
 
         Window window = dialog.getWindow();
         if (window != null) {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-            window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.dimAmount = 0.42f;
+            window.setAttributes(params);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
         }
     }
 
@@ -37,6 +45,10 @@ public class PreloaderDialog {
         if (dialog == null) create();
         ((TextView)dialog.findViewById(R.id.TextView)).setText(textResId);
         dialog.show();
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+        }
     }
 
     public void showOnUiThread(final int textResId) {
