@@ -16,8 +16,8 @@ import sys
 
 from PIL import Image, ImageDraw, ImageFont
 
-TOP_LEFT = (0x2F, 0x7B, 0xFF)
-BOTTOM_RIGHT = (0x7B, 0x5C, 0xFF)
+TOP_LEFT = (0x5C, 0xC0, 0xFF)
+BOTTOM_RIGHT = (0x56, 0x8C, 0xFF)
 
 
 # The panes in units of 1/100 of the tile: (left, top, right, bottom), opacity
@@ -164,11 +164,11 @@ def android(res, font_path):
         foreground.paste(art, (offset, offset), art)
         foreground.save(os.path.join(folder, "ic_launcher_foreground.png"))
 
-    # drawer header wordmark: the mark and "Winlator S11" in white
+    # drawer header wordmark: the mark and "S11 Workspace" in white
     height = 208
     mark = render(height)
     font = ImageFont.truetype(font_path, round(height * 0.42))
-    text = "Winlator S11"
+    text = "S11 Workspace"
     width = height + round(height * 0.22) + round(font.getlength(text)) + 8
     logo = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     logo.paste(mark, (0, 0), mark)

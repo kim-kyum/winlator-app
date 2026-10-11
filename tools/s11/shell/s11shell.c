@@ -32,6 +32,7 @@ static ULONG_PTR gdiplus_token;
 #define WM_APP_FILES (WM_APP + 5)
 #define WM_APP_SETTINGS (WM_APP + 6)
 #define WM_APP_TASK_MANAGER (WM_APP + 7)
+#define WM_APP_SWITCH_TASK (WM_APP + 8)
 
 static UINT settings_changed_msg;   /* "WinlatorS11SettingsChanged", posted by s11settings.exe */
 static BOOL align_left;             /* taskbar icons on the left instead of in the middle */
@@ -133,10 +134,10 @@ static HICON window_icon(HWND hwnd)
 {
     DWORD_PTR result = 0;
     HICON icon;
-
+    /* Wine often supplies its generic legacy icon even when the executable has a newer one. */
+    if ((icon = program_icon(hwnd))) return icon;
     if (SendMessageTimeoutW(hwnd, WM_GETICON, ICON_BIG, 0, SMTO_ABORTIFHUNG, 150, &result) && result)
         return (HICON)result;
-    if ((icon = program_icon(hwnd))) return icon;
     if (SendMessageTimeoutW(hwnd, WM_GETICON, ICON_SMALL2, 0, SMTO_ABORTIFHUNG, 150, &result) && result)
         return (HICON)result;
     if ((result = GetClassLongPtrW(hwnd, GCLP_HICON))) return (HICON)result;
@@ -229,6 +230,21 @@ static void activate_task(HWND hwnd)
     }
     SetForegroundWindow(hwnd);
     BringWindowToTop(hwnd);
+}
+
+static void switch_task(int direction)
+{
+    int i, current = -1;
+    if (task_count < 2) return;
+    for (i = 0; i < task_count; i++) {
+        if (tasks[i].hwnd == active_task) {
+            current = i;
+            break;
+        }
+    }
+    if (current < 0) current = direction > 0 ? -1 : 0;
+    i = (current + direction + task_count) % task_count;
+    activate_task(tasks[i].hwnd);
 }
 
 static void toggle_show_desktop(void)
@@ -1384,7 +1400,7 @@ static void scan_apps(void)
     else if (GetFileAttributesW(wfm) != INVALID_FILE_ATTRIBUTES)
         add_builtin(TR(L"파일 탐색기", L"File Explorer"), wfm, NULL);
 
-    add_builtin(TR(L"명령 프롬프트", L"Command Prompt"), L"cmd.exe", NULL);
+    add_builtin(TR(L"명령 프롬프트", L"Command Prompt"), L"cmd.exe", L"/k cd /d C:\\");
     add_builtin(TR(L"메모장", L"Notepad"), L"notepad.exe", NULL);
     add_builtin(TR(L"작업 관리자", L"Task Manager"), L"taskmgr.exe", NULL);
     add_builtin(TR(L"제어판", L"Control Panel"), L"control.exe", NULL);
@@ -1653,7 +1669,7 @@ static void paint_menu(HDC hdc)
     fill_rect(&c, 1, menu_h - SC(64) + 1, client.right - 2, SC(64) - 2, argb(pal.bar, 255));
     draw_logo(&c, (float)(SC(32) + SC(14)), (float)(menu_h - SC(32)), (float)SC(28));
     SetRect(&rc, SC(32) + SC(38), menu_h - SC(64), files_rc.left - SC(8), menu_h);
-    draw_text(&c, L"Winlator S11", &rc, ui_font, pal.text, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    draw_text(&c, L"S11 Workspace", &rc, ui_font, pal.text, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 
     if (menu_hot == MENU_FILES) fill_round_rect(&c, &files_rc, (float)SC(4), pal.hover);
     if (menu_hot == MENU_SETTINGS) fill_round_rect(&c, &settings_rc, (float)SC(4), pal.hover);
@@ -2026,6 +2042,10 @@ static LRESULT CALLBACK taskbar_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_CREATE:
         taskbar_created = RegisterWindowMessageW(L"TaskbarCreated");
         return 0;
+    case WM_APP_SWITCH_TASK:
+        scan_windows();
+        switch_task((int)(INT_PTR)wp);
+        return 0;
     default:
         if (msg == settings_changed_msg && msg) {
             read_settings();
@@ -2183,6 +2203,11 @@ static LRESULT CALLBACK keyboard_hook(int code, WPARAM wp, LPARAM lp)
             /* Ctrl+Shift+Esc: Task Manager; Ctrl+Esc: Start (when the Windows key can't be used) */
             if (GetAsyncKeyState(VK_SHIFT) < 0) PostMessageW(taskbar, WM_APP_TASK_MANAGER, 0, 0);
             else PostMessageW(taskbar, WM_APP_TOGGLE_START, 0, 0);
+            return 1;
+        }
+        else if (key->vkCode == VK_TAB && GetAsyncKeyState(VK_MENU) < 0) {
+            if (down) PostMessageW(taskbar, WM_APP_SWITCH_TASK,
+                                   GetAsyncKeyState(VK_SHIFT) < 0 ? (WPARAM)-1 : (WPARAM)1, 0);
             return 1;
         }
         else if (down && win_down) {

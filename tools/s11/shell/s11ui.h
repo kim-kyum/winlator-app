@@ -191,7 +191,7 @@ static void draw_logo(struct canvas *c, float cx, float cy, float size)
     GpPath *path = round_rect_path(x, y, size, size, size * 0.23f);
     int i;
 
-    GdipCreateLineBrush(&p1, &p2, 0xff2f7bff, 0xff7b5cff, WrapModeTile, &gradient);
+    GdipCreateLineBrush(&p1, &p2, 0xff5cc0ff, 0xff568cff, WrapModeTile, &gradient);
     GdipFillPath(c->g, (GpBrush *)gradient, path);
     GdipDeletePath(path);
 

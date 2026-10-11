@@ -1,4 +1,4 @@
-# Winlator S11
+# S11 Workspace
 
 Winlator tuned for the Galaxy Tab S11 (Dimensity 9400+, Mali Immortalis-G925,
 2560×1600). It installs next to the official Winlator, so existing containers
@@ -6,7 +6,7 @@ there stay untouched.
 
 ## How it differs from upstream
 
-- Application id `com.winlatab` (official: `com.winlator`), app name "Winlator S11".
+- Application id `com.winlatab` (official: `com.winlator`), app name "S11 Workspace".
 - The id must stay exactly 12 characters: `tools/s11/patch_assets.py` rewrites the
   install path `/data/data/com.winlator` inside the bundled rootfs, Box64 and
   driver archives byte-for-byte at build time. The same path is changed in
@@ -39,6 +39,9 @@ The Wine desktop is set up to look like Windows 10/11 rather than Windows 95:
   1280×800/96 dpi defaults move there once.
 - **Wallpaper**: an original S11 wallpaper (`tools/s11/theme/make_wallpaper.py`),
   rendered at the screen's size instead of 480 px tall.
+- **Product identity**: the Android app is named "S11 Workspace"; the S11 mark now uses
+  a brighter Windows 11-style blue gradient. The upstream Winlator origin and its licence
+  notices remain documented and intact.
 
 ## Taskbar and start menu
 
@@ -62,10 +65,14 @@ only restacks a window in X when it becomes the very top one, so windows that op
 covered the taskbar. When a window is resized the X server now keeps its contents until the
 program repaints (it showed black meanwhile, flickering while resizing).
 
-The clock opens a calendar. Ctrl+Esc opens Start and Ctrl+Shift+Esc the Task Manager; on
+The clock opens a calendar. Alt+Tab switches between open windows; Shift+Alt+Tab reverses
+the order. Ctrl+Esc opens Start and Ctrl+Shift+Esc the Task Manager; on
 Samsung devices the Windows key itself reaches the container (`MetaKeyCapture`, One UI
 keeps it otherwise). The power tab at the top of the screen is gone on the S11 desktop (the
-start menu has shut down and restart); Ctrl+Alt+Del still opens the power menu.
+start menu has shut down and restart); Ctrl+Alt+Del still opens the power menu. When the S11
+shell is enabled, the redundant Android power tab is hidden even when a program is launched
+from a shortcut. Session restart/exit transitions are guarded against duplicate callbacks.
+The Command Prompt starts in `C:\`.
 
 Wine gets the device's time zone as a POSIX TZ string (`TimeZones`): the rootfs has no
 zone database, so it ran on UTC. The Windows keys now
@@ -85,13 +92,17 @@ Win+I, or the taskbar's menu:
 - **Apps**: installed programs from the Uninstall keys, with their icons; uninstall, or
   start an installer.
 - **Fonts**: installed scalable fonts with a preview; install .ttf/.otf/.ttc files.
-- **About**: Winlator S11 version, container, Wine, Windows, processor, memory, display.
+- **About**: S11 Workspace version, container, Wine, Windows, processor, memory, display.
 
 What Wine keeps in the registry it writes directly. Resolution, mode and background belong
 to the container in Winlator, so it sends them to winhandler's UDP port (codes 102-104,
 `S11Settings`), the app stores them in the container, and they apply when it restarts; a
 banner offers to restart right away. The S11 pictures are packed into the overlay from the
 app's assets by `build_overlay.py`.
+
+The display size is fixed when the X server starts (`XServer.screenInfo` is immutable), so a
+resolution change still requires restarting the container; changing it live needs coordinated
+X-server, renderer, Wine desktop and window-manager resize support.
 
 Licences: the visual style and Marlett come from Wine (LGPL 2.1); S11 Sans keeps
 Selawik's OFL (`S11Sans-OFL.txt` next to the fonts).

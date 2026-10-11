@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Winlator S11: Korean. Strings marked translatable="false" in values/ stay English. -->
-    <string name="app_name">Winlator S11</string>
+    <string name="app_name">S11 워크스페이스</string>
     <string name="run">실행</string>
     <string name="edit">편집</string>
     <string name="remove">삭제</string>

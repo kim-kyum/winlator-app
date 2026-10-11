@@ -115,6 +115,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.Executors;
 
 public class XServerDisplayActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -124,6 +125,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private boolean s11ImeEnabled;
     private PowerMenu powerMenu;
     private volatile boolean s11RestartRequested;
+    private final AtomicBoolean sessionTransitionStarted = new AtomicBoolean(false);
     private boolean s11ShellEnabled;
     private XEnvironment environment;
     private DrawerLayout drawerLayout;
@@ -577,6 +579,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
     /** Stops this container and starts the same container (or shortcut) again in a fresh process. */
     private void restartContainer() {
+        if (!sessionTransitionStarted.compareAndSet(false, true)) return;
         winHandler.stop();
         if (environment != null) environment.stopEnvironmentComponents();
         ForegroundService.stopSession(this);
@@ -588,6 +591,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     }
 
     private void exit() {
+        if (!sessionTransitionStarted.compareAndSet(false, true)) return;
         winHandler.stop();
         if (environment != null) environment.stopEnvironmentComponents();
 
@@ -664,9 +668,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         s11ShellEnabled = S11Shell.isEnabled(preferences, rootFS.getRootDir());
         if (S11Shell.configure(container, rootFS.getRootDir(), s11ShellEnabled)) containerDataChanged = true;
         // the S11 start menu shuts down and restarts, so the power tab is not needed there
-        final boolean s11Desktop = s11ShellEnabled && shortcut == null && !getIntent().hasExtra("exec_path");
+        // Shortcuts use a shell-less desktop too; do not leave the legacy Android power tab there.
+        final boolean hideLegacyPowerTab = s11ShellEnabled;
         runOnUiThread(() -> {
-            if (powerMenu != null) powerMenu.setTabWanted(!s11Desktop);
+            if (powerMenu != null) powerMenu.setTabWanted(!hideLegacyPowerTab);
         });
 
         if (containerDataChanged) container.saveData();

@@ -490,7 +490,7 @@ static void browse_wallpaper(void)
     ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_EXPLORER;
     if (!GetOpenFileNameW(&ofn)) return;
     if (!apply_wallpaper(file, L"user", TRUE))
-        MessageBoxW(main_window, TR(L"이 사진을 열 수 없어요.", L"This picture can't be opened."), L"Winlator S11", MB_ICONWARNING);
+        MessageBoxW(main_window, TR(L"이 사진을 열 수 없어요.", L"This picture can't be opened."), L"S11 Workspace", MB_ICONWARNING);
     InvalidateRect(main_window, NULL, FALSE);
 }
 
@@ -865,7 +865,7 @@ static void build_rows(void)
     lstrcpyW(r->detail, TR(L".ttf, .otf, .ttc 파일을 설치할 수 있어요.", L"You can install .ttf, .otf and .ttc files."));
     r->list_height = 300;
 
-    r = add_row(PAGE_ABOUT, L"Winlator S11", NULL);
+    r = add_row(PAGE_ABOUT, L"S11 Workspace", NULL);
     r->height = 96;
     r = add_row(PAGE_ABOUT, TR(L"사양", L"Specifications"), NULL);
     r->height = 184;
@@ -1019,7 +1019,7 @@ static void paint(HDC hdc)
     /* navigation */
     draw_logo(&c, (float)(SC(24) + SC(24)), (float)SC(58), (float)SC(48));
     SetRect(&rc, SC(84), SC(30), nav_w(), SC(58));
-    draw_text(&c, L"Winlator S11", &rc, title_font, pal.text, DT_LEFT | DT_BOTTOM | DT_SINGLELINE);
+    draw_text(&c, L"S11 Workspace", &rc, title_font, pal.text, DT_LEFT | DT_BOTTOM | DT_SINGLELINE);
     SetRect(&rc, SC(84), SC(60), nav_w(), SC(84));
     draw_text(&c, TR(L"설정", L"Settings"), &rc, small_font, pal.text_dim, DT_LEFT | DT_TOP | DT_SINGLELINE);
     for (i = 0; i < PAGE_COUNT; i++) {
