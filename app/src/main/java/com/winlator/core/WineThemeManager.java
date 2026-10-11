@@ -100,6 +100,11 @@ public abstract class WineThemeManager {
 
             // Winlator S11: visual style (light theme) and Windows 10 window metrics
             ModernLook.applyTheme(rootDir, registryEditor, themeInfo.theme == Theme.LIGHT);
+
+            // Winlator S11: the Settings app marks the background in use (s11settings.c)
+            String wallpaper = themeInfo.backgroundType != BackgroundType.IMAGE ? "" :
+                themeInfo.wallpaperId.equals("user-wallpaper") ? "user" : themeInfo.wallpaperId;
+            registryEditor.setStringValue("Software\\Winlator\\S11", "Wallpaper", wallpaper);
         }
     }
 

@@ -4,8 +4,10 @@
 Usage: python -I make_logo.py ico <out.ico>
        python -I make_logo.py png <size> <out.png> [--no-tile]
        python -I make_logo.py android <res dir> <bold font.ttf>
-The shell draws the same mark with GDI+ (draw_logo in tools/s11/shell/s11shell.c).
+       python -I make_logo.py settings-ico <out.ico>   (the Settings app: a gear in the same colours)
+The shell draws the same mark with GDI+ (draw_logo in tools/s11/shell/s11ui.h).
 """
+import math
 import os
 import sys
 
@@ -59,6 +61,54 @@ def render(size, tile=True):
     layer = Image.new("RGBA", (big, big), (0, 0, 0, 0))
     ribbon(layer, big, bezier((0.18, 0.72), (0.40, 0.30), (0.58, 0.78), (0.82, 0.30)), 0.085, 255)
     image = Image.alpha_composite(image, layer)
+    return image.resize((size, size), Image.LANCZOS)
+
+
+def gradient_image(big):
+    image = Image.new("RGBA", (big, big))
+    px = image.load()
+    for y in range(big):
+        for x in range(big):
+            t = (x + y) / (2 * (big - 1))
+            px[x, y] = tuple(round(TOP_LEFT[i] * (1 - t) + BOTTOM_RIGHT[i] * t) for i in range(3)) + (255,)
+    return image
+
+
+def gear(size):
+    """A gear with eight teeth in the S11 gradient, on a transparent background."""
+    ss = 4
+    big = size * ss
+    c = big / 2
+    teeth = 8
+    step = 2 * math.pi / teeth
+    r_out, r_root, r_hole = 0.48 * big, 0.37 * big, 0.155 * big
+
+    def polar(angle, radius):
+        return (c + radius * math.cos(angle), c + radius * math.sin(angle))
+
+    points = []
+    for i in range(teeth):
+        a = i * step - math.pi / 2
+        top, base = step * 0.19, step * 0.29
+        points += [polar(a - base, r_root), polar(a - top, r_out), polar(a + top, r_out), polar(a + base, r_root)]
+        for k in range(1, 10):   # the root between this tooth and the next
+            points.append(polar(a + base + (step - 2 * base) * k / 10, r_root))
+    mask = Image.new("L", (big, big), 0)
+    draw = ImageDraw.Draw(mask)
+    draw.polygon(points, fill=255)
+    draw.ellipse([c - r_hole, c - r_hole, c + r_hole, c + r_hole], fill=0)
+
+    image = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+    image.paste(gradient_image(big), (0, 0), mask)
+    # a lighter ring around the hole gives the flat gear some depth
+    ring = Image.new("L", (big, big), 0)
+    rd = ImageDraw.Draw(ring)
+    r1, r2 = 0.27 * big, r_hole
+    rd.ellipse([c - r1, c - r1, c + r1, c + r1], fill=70)
+    rd.ellipse([c - r2, c - r2, c + r2, c + r2], fill=0)
+    white = Image.new("RGBA", (big, big), (255, 255, 255, 0))
+    white.putalpha(ring)
+    image.alpha_composite(white)
     return image.resize((size, size), Image.LANCZOS)
 
 
@@ -127,10 +177,10 @@ def main():
         android(sys.argv[2], sys.argv[3])
         print("android icons written")
         return
-    if kind == "ico":
+    if kind in ("ico", "settings-ico"):
         out = sys.argv[2]
         sizes = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]
-        images = [render(s) for s in sizes]
+        images = [(gear if kind == "settings-ico" else render)(s) for s in sizes]
         images[-1].save(out, format="ICO", sizes=[(s, s) for s in sizes], append_images=images[:-1])
     else:
         size, out = int(sys.argv[2]), sys.argv[3]

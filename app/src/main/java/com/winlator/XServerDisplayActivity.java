@@ -103,6 +103,7 @@ import com.winlator.s11.LegacyBrowserCleanup;
 import com.winlator.s11.ModernLook;
 import com.winlator.s11.PowerMenu;
 import com.winlator.s11.RootfsOverlay;
+import com.winlator.s11.S11Settings;
 import com.winlator.s11.S11Shell;
 
 import org.json.JSONArray;
@@ -552,6 +553,14 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         });
     }
 
+    /** The S11 Settings app changed a setting Winlator keeps for the container (see S11Settings). */
+    public void onS11Setting(byte code, String value) {
+        runOnUiThread(() -> {
+            if (container == null || isFinishing()) return;
+            if (S11Settings.apply(this, container, code, value)) container.saveData();
+        });
+    }
+
     /**
      * Shuts Wine down the way Windows does: programs get WM_QUERYENDSESSION and may offer to
      * save first. Run through winhandler.exe so it happens inside this session's desktop. When
@@ -675,6 +684,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             String desktopName = shortcut != null || getIntent().hasExtra("exec_path") ? "nogui" : "shell";
             String guestExecutable = "wine explorer /desktop="+desktopName+","+xServer.screenInfo+" "+getWineStartCommand();
             guestProgramLauncherComponent.setGuestExecutable(guestExecutable);
+
+            // Winlator S11: shown on the About page of the S11 Settings app
+            envVars.put("S11_VERSION", AppUtils.getVersionName(this));
+            envVars.put("S11_CONTAINER", container.getName());
 
             envVars.putAll(container.getEnvVars());
             if (shortcut != null) envVars.putAll(shortcut.getExtra("envVars"));

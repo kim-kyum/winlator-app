@@ -409,6 +409,17 @@ public class WinHandler {
             case RequestCodes.S11_RESTART:
                 activity.onShellPowerRequest(requestCode == RequestCodes.S11_RESTART);
                 break;
+            case RequestCodes.S11_SET_SCREEN:
+            case RequestCodes.S11_SET_THEME:
+            case RequestCodes.S11_SET_WALLPAPER: {
+                // [code][ASCII value][NUL] in one datagram
+                int length = Math.max(0, receivePacket.getLength() - 1);
+                String value = new String(receiveData.array(), 1, length, StandardCharsets.US_ASCII);
+                int end = value.indexOf('\0');
+                if (end >= 0) value = value.substring(0, end);
+                activity.onS11Setting(requestCode, value.trim());
+                break;
+            }
             case RequestCodes.PRE_EXEC: {
                 int requestLength = receiveData.getInt();
                 boolean shouldExit = false;

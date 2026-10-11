@@ -27,4 +27,8 @@ abstract class RequestCodes {
     // Winlator S11 start menu (tools/s11/shell)
     public static final byte S11_SHUTDOWN = 100;
     public static final byte S11_RESTART = 101;
+    // Winlator S11 Settings: container settings that Winlator keeps (an ASCII value follows the code)
+    public static final byte S11_SET_SCREEN = 102;
+    public static final byte S11_SET_THEME = 103;
+    public static final byte S11_SET_WALLPAPER = 104;
 }

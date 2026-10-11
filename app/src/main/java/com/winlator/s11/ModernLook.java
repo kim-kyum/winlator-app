@@ -24,7 +24,8 @@ import java.io.File;
  *   the old defaults: on the 2560x1600 tablet panel that is sharper and the same size.
  */
 public final class ModernLook {
-    private static final String VERSION = "1";
+    // 2: no padded border (Wine leaves it unpainted, a black frame around resizable windows)
+    private static final String VERSION = "2";
     public static final String EXTRA_KEY = "s11ModernLook";
     private static final String DISPLAY_EXTRA_KEY = "s11Display";
 
@@ -73,6 +74,10 @@ public final class ModernLook {
         }
         else userRegistry.setStringValue(THEME_KEY, "ThemeActive", "0");
 
+        setWindowMetrics(userRegistry);
+    }
+
+    private static void setWindowMetrics(WineRegistryEditor userRegistry) {
         // Sizes at 96 dpi; Wine scales them with LogPixels
         setPixels(userRegistry, "CaptionHeight", 28);
         setPixels(userRegistry, "CaptionWidth", 46);
@@ -81,12 +86,13 @@ public final class ModernLook {
         setPixels(userRegistry, "MenuHeight", 19);
         setPixels(userRegistry, "MenuWidth", 19);
         setPixels(userRegistry, "BorderWidth", 1);
-        setPixels(userRegistry, "PaddedBorderWidth", 2);
+        // Windows 10 pads the frame by 4 px, but Wine does not paint the padding
+        setPixels(userRegistry, "PaddedBorderWidth", 0);
         setPixels(userRegistry, "ScrollWidth", 17);
         setPixels(userRegistry, "ScrollHeight", 17);
     }
 
-    /** Fonts, once per container. Returns true when the container data changed. */
+    /** Fonts and window metrics, once per container (VERSION). Returns true when the container data changed. */
     public static boolean applyIfNeeded(Container container, File rootDir) {
         if (VERSION.equals(container.getExtra(EXTRA_KEY))) return false;
 
@@ -106,6 +112,9 @@ public final class ModernLook {
             if (face == null || face.isEmpty() || face.equalsIgnoreCase(OLD_UI_FONT)) {
                 WineUtils.setSystemFont(registryEditor, UI_FONT);
             }
+
+            // containers set up by earlier builds have the padded border
+            setWindowMetrics(registryEditor);
         }
 
         try (WineRegistryEditor registryEditor = new WineRegistryEditor(systemRegFile)) {

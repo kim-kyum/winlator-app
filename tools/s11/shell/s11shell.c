@@ -9,320 +9,45 @@
  *  - notification area icons (the Shell_NotifyIcon protocol of Wine's shell32) and a clock;
  *  - a start menu with every installed program, search (also by Hangul initial consonants,
  *    e.g. "ㅋㅋㅇㅌ" finds 카카오톡) and Winlator's shut down / restart;
- *  - the Windows key opens the start menu; Win+D shows the desktop, Win+E the file manager;
+ *  - the Windows key opens the start menu; Win+D shows the desktop, Win+E the file manager,
+ *    Win+I the settings;
  *  - maximized windows are kept above the taskbar, and the taskbar steps aside for
- *    fullscreen programs.
+ *    fullscreen programs;
+ *  - the icons sit in the middle or on the left (S11 Settings, Personalization).
  *
  * Built with clang against Wine's headers and import libraries (see build.sh).
  */
-#define WIN32_LEAN_AND_MEAN
-#define COBJMACROS
-#include <winsock2.h>
-#include <windows.h>
-#include <windowsx.h>
-#include <shellapi.h>
-#include <shlobj.h>
-#include <commctrl.h>
-#include <winternl.h>
-#include <gdiplus.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <wchar.h>
-
-/* ---------------------------------------------------------------------------------------- */
-/* Basics                                                                                   */
-/* ---------------------------------------------------------------------------------------- */
-
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
-
-static UINT dpi = 96;
-static int SC(int value) { return MulDiv(value, (int)dpi, 96); }
-
-static BOOL korean;
-#define TR(ko, en) (korean ? (ko) : (en))
+#include "s11ui.h"
 
 static HINSTANCE instance;
 static HWND taskbar, start_menu, search_edit, tooltip;
 static HFONT ui_font, small_font, menu_title_font, search_font;
 static ULONG_PTR gdiplus_token;
 
-/* Messages Winlator understands on winhandler's UDP port (WinHandler.java) */
-#define WINLATOR_PORT 7947
-#define WINLATOR_SHUTDOWN 100
-#define WINLATOR_RESTART 101
 
 #define WM_APP_TOGGLE_START (WM_APP + 1)
 #define WM_APP_SHOW_DESKTOP (WM_APP + 2)
 #define WM_APP_RUN (WM_APP + 3)
 #define WM_APP_APPBAR (WM_APP + 4)
 #define WM_APP_FILES (WM_APP + 5)
+#define WM_APP_SETTINGS (WM_APP + 6)
+
+static UINT settings_changed_msg;   /* "WinlatorS11SettingsChanged", posted by s11settings.exe */
+static BOOL align_left;             /* taskbar icons on the left instead of in the middle */
+
+static void read_settings(void)
+{
+    DWORD value = 0, size = sizeof(value);
+    if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\Winlator\\S11", L"TaskbarAlignment", RRF_RT_REG_DWORD, NULL,
+                     &value, &size))
+        value = 0;
+    align_left = value == 1;
+}
 
 #define TIMER_POLL 1
 #define TIMER_CLOCK 2
 #define TIMER_TIP 3
 #define TIMER_ANNOUNCE 4
-
-struct palette {
-    COLORREF bar, bar_border, text, text_dim, accent, indicator;
-    COLORREF menu, menu_border, field, field_border;
-    ARGB hover, pressed, active;
-};
-
-static const struct palette light_palette = {
-    RGB(238, 241, 247), RGB(213, 217, 224), RGB(26, 26, 26), RGB(96, 96, 96), RGB(0, 95, 184), RGB(138, 138, 138),
-    RGB(243, 244, 248), RGB(200, 204, 212), RGB(255, 255, 255), RGB(214, 218, 224),
-    0x14000000, 0x0c000000, 0x0f000000
-};
-static const struct palette dark_palette = {
-    RGB(32, 32, 34), RGB(54, 54, 58), RGB(255, 255, 255), RGB(196, 196, 196), RGB(76, 194, 255), RGB(160, 160, 160),
-    RGB(40, 40, 43), RGB(70, 70, 74), RGB(52, 52, 56), RGB(78, 78, 82),
-    0x1affffff, 0x10ffffff, 0x14ffffff
-};
-static struct palette pal;
-
-static ARGB argb(COLORREF c, BYTE alpha)
-{
-    return ((ARGB)alpha << 24) | ((ARGB)GetRValue(c) << 16) | ((ARGB)GetGValue(c) << 8) | GetBValue(c);
-}
-
-static void choose_palette(void)
-{
-    COLORREF face = GetSysColor(COLOR_BTNFACE);
-    int luminance = (GetRValue(face) * 299 + GetGValue(face) * 587 + GetBValue(face) * 114) / 1000;
-    pal = luminance < 128 ? dark_palette : light_palette;
-}
-
-static HFONT make_font(int points_x10, int weight)
-{
-    LOGFONTW lf = {0};
-    lf.lfHeight = -MulDiv(points_x10, (int)dpi, 720);
-    lf.lfWeight = weight;
-    lf.lfCharSet = DEFAULT_CHARSET;
-    lf.lfQuality = CLEARTYPE_QUALITY;
-    lstrcpyW(lf.lfFaceName, L"Segoe UI");
-    return CreateFontIndirectW(&lf);
-}
-
-/* ---------------------------------------------------------------------------------------- */
-/* Drawing helpers (GDI+ for anti-aliased shapes, GDI for text and icons)                   */
-/* ---------------------------------------------------------------------------------------- */
-
-struct canvas {
-    HDC dc;
-    HBITMAP bitmap, old_bitmap;
-    GpGraphics *g;
-    int width, height;
-};
-
-static BOOL canvas_begin(struct canvas *c, HDC target, int width, int height)
-{
-    BITMAPINFO bmi = {{sizeof(BITMAPINFOHEADER), width, -height, 1, 32, BI_RGB}};
-    void *bits;
-
-    c->width = width;
-    c->height = height;
-    c->dc = CreateCompatibleDC(target);
-    c->bitmap = CreateDIBSection(target, &bmi, DIB_RGB_COLORS, &bits, NULL, 0);
-    if (!c->dc || !c->bitmap) return FALSE;
-    c->old_bitmap = SelectObject(c->dc, c->bitmap);
-    GdipCreateFromHDC(c->dc, &c->g);
-    GdipSetSmoothingMode(c->g, SmoothingModeAntiAlias);
-    GdipSetPixelOffsetMode(c->g, PixelOffsetModeHalf);
-    SetBkMode(c->dc, TRANSPARENT);
-    return TRUE;
-}
-
-static void canvas_end(struct canvas *c, HDC target, int x, int y)
-{
-    GdipFlush(c->g, FlushIntentionSync);
-    BitBlt(target, x, y, c->width, c->height, c->dc, 0, 0, SRCCOPY);
-    GdipDeleteGraphics(c->g);
-    SelectObject(c->dc, c->old_bitmap);
-    DeleteObject(c->bitmap);
-    DeleteDC(c->dc);
-}
-
-static GpPath *round_rect_path(float x, float y, float w, float h, float r)
-{
-    GpPath *path;
-    float d = r * 2;
-
-    GdipCreatePath(FillModeAlternate, &path);
-    if (r <= 0.5f) {
-        GdipAddPathRectangle(path, x, y, w, h);
-        return path;
-    }
-    GdipAddPathArc(path, x, y, d, d, 180, 90);
-    GdipAddPathArc(path, x + w - d, y, d, d, 270, 90);
-    GdipAddPathArc(path, x + w - d, y + h - d, d, d, 0, 90);
-    GdipAddPathArc(path, x, y + h - d, d, d, 90, 90);
-    GdipClosePathFigure(path);
-    return path;
-}
-
-static void fill_round_rect(struct canvas *c, const RECT *rc, float radius, ARGB color)
-{
-    GpPath *path = round_rect_path((float)rc->left, (float)rc->top, (float)(rc->right - rc->left),
-                                   (float)(rc->bottom - rc->top), radius);
-    GpSolidFill *brush;
-    GdipCreateSolidFill(color, &brush);
-    GdipFillPath(c->g, (GpBrush *)brush, path);
-    GdipDeleteBrush((GpBrush *)brush);
-    GdipDeletePath(path);
-}
-
-static void stroke_round_rect(struct canvas *c, const RECT *rc, float radius, ARGB color, float width)
-{
-    float inset = width / 2;
-    GpPath *path = round_rect_path(rc->left + inset, rc->top + inset, rc->right - rc->left - width,
-                                   rc->bottom - rc->top - width, radius);
-    GpPen *pen;
-    GdipCreatePen1(color, width, UnitPixel, &pen);
-    GdipDrawPath(c->g, pen, path);
-    GdipDeletePen(pen);
-    GdipDeletePath(path);
-}
-
-static void fill_rect(struct canvas *c, int x, int y, int w, int h, ARGB color)
-{
-    GpSolidFill *brush;
-    GdipCreateSolidFill(color, &brush);
-    GdipFillRectangleI(c->g, (GpBrush *)brush, x, y, w, h);
-    GdipDeleteBrush((GpBrush *)brush);
-}
-
-static GpPen *make_pen(ARGB color, float width)
-{
-    GpPen *pen;
-    GdipCreatePen1(color, width, UnitPixel, &pen);
-    GdipSetPenStartCap(pen, LineCapRound);
-    GdipSetPenEndCap(pen, LineCapRound);
-    GdipSetPenLineJoin(pen, LineJoinRound);
-    return pen;
-}
-
-/* The Winlator S11 mark: a blue-violet tile with two light ribbons (as on the wallpaper) */
-static void draw_logo(struct canvas *c, float cx, float cy, float size)
-{
-    float x = cx - size / 2, y = cy - size / 2;
-    GpPointF p1 = {x, y}, p2 = {x + size, y + size};
-    GpLineGradient *gradient;
-    GpPath *path = round_rect_path(x, y, size, size, size * 0.24f);
-    GpPen *pen;
-
-    GdipCreateLineBrush(&p1, &p2, 0xff2f7bff, 0xff7b5cff, WrapModeTile, &gradient);
-    GdipFillPath(c->g, (GpBrush *)gradient, path);
-    GdipDeleteBrush((GpBrush *)gradient);
-    GdipDeletePath(path);
-
-    pen = make_pen(0xffffffff, size * 0.085f);
-    GdipDrawBezier(c->g, pen, x + size * 0.18f, y + size * 0.72f, x + size * 0.40f, y + size * 0.30f,
-                   x + size * 0.58f, y + size * 0.78f, x + size * 0.82f, y + size * 0.30f);
-    GdipDeletePen(pen);
-    pen = make_pen(0xb3ffffff, size * 0.06f);
-    GdipDrawBezier(c->g, pen, x + size * 0.18f, y + size * 0.50f, x + size * 0.42f, y + size * 0.82f,
-                   x + size * 0.60f, y + size * 0.22f, x + size * 0.82f, y + size * 0.52f);
-    GdipDeletePen(pen);
-}
-
-static void draw_search_glyph(struct canvas *c, float cx, float cy, float size, COLORREF color)
-{
-    float r = size * 0.32f;
-    GpPen *pen = make_pen(argb(color, 255), size * 0.09f);
-    GdipDrawEllipse(c->g, pen, cx - size * 0.12f - r, cy - size * 0.12f - r, r * 2, r * 2);
-    GdipDrawLine(c->g, pen, cx + size * 0.12f, cy + size * 0.12f, cx + size * 0.40f, cy + size * 0.40f);
-    GdipDeletePen(pen);
-}
-
-static void draw_power_glyph(struct canvas *c, float cx, float cy, float size, COLORREF color)
-{
-    float r = size * 0.36f;
-    GpPen *pen = make_pen(argb(color, 255), size * 0.08f);
-    GdipDrawArc(c->g, pen, cx - r, cy - r, r * 2, r * 2, -50, 280);
-    GdipDrawLine(c->g, pen, cx, cy - size * 0.46f, cx, cy - size * 0.06f);
-    GdipDeletePen(pen);
-}
-
-static void draw_gear_glyph(struct canvas *c, float cx, float cy, float size, COLORREF color)
-{
-    GpPen *pen = make_pen(argb(color, 255), size * 0.08f);
-    float r = size * 0.30f, ri = size * 0.12f;
-    int i;
-    GdipDrawEllipse(c->g, pen, cx - r, cy - r, r * 2, r * 2);
-    GdipDrawEllipse(c->g, pen, cx - ri, cy - ri, ri * 2, ri * 2);
-    for (i = 0; i < 8; i++) {
-        float a = i * 3.14159265f / 4;
-        float ca = cosf(a), sa = sinf(a);
-        GdipDrawLine(c->g, pen, cx + ca * r, cy + sa * r, cx + ca * (r + size * 0.12f), cy + sa * (r + size * 0.12f));
-    }
-    GdipDeletePen(pen);
-}
-
-static void draw_folder_glyph(struct canvas *c, float cx, float cy, float size, COLORREF color)
-{
-    GpPen *pen = make_pen(argb(color, 255), size * 0.08f);
-    float l = cx - size * 0.40f, r = cx + size * 0.40f, t = cy - size * 0.30f, b = cy + size * 0.32f;
-    GpPointF points[] = {
-        {l, b}, {l, t}, {l + size * 0.28f, t}, {l + size * 0.36f, t + size * 0.10f}, {r, t + size * 0.10f}, {r, b}
-    };
-    GdipDrawPolygon(c->g, pen, points, ARRAY_SIZE(points));
-    GdipDrawLine(c->g, pen, l, t + size * 0.22f, r, t + size * 0.22f);
-    GdipDeletePen(pen);
-}
-
-static void draw_text(struct canvas *c, const WCHAR *text, RECT *rc, HFONT font, COLORREF color, UINT flags)
-{
-    HFONT old;
-    GdipFlush(c->g, FlushIntentionSync);
-    old = SelectObject(c->dc, font);
-    SetTextColor(c->dc, color);
-    DrawTextW(c->dc, text, -1, rc, flags | DT_NOPREFIX);
-    SelectObject(c->dc, old);
-}
-
-static void draw_icon(struct canvas *c, HICON icon, int x, int y, int size)
-{
-    if (!icon) return;
-    GdipFlush(c->g, FlushIntentionSync);
-    DrawIconEx(c->dc, x, y, icon, size, size, 0, NULL, DI_NORMAL);
-}
-
-/* ---------------------------------------------------------------------------------------- */
-/* Talking to Winlator                                                                      */
-/* ---------------------------------------------------------------------------------------- */
-
-static void send_winlator_request(BYTE code)
-{
-    WSADATA wsa;
-    SOCKET s;
-    struct sockaddr_in addr = {0};
-
-    if (WSAStartup(MAKEWORD(2, 2), &wsa)) return;
-    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (s != INVALID_SOCKET) {
-        addr.sin_family = AF_INET;
-        addr.sin_port = htons(WINLATOR_PORT);
-        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-        sendto(s, (const char *)&code, 1, 0, (struct sockaddr *)&addr, sizeof(addr));
-        closesocket(s);
-    }
-    WSACleanup();
-}
-
-static void run(const WCHAR *file, const WCHAR *args)
-{
-    ShellExecuteW(NULL, NULL, file, args, NULL, SW_SHOWNORMAL);
-}
-
-static void open_files(void)
-{
-    WCHAR path[MAX_PATH];
-    GetWindowsDirectoryW(path, MAX_PATH);
-    lstrcatW(path, L"\\wfm.exe");
-    if (GetFileAttributesW(path) != INVALID_FILE_ATTRIBUTES) run(path, NULL);
-    else run(L"explorer.exe", NULL);
-}
 
 /* ---------------------------------------------------------------------------------------- */
 /* Windows on the taskbar                                                                   */
@@ -542,6 +267,18 @@ static void fit_maximized_windows(void)
         if (rc.bottom < screen_h - SC(2)) continue;  /* not a full-height maximized window */
         SetWindowPos(hwnd, NULL, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top - bar_h,
                      SWP_NOZORDER | SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS);
+    }
+}
+
+/*
+ * Winlator's Wine shows explorer's own taskbar on the "shell" desktop whatever the EnableShell
+ * setting says. It sits under ours, but comes up over it when windows close; keep it hidden.
+ */
+static void hide_explorer_taskbar(void)
+{
+    HWND hwnd = NULL;
+    while ((hwnd = FindWindowExW(NULL, hwnd, L"Shell_TrayWnd", NULL))) {
+        if (hwnd != taskbar && IsWindowVisible(hwnd)) ShowWindowAsync(hwnd, SW_HIDE);
     }
 }
 
@@ -788,7 +525,7 @@ static void layout_taskbar(void)
 
     count = 2 + task_count;
     total = count * button + (count - 1) * gap;
-    left = (screen_w - total) / 2;
+    left = align_left ? SC(8) : (screen_w - total) / 2;
     if (left + total > right_limit) left = max(SC(8), right_limit - total);
 
     add_part(PART_START, 0, left, top, left + button, top + height);
@@ -1159,6 +896,8 @@ static void scan_apps(void)
     if (SHGetSpecialFolderPathW(NULL, dir, CSIDL_STARTMENU, FALSE)) scan_folder(dir, 0);
     if (SHGetSpecialFolderPathW(NULL, dir, CSIDL_COMMON_STARTMENU, FALSE)) scan_folder(dir, 0);
 
+    if (GetFileAttributesW(settings_exe()) != INVALID_FILE_ATTRIBUTES) add_builtin(TR(L"설정", L"Settings"), settings_exe(), NULL);
+
     GetWindowsDirectoryW(windir, MAX_PATH);
     wsprintfW(wfm, L"%s\\wfm.exe", windir);
     if (GetFileAttributesW(wfm) != INVALID_FILE_ATTRIBUTES)
@@ -1472,7 +1211,7 @@ static void menu_command(int part)
         break;
     case MENU_SETTINGS:
         hide_start_menu();
-        run(L"control.exe", NULL);
+        open_settings(NULL);
         break;
     case MENU_POWER:
         show_power_options();
@@ -1503,7 +1242,7 @@ static void show_start_menu(void)
     menu_w = SC(660);
     menu_h = min(SC(640), screen_h - bar_h - SC(24));
     SetRect(&work, 0, 0, screen_w, screen_h - bar_h);
-    x = (screen_w - menu_w) / 2;
+    x = align_left ? SC(12) : (screen_w - menu_w) / 2;
     y = work.bottom - menu_h - SC(12);
     layout_menu();
     SetWindowPos(start_menu, HWND_TOPMOST, x, y, menu_w, menu_h, SWP_SHOWWINDOW);
@@ -1695,6 +1434,8 @@ static void taskbar_menu(POINT screen_pt)
     int cmd;
     AppendMenuW(menu, MF_STRING, 1, TR(L"작업 관리자", L"Task Manager"));
     AppendMenuW(menu, MF_STRING, 2, TR(L"바탕 화면 보기", L"Show desktop"));
+    AppendMenuW(menu, MF_SEPARATOR, 0, NULL);
+    AppendMenuW(menu, MF_STRING, 3, TR(L"작업 표시줄 설정", L"Taskbar settings"));
     SetForegroundWindow(taskbar);
     cmd = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_BOTTOMALIGN | TPM_CENTERALIGN,
                          screen_pt.x, screen_h - bar_h, 0, taskbar, NULL);
@@ -1703,6 +1444,7 @@ static void taskbar_menu(POINT screen_pt)
     if (active_task && IsWindow(active_task)) SetForegroundWindow(active_task);
     if (cmd == 1) run(L"taskmgr.exe", NULL);
     else if (cmd == 2) toggle_show_desktop();
+    else if (cmd == 3) open_settings(L"personalization");
 }
 
 static void click_part(int index)
@@ -1753,6 +1495,13 @@ static LRESULT CALLBACK taskbar_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_CREATE:
         taskbar_created = RegisterWindowMessageW(L"TaskbarCreated");
         return 0;
+    default:
+        if (msg == settings_changed_msg && msg) {
+            read_settings();
+            refresh_taskbar();
+            return 0;
+        }
+        break;
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
@@ -1771,7 +1520,9 @@ static LRESULT CALLBACK taskbar_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_TIMER:
         switch (wp) {
         case TIMER_POLL: {
-            BOOL changed = scan_windows();
+            BOOL changed;
+            hide_explorer_taskbar();
+            changed = scan_windows();
             changed |= prune_trays();
             changed |= check_fullscreen();
             fit_maximized_windows();
@@ -1842,6 +1593,9 @@ static LRESULT CALLBACK taskbar_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_APP_FILES:
         open_files();
         return 0;
+    case WM_APP_SETTINGS:
+        open_settings(NULL);
+        return 0;
     case WM_APP_RUN:
         run(L"rundll32.exe", L"shell32.dll,Control_RunDLL");
         return 0;
@@ -1893,6 +1647,7 @@ static LRESULT CALLBACK keyboard_hook(int code, WPARAM wp, LPARAM lp)
             switch (key->vkCode) {
             case 'D': PostMessageW(taskbar, WM_APP_SHOW_DESKTOP, 0, 0); return 1;
             case 'E': PostMessageW(taskbar, WM_APP_FILES, 0, 0); return 1;
+            case 'I': PostMessageW(taskbar, WM_APP_SETTINGS, 0, 0); return 1;
             case 'S': case 'Q': PostMessageW(taskbar, WM_APP_TOGGLE_START, 0, 0); return 1;
             case 'M': PostMessageW(taskbar, WM_APP_SHOW_DESKTOP, 0, 0); return 1;
             }
@@ -1976,6 +1731,8 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
     menu_title_font = make_font(105, FW_SEMIBOLD);
     search_font = make_font(105, FW_NORMAL);
 
+    settings_changed_msg = RegisterWindowMessageW(L"WinlatorS11SettingsChanged");
+    read_settings();
     create_windows();
     update_clock_text();
     scan_windows();

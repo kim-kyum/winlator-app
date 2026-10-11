@@ -24,7 +24,8 @@ The Wine desktop is set up to look like Windows 10/11 rather than Windows 95:
   `WineThemeManager` instead of the theme's own.
 - **Colours** (`WineThemeManager`): light title bars that match the dialogs, Windows
   blue selection, 3D colours tuned so classic controls get flat 1 px borders.
-- **Title bars**: Windows 10 sizes (`ModernLook`), thin Marlett glyphs
+- **Title bars**: Windows 10 sizes (`ModernLook`; no padded border, which Wine leaves
+  unpainted as a black frame), thin Marlett glyphs
   (`tools/s11/theme/build_marlett.py`, installed as a newer Marlett in the overlay),
   and `CaptionButtons` turns off the raised push-button frame Wine draws around them
   (one verified call in the bundled `win32u.so`).
@@ -44,13 +45,36 @@ taskbar on the desktop session: centred program buttons with icons and tooltips,
 notification area (it answers Wine's `Shell_NotifyIcon` messages as `Shell_TrayWnd`), a
 clock, and a start menu with every installed program, search (Hangul initial consonants
 too) and Shut down / Restart, which go to the app over winhandler's UDP port. The Windows
-key opens it; Win+D shows the desktop, Win+E the file manager. Maximized windows are kept
-above it, and it steps aside for fullscreen programs.
+key opens it; Win+D shows the desktop, Win+E the file manager, Win+I the settings.
+Maximized windows are kept above it, and it steps aside for fullscreen programs. The icons
+sit in the middle or on the left (Settings, Personalization).
 
 `S11Shell` switches explorer's taskbar off for the "shell" desktop and has winhandler.exe
-start the shell; Settings has a switch to go back to Wine's taskbar. The Windows keys now
+start the shell (Winlator's Wine shows explorer's taskbar on that desktop anyway, so the
+shell keeps it hidden); the app's Settings has a switch to go back to Wine's taskbar. The Windows keys now
 reach Wine: Meta maps to Super_L/R, and the X server's keyboard mapping reply was fixed to
 cover keycodes above 131.
+
+## Settings app
+
+`tools/s11/shell/s11settings.c` (`s11settings.exe`, next to the shell in the overlay) is a
+Windows 11 style Settings window, opened from the start menu (gear, or "설정" in the list),
+Win+I, or the taskbar's menu:
+
+- **System**: display scale (LogPixels), resolution, and the Windows version programs see
+  (the same registry values as the container settings).
+- **Personalization**: background (the two S11 pictures, your own picture, or a new one
+  from a file; applied at once), light or dark mode, taskbar alignment.
+- **Apps**: installed programs from the Uninstall keys, with their icons; uninstall, or
+  start an installer.
+- **Fonts**: installed scalable fonts with a preview; install .ttf/.otf/.ttc files.
+- **About**: Winlator S11 version, container, Wine, Windows, processor, memory, display.
+
+What Wine keeps in the registry it writes directly. Resolution, mode and background belong
+to the container in Winlator, so it sends them to winhandler's UDP port (codes 102-104,
+`S11Settings`), the app stores them in the container, and they apply when it restarts; a
+banner offers to restart right away. The S11 pictures are packed into the overlay from the
+app's assets by `build_overlay.py`.
 
 Licences: the visual style and Marlett come from Wine (LGPL 2.1); S11 Sans keeps
 Selawik's OFL (`S11Sans-OFL.txt` next to the fonts).
