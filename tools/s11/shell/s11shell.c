@@ -632,9 +632,9 @@ static void paint_taskbar(HDC hdc)
             break;
         case PART_TASK: {
             struct task *t = &tasks[p->index];
-            int size = SC(24);
+            int box_size = SC(32), icon_size = SC(20);
             RECT bar;
-            draw_icon(&c, t->icon, cx - size / 2, cy - size / 2 - SC(1), size);
+            draw_s11_app_icon(&c, t->icon, cx - box_size / 2, cy - box_size / 2 - SC(1), box_size, icon_size);
             if (active) SetRect(&bar, cx - SC(8), rc.bottom - SC(3), cx + SC(8), rc.bottom);
             else SetRect(&bar, cx - SC(3), rc.bottom - SC(3), cx + SC(3), rc.bottom);
             fill_round_rect(&c, &bar, SC(3) / 2.0f, argb(active ? pal.accent : pal.indicator, 255));
@@ -1418,6 +1418,7 @@ static void scan_apps(void)
     if (SHGetSpecialFolderPathW(NULL, dir, CSIDL_COMMON_STARTMENU, FALSE)) scan_folder(dir, 0);
 
     if (GetFileAttributesW(settings_exe()) != INVALID_FILE_ATTRIBUTES) add_builtin(TR(L"설정", L"Settings"), settings_exe(), NULL);
+    if (GetFileAttributesW(gallery_exe()) != INVALID_FILE_ATTRIBUTES) add_builtin(TR(L"갤러리", L"Gallery"), gallery_exe(), NULL);
 
     GetWindowsDirectoryW(windir, MAX_PATH);
     wsprintfW(wfm, L"%s\\wfm.exe", windir);
@@ -1429,9 +1430,7 @@ static void scan_apps(void)
     add_builtin(TR(L"명령 프롬프트", L"Command Prompt"), L"cmd.exe", NULL);
     add_builtin(TR(L"메모장", L"Notepad"), L"notepad.exe", NULL);
     add_builtin(TR(L"작업 관리자", L"Task Manager"), L"taskmgr.exe", NULL);
-    add_builtin(TR(L"제어판", L"Control Panel"), L"control.exe", NULL);
     add_builtin(TR(L"레지스트리 편집기", L"Registry Editor"), L"regedit.exe", NULL);
-    add_builtin(TR(L"Wine 설정", L"Wine Configuration"), L"winecfg.exe", NULL);
 
     qsort(apps, app_count, sizeof(*apps), compare_apps);
 }
@@ -1517,7 +1516,7 @@ enum menu_part { MENU_NONE = -100, MENU_RUN = -1, MENU_FILES = -2, MENU_SETTINGS
 
 static int menu_w, menu_h, menu_hot = MENU_NONE, menu_selected;
 static int scroll_y, content_h;
-static int columns = 6;
+static int columns = 5;
 static DWORD menu_hidden_tick;
 static HWND menu_previous;   /* the active window before the menu opened */
 static BOOL dragging, drag_moved;
@@ -1650,7 +1649,7 @@ static void paint_menu(HDC hdc)
                      CombineModeReplace);
     for (i = 0; i < n; i++) {
         RECT tile, label;
-        int icon_size = SC(32);
+        int icon_size = SC(28), box_size = SC(48);
         BOOL is_run = run_item && i == 0;
         int app_index = run_item ? i - 1 : i;
 
@@ -1662,21 +1661,21 @@ static void paint_menu(HDC hdc)
         if (menu_selected == i && query[0]) stroke_round_rect(&c, &tile, (float)SC(6), argb(pal.accent, 160), 1);
 
         label = tile;
-        label.top += SC(12) + icon_size + SC(6);
+        label.top += SC(4) + box_size + SC(6);
         label.left += SC(4);
         label.right -= SC(4);
         if (is_run) {
             WCHAR text[160];
-            draw_icon(&c, LoadIconW(NULL, (const WCHAR *)IDI_APPLICATION), (tile.left + tile.right - icon_size) / 2,
-                      tile.top + SC(12), icon_size);
+            draw_s11_app_icon(&c, LoadIconW(NULL, (const WCHAR *)IDI_APPLICATION),
+                              (tile.left + tile.right - box_size) / 2, tile.top + SC(4), box_size, icon_size);
             wsprintfW(text, TR(L"실행: %s", L"Run: %s"), query);
             draw_text(&c, text, &label, small_font, pal.text, DT_CENTER | DT_WORDBREAK | DT_END_ELLIPSIS | DT_EDITCONTROL);
         }
         else {
             struct app *app = &apps[shown[app_index]];
             load_app_icon(app);
-            draw_icon(&c, app->icon ? app->icon : LoadIconW(NULL, (const WCHAR *)IDI_APPLICATION),
-                      (tile.left + tile.right - icon_size) / 2, tile.top + SC(12), icon_size);
+            draw_s11_app_icon(&c, app->icon ? app->icon : LoadIconW(NULL, (const WCHAR *)IDI_APPLICATION),
+                              (tile.left + tile.right - box_size) / 2, tile.top + SC(4), box_size, icon_size);
             draw_label(&c, app->name, &label, small_font, pal.text);
         }
     }
@@ -1813,8 +1812,8 @@ static void show_start_menu(void)
     menu_hot = MENU_NONE;
     scroll_y = 0;
 
-    menu_w = SC(660);
-    menu_h = min(SC(640), screen_h - bar_h - SC(24));
+    menu_w = min(SC(520), screen_w - SC(32));
+    menu_h = min(SC(520), screen_h - bar_h - SC(24));
     SetRect(&work, 0, 0, screen_w, screen_h - bar_h);
     x = align_left ? SC(12) : (screen_w - menu_w) / 2;
     y = work.bottom - menu_h - SC(12);
@@ -2073,10 +2072,9 @@ static void click_part(int index)
         break;
     }
     case PART_NETWORK:
-        run(L"control.exe", L"ncpa.cpl");
-        break;
     case PART_BLUETOOTH:
-        run(L"control.exe", L"bthprops.cpl");
+        /* Wine doesn't ship these Windows control panels; keep the entry in S11 Settings. */
+        open_settings(L"connectivity");
         break;
     default:
         break;
@@ -2280,6 +2278,11 @@ static LRESULT CALLBACK keyboard_hook(int code, WPARAM wp, LPARAM lp)
         }
         else if (down && win_down) {
             win_combo = TRUE;
+            if (key->vkCode == 'S' && GetAsyncKeyState(VK_SHIFT) < 0) {
+                hide_start_menu();
+                send_winlator_request(WINLATOR_SCREENSHOT);
+                return 1;
+            }
             switch (key->vkCode) {
             case 'D': PostMessageW(taskbar, WM_APP_SHOW_DESKTOP, 0, 0); return 1;
             case 'E': PostMessageW(taskbar, WM_APP_FILES, 0, 0); return 1;

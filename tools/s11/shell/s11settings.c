@@ -30,10 +30,10 @@
 #define WM_APP_REFRESH_APPS (WM_APP + 20)
 #define WM_APP_SELECT_PAGE (WM_APP + 21)   /* another start asked for a page */
 
-enum page { PAGE_SYSTEM, PAGE_PERSONALIZE, PAGE_APPS, PAGE_FONTS, PAGE_ABOUT, PAGE_COUNT };
+enum page { PAGE_SYSTEM, PAGE_WINE, PAGE_CONNECTIVITY, PAGE_PERSONALIZE, PAGE_APPS, PAGE_FONTS, PAGE_ABOUT, PAGE_COUNT };
 
 enum control_id {
-    ID_SCALE = 100, ID_RESOLUTION, ID_WINVER, ID_RESTART, ID_MODE, ID_ALIGN, ID_MOUSE, ID_WINECFG,
+    ID_SCALE = 100, ID_RESOLUTION, ID_WINVER, ID_RESTART, ID_MODE, ID_ALIGN, ID_MOUSE, ID_OPEN_WIFI, ID_OPEN_BLUETOOTH,
     ID_APP_LIST, ID_UNINSTALL, ID_INSTALL, ID_FONT_LIST, ID_FONT_INSTALL, ID_BROWSE
 };
 
@@ -47,7 +47,8 @@ static BOOL restart_needed;
 static int scroll_y, content_bottom;
 
 /* controls of each page */
-static HWND scale_box, resolution_box, winver_box, restart_button, mode_box, align_box, mouse_box, winecfg_button, browse_button;
+static HWND scale_box, resolution_box, winver_box, restart_button, mode_box, align_box, mouse_box, browse_button;
+static HWND wifi_button, bluetooth_button;
 static HWND app_list, uninstall_button, install_button, font_list, font_install_button;
 static HIMAGELIST app_images, font_images;
 
@@ -86,6 +87,8 @@ static const WCHAR *page_title(enum page page)
 {
     switch (page) {
     case PAGE_SYSTEM: return TR(L"시스템", L"System");
+    case PAGE_WINE: return L"Wine";
+    case PAGE_CONNECTIVITY: return TR(L"연결", L"Connectivity");
     case PAGE_PERSONALIZE: return TR(L"개인 설정", L"Personalization");
     case PAGE_APPS: return TR(L"앱", L"Apps");
     case PAGE_FONTS: return TR(L"글꼴", L"Fonts");
@@ -859,15 +862,19 @@ static void build_rows(void)
     r = add_row(PAGE_SYSTEM, TR(L"해상도", L"Resolution"), &resolution_box);
     lstrcpyW(r->detail, TR(L"높을수록 선명하고, 낮을수록 빨라요. 다시 시작하면 적용돼요.",
                            L"Higher is sharper, lower is faster. Applies after a restart."));
-    r = add_row(PAGE_SYSTEM, TR(L"Windows 버전", L"Windows version"), &winver_box);
+    r = add_row(PAGE_WINE, TR(L"Windows 버전", L"Windows version"), &winver_box);
     lstrcpyW(r->detail, TR(L"프로그램에 알려 줄 Windows 버전. 새로 여는 프로그램부터 적용돼요.",
                            L"The version programs see. Applies to programs you open next."));
-    r = add_row(PAGE_SYSTEM, TR(L"마우스 가속", L"Mouse acceleration"), &mouse_box);
+    r = add_row(PAGE_WINE, TR(L"마우스 가속", L"Mouse acceleration"), &mouse_box);
     lstrcpyW(r->detail, TR(L"빠르게 움직일 때 포인터 속도를 높입니다. 바로 적용돼요.",
                            L"Increases pointer speed for faster movement. Applies immediately."));
-    r = add_row(PAGE_SYSTEM, TR(L"Wine 설정", L"Wine settings"), &winecfg_button);
-    lstrcpyW(r->detail, TR(L"Windows 버전, 라이브러리, 드라이브 등 고급 호환성 설정을 엽니다.",
-                           L"Open advanced compatibility options: Windows version, libraries and drives."));
+
+    r = add_row(PAGE_CONNECTIVITY, TR(L"Wi-Fi 및 네트워크", L"Wi-Fi and network"), &wifi_button);
+    lstrcpyW(r->detail, TR(L"기기 연결은 Android가 관리합니다. 여기서 네트워크 제어를 열 수 있어요.",
+                           L"Android manages device connectivity. Open its network controls here."));
+    r = add_row(PAGE_CONNECTIVITY, TR(L"Bluetooth", L"Bluetooth"), &bluetooth_button);
+    lstrcpyW(r->detail, TR(L"주변 기기를 연결하거나 Bluetooth 설정을 관리합니다.",
+                           L"Connect nearby devices or manage Bluetooth settings."));
 
     r = add_row(PAGE_PERSONALIZE, TR(L"배경", L"Background"), &browse_button);
     lstrcpyW(r->detail, TR(L"그림을 고르거나 내 사진을 쓰세요.", L"Pick a picture or use your own."));
@@ -898,7 +905,7 @@ static void layout(void)
 {
     RECT client;
     int x, y, w, i;
-    HWND controls[] = {scale_box, resolution_box, winver_box, mode_box, align_box, mouse_box, winecfg_button, browse_button, app_list,
+    HWND controls[] = {scale_box, resolution_box, winver_box, mode_box, align_box, mouse_box, wifi_button, bluetooth_button, browse_button, app_list,
                        uninstall_button, install_button, font_list, font_install_button, restart_button};
 
     GetClientRect(main_window, &client);
@@ -918,8 +925,8 @@ static void layout(void)
         SetRect(&r->rc, x, y, x + w, y + h);
         if (r->control && *r->control) {
             HWND c = *r->control;
-            BOOL is_button = c == browse_button || c == install_button || c == font_install_button;
-            int cw = is_button ? SC(150) : SC(240), ch = SC(34), top = y + (SC(68) - ch) / 2;
+            BOOL is_button = c == browse_button || c == install_button || c == font_install_button || c == wifi_button || c == bluetooth_button;
+            int cw = is_button ? SC(176) : SC(240), ch = SC(34), top = y + (SC(68) - ch) / 2;
             if (is_button) SetWindowPos(c, NULL, x + w - cw - SC(16), top, cw, ch, SWP_NOZORDER | SWP_SHOWWINDOW);
             else {
                 /* a combo box's height includes its drop-down list; centre the field itself */
@@ -983,6 +990,12 @@ static void draw_nav_glyph(struct canvas *c, enum page page, float cx, float cy,
         GdipDrawLine(c->g, pen, cx - s * 0.22f, cy + s * 0.38f, cx + s * 0.22f, cy + s * 0.38f);
         break;
     }
+    case PAGE_WINE:
+        draw_gear_glyph(c, cx, cy, s, color);
+        break;
+    case PAGE_CONNECTIVITY:
+        draw_wifi_glyph(c, cx, cy, s, color);
+        break;
     case PAGE_PERSONALIZE: { /* a brush over a stroke of paint */
         GpSolidFill *paint;
         GpPath *tip;
@@ -1308,7 +1321,8 @@ static void create_controls(void)
     align_box = make_combo(ID_ALIGN);
     mouse_box = make_combo(ID_MOUSE);
     fill_mouse_acceleration();
-    winecfg_button = make_button(ID_WINECFG, TR(L"Wine 설정 열기", L"Open Wine settings"));
+    wifi_button = make_button(ID_OPEN_WIFI, TR(L"네트워크 제어 열기", L"Open network controls"));
+    bluetooth_button = make_button(ID_OPEN_BLUETOOTH, TR(L"Bluetooth 설정 열기", L"Open Bluetooth settings"));
     restart_button = make_button(ID_RESTART, TR(L"지금 다시 시작", L"Restart now"));
     browse_button = make_button(ID_BROWSE, TR(L"내 사진 찾기…", L"Browse photos…"));
     install_button = make_button(ID_INSTALL, TR(L"앱 설치…", L"Install an app…"));
@@ -1327,10 +1341,10 @@ static void create_controls(void)
 
 static enum page initial_page;
 
-/* "system", "personalization", "apps", "fonts" or "about"; PAGE_COUNT when none of them */
+/* "system", "wine", "connectivity", "personalization", "apps", "fonts" or "about" */
 static enum page page_from_name(const WCHAR *name)
 {
-    static const WCHAR *const names[PAGE_COUNT] = {L"system", L"personalization", L"apps", L"fonts", L"about"};
+    static const WCHAR *const names[PAGE_COUNT] = {L"system", L"wine", L"connectivity", L"personalization", L"apps", L"fonts", L"about"};
     int i;
     for (i = 0; i < PAGE_COUNT; i++) if (name && !lstrcmpiW(name, names[i])) return (enum page)i;
     return PAGE_COUNT;
@@ -1536,8 +1550,11 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         case ID_RESTART:
             send_winlator_request(WINLATOR_RESTART);
             break;
-        case ID_WINECFG:
-            ShellExecuteW(hwnd, NULL, L"C:\\windows\\system32\\winecfg.exe", NULL, NULL, SW_SHOWNORMAL);
+        case ID_OPEN_WIFI:
+            send_winlator_request(WINLATOR_OPEN_WIFI);
+            break;
+        case ID_OPEN_BLUETOOTH:
+            send_winlator_request(WINLATOR_OPEN_BLUETOOTH);
             break;
         case ID_BROWSE:
             browse_wallpaper();

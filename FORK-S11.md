@@ -47,7 +47,7 @@ The Wine desktop is set up to look like Windows 10/11 rather than Windows 95:
 
 `tools/s11/shell/s11shell.c` is a small Win32 program (built with clang against Wine's
 headers, `build.sh`; the exe ships in the rootfs overlay) that replaces explorer.exe's
-taskbar on the desktop session: centred program buttons with icons and tooltips, the
+taskbar on the desktop session: centred program buttons with unified rounded app-icon tiles and tooltips, the
 notification area (it answers Wine's `Shell_NotifyIcon` messages as `Shell_TrayWnd`), a
 clock, input-language indicator and quick links for hidden background icons, Wi-Fi and
 Bluetooth, and a start menu with every installed program, search (Hangul initial consonants
@@ -55,6 +55,11 @@ too) and Shut down / Restart, which go to the app over winhandler's UDP port. Th
 key opens it; Win+D shows the desktop, Win+E the file manager, Win+I the settings.
 Maximized windows are kept above it, and it steps aside for fullscreen programs. The icons
 sit in the middle or on the left (Settings, Personalization).
+
+The Start menu is capped at 520×520 dp and uses five columns so the icon cards stay compact.
+`Win+Shift+S` requests an Android `PixelCopy` of the guest desktop; the PNG is stored at
+`C:\S11\Screenshots` and opened from the S11 Gallery app. The gallery provides a
+thumbnail grid, refresh, selection and full-size preview.
 
 The desktop session is named "s11" instead of "shell": Winlator's Wine turns explorer's
 taskbar on for "shell" whatever EnableShell says, and it came up over ours. `S11Shell` sets
@@ -74,9 +79,9 @@ start menu has shut down and restart); Ctrl+Alt+Del still opens the power menu. 
 shell is enabled, the redundant Android power tab is hidden even when a program is launched
 from a shortcut. Session restart/exit transitions are guarded against duplicate callbacks.
 The Command Prompt starts in `C:\`.
-Wi-Fi and Bluetooth open Wine's network and Bluetooth control-panel entry points in the
-container rather than leaving the desktop for Android Settings; actual radio control remains
-subject to Wine's device passthrough support. The language indicator opens the Wine locale
+Wi-Fi and Bluetooth open the in-container S11 Connectivity page. The actual radio settings
+are managed by Android and the page routes to the corresponding system controls; Wine cannot
+directly change those protected device radios. The language indicator opens the Wine locale
 control panel. The overflow menu exposes notification icons marked hidden by their owning
 Windows applications.
 
@@ -91,14 +96,21 @@ cover keycodes above 131.
 Windows 11 style Settings window, opened from the start menu (gear, or "설정" in the list),
 Win+I, or the taskbar's menu:
 
-- **System**: display scale (LogPixels), resolution, the Windows version programs see,
-  mouse acceleration, and a button to open Wine Configuration (`winecfg.exe`).
+- **System**: display scale (LogPixels) and resolution.
+- **Wine**: the Windows version programs see and mouse acceleration. Advanced `winecfg.exe`
+  is no longer presented as a separate app; the supported everyday controls are exposed here.
+- **Connectivity**: internal entry points for Wi-Fi and Bluetooth system controls.
 - **Personalization**: background (the two S11 pictures, your own picture, or a new one
   from a file; applied at once), light, dark or Android system-following mode, taskbar alignment.
 - **Apps**: installed programs from the Uninstall keys, with their icons; uninstall, or
   start an installer.
 - **Fonts**: installed scalable fonts with a preview; install .ttf/.otf/.ttc files.
 - **About**: S11 Workspace version, container, Wine, Windows, processor, memory, display.
+
+The File Explorer keeps its shell navigation but now applies the S11 palette and Segoe-style
+typography to the embedded file list, uses Explorer-themed headers, double buffering, and
+full-row selection; the application icon is a familiar light-blue folder rather than Wine
+branding.
 
 What Wine keeps in the registry it writes directly. Resolution, mode and background belong
 to the container in Winlator, so it sends them to winhandler's UDP port (codes 102-104,

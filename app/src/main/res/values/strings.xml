@@ -17,6 +17,9 @@
     <string name="installing_system_files">Installing System Files...</string>
     <string name="updating_system_files">Updating System Files...</string>
     <string name="starting_up">Preparing your workspace...</string>
+    <string name="s11_screenshot_saved">Screenshot saved to %1$s</string>
+    <string name="s11_screenshot_failed">Couldn't save the screenshot.</string>
+    <string name="s11_screenshot_not_ready">The desktop isn't ready to capture yet.</string>
     <string name="unable_to_install_system_files">Unable to install system files</string>
     <string name="keyboard">Keyboard</string>
     <string name="toggle_fullscreen">Toggle Fullscreen</string>

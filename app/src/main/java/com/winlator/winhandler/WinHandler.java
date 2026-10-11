@@ -409,6 +409,15 @@ public class WinHandler {
             case RequestCodes.S11_RESTART:
                 activity.onShellPowerRequest(requestCode == RequestCodes.S11_RESTART);
                 break;
+            case RequestCodes.S11_OPEN_WIFI:
+                activity.onS11StatusPanel(false);
+                break;
+            case RequestCodes.S11_OPEN_BLUETOOTH:
+                activity.onS11StatusPanel(true);
+                break;
+            case RequestCodes.S11_SCREENSHOT:
+                activity.captureS11Screenshot();
+                break;
             case RequestCodes.S11_SET_SCREEN:
             case RequestCodes.S11_SET_THEME:
             case RequestCodes.S11_SET_WALLPAPER: {

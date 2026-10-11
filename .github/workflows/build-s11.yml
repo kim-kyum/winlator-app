@@ -1,4 +1,4 @@
-name: Build Winlator S11
+name: Build S11 Workspace
 
 on:
   push:
@@ -93,7 +93,7 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace assembleDebug 2>&1 | tee "$RUNNER_TEMP/build.log"
           APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
-          OUT="Winlator-S11-build${GITHUB_RUN_NUMBER}.apk"
+          OUT="S11-Workspace-build${GITHUB_RUN_NUMBER}.apk"
           mv "$APK" "$OUT"
           echo "APK_FILE=$OUT" >> "$GITHUB_ENV"
           ls -l "$OUT"
@@ -126,7 +126,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: winlator-s11-build${{ github.run_number }}
+          name: s11-workspace-build${{ github.run_number }}
           path: ${{ env.APK_FILE }}
 
       - name: Publish release
@@ -136,5 +136,5 @@ jobs:
         run: |
           gh release create "s11-build${GITHUB_RUN_NUMBER}" "$APK_FILE" \
             --target "$GITHUB_SHA" \
-            --title "Winlator S11 build ${GITHUB_RUN_NUMBER}" \
+            --title "S11 Workspace build ${GITHUB_RUN_NUMBER}" \
             --notes "$(git log -1 --format='%s%n%n%b')"

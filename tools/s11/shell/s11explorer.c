@@ -147,15 +147,19 @@ static void style_shell_view(void)
     if (view) SetWindowTheme(view, L"Explorer", NULL);
     if (!list) return;
     SetWindowTheme(list, L"Explorer", NULL);
+    SendMessageW(list, LVM_SETEXTENDEDLISTVIEWSTYLE, 0,
+                 LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_INFOTIP | LVS_EX_HEADERDRAGDROP);
+    SetWindowLongW(list, GWL_EXSTYLE, GetWindowLongW(list, GWL_EXSTYLE) & ~WS_EX_CLIENTEDGE);
     SendMessageW(list, WM_SETFONT, (WPARAM)ui_font, TRUE);
-    SendMessageW(list, LVM_SETBKCOLOR, 0, pal.menu);
-    SendMessageW(list, LVM_SETTEXTBKCOLOR, 0, pal.menu);
+    SendMessageW(list, LVM_SETBKCOLOR, 0, pal.field);
+    SendMessageW(list, LVM_SETTEXTBKCOLOR, 0, pal.field);
     SendMessageW(list, LVM_SETTEXTCOLOR, 0, pal.text);
     header = (HWND)SendMessageW(list, LVM_GETHEADER, 0, 0);
     if (header) {
         SetWindowTheme(header, L"Explorer", NULL);
         SendMessageW(header, WM_SETFONT, (WPARAM)small_font, TRUE);
     }
+    SetWindowPos(list, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 }
 
 static void item_counts(UINT *all, UINT *selected)

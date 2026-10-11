@@ -39,6 +39,9 @@ static BOOL korean;
 #define WINLATOR_PORT 7947
 #define WINLATOR_SHUTDOWN 100
 #define WINLATOR_RESTART 101
+#define WINLATOR_OPEN_WIFI 105
+#define WINLATOR_OPEN_BLUETOOTH 106
+#define WINLATOR_SCREENSHOT 107
 
 struct palette {
     COLORREF bar, bar_border, text, text_dim, accent, indicator;
@@ -307,6 +310,15 @@ static void draw_icon(struct canvas *c, HICON icon, int x, int y, int size)
     DrawIconEx(c->dc, x, y, icon, size, size, 0, NULL, DI_NORMAL);
 }
 
+/* App icons share the soft, rounded surface used by S11 Settings. */
+static void draw_s11_app_icon(struct canvas *c, HICON icon, int x, int y, int box_size, int icon_size)
+{
+    RECT box = {x, y, x + box_size, y + box_size};
+    fill_round_rect(c, &box, (float)SC(9), argb(pal.field, 255));
+    stroke_round_rect(c, &box, (float)SC(9), argb(pal.field_border, 190), 1);
+    draw_icon(c, icon, x + (box_size - icon_size) / 2, y + (box_size - icon_size) / 2, icon_size);
+}
+
 /* ---------------------------------------------------------------------------------------- */
 /* Talking to Winlator                                                                      */
 /* ---------------------------------------------------------------------------------------- */
@@ -363,6 +375,13 @@ static const WCHAR *explorer_exe(void)
     return path;
 }
 
+static const WCHAR *gallery_exe(void)
+{
+    static WCHAR path[MAX_PATH];
+    if (!path[0]) sibling_exe(path, L"s11gallery.exe");
+    return path;
+}
+
 /* File Explorer: ours, else Winlator's file manager, else Wine's explorer */
 static void open_files(void)
 {
@@ -377,7 +396,7 @@ static void open_files(void)
     else run(L"explorer.exe", NULL);
 }
 
-/* page: NULL, "system", "personalization", "apps", "fonts" or "about" */
+/* page: NULL, "system", "wine", "connectivity", "personalization", "apps", "fonts" or "about" */
 static void open_settings(const WCHAR *page)
 {
     if (GetFileAttributesW(settings_exe()) != INVALID_FILE_ATTRIBUTES) run(settings_exe(), page);

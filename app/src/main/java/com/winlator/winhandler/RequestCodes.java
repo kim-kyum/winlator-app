@@ -31,4 +31,7 @@ abstract class RequestCodes {
     public static final byte S11_SET_SCREEN = 102;
     public static final byte S11_SET_THEME = 103;
     public static final byte S11_SET_WALLPAPER = 104;
+    public static final byte S11_OPEN_WIFI = 105;
+    public static final byte S11_OPEN_BLUETOOTH = 106;
+    public static final byte S11_SCREENSHOT = 107;
 }

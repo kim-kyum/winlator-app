@@ -8,17 +8,25 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.PixelCopy;
+import android.view.Surface;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -113,8 +121,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.Executors;
 
@@ -569,6 +581,70 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         runOnUiThread(() -> {
             if (container == null || isFinishing()) return;
             if (S11Settings.apply(this, container, code, value)) container.saveData();
+        });
+    }
+
+    /** Opens the device-owned controls from the S11 Connectivity page. Android keeps radio
+     * permissions privileged, so Wine can present the entry point but cannot toggle radios itself. */
+    public void onS11StatusPanel(boolean bluetooth) {
+        runOnUiThread(() -> {
+            if (isFinishing()) return;
+            String action = bluetooth ? Settings.ACTION_BLUETOOTH_SETTINGS : Settings.Panel.ACTION_WIFI;
+            String fallback = bluetooth ? Settings.ACTION_BLUETOOTH_SETTINGS : Settings.ACTION_WIFI_SETTINGS;
+            try { startActivity(new Intent(action)); }
+            catch (Exception e) {
+                try { startActivity(new Intent(fallback)); }
+                catch (Exception ignored) {}
+            }
+        });
+    }
+
+    /** Captures the guest desktop surface and stores it where C:\\S11\\Screenshots can see it. */
+    public void captureS11Screenshot() {
+        runOnUiThread(() -> {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || xServerView == null || container == null || rootFS == null) {
+                Toast.makeText(this, R.string.s11_screenshot_not_ready, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Surface surface = xServerView.getHolder().getSurface();
+            int width = xServerView.getWidth(), height = xServerView.getHeight();
+            if (surface == null || !surface.isValid() || width <= 0 || height <= 0) {
+                Toast.makeText(this, R.string.s11_screenshot_not_ready, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            PixelCopy.request(surface, bitmap, result -> {
+                if (result != PixelCopy.SUCCESS) {
+                    bitmap.recycle();
+                    Toast.makeText(this, R.string.s11_screenshot_failed, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                String filename = "Screenshot-" + new SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.US).format(new Date()) + ".png";
+                File directory = new File(rootFS.getRootDir(), RootFS.WINEPREFIX + "/drive_c/S11/Screenshots");
+                Thread saveThread = new Thread(() -> {
+                    boolean saved = false;
+                    File output = new File(directory, filename);
+                    try {
+                        if (directory.isDirectory() || directory.mkdirs()) {
+                            try (FileOutputStream stream = new FileOutputStream(output)) {
+                                saved = bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                                stream.flush();
+                            }
+                        }
+                    }
+                    catch (Exception ignored) {
+                        output.delete();
+                    }
+                    finally {
+                        bitmap.recycle();
+                    }
+                    final boolean success = saved;
+                    runOnUiThread(() -> Toast.makeText(this,
+                            success ? getString(R.string.s11_screenshot_saved, "C:\\S11\\Screenshots") : getString(R.string.s11_screenshot_failed),
+                            Toast.LENGTH_SHORT).show());
+                }, "S11-Screenshot");
+                saveThread.start();
+            }, new Handler(Looper.getMainLooper()));
         });
     }
 

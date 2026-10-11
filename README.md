@@ -6,21 +6,22 @@
 
 **Galaxy Tab S11을 우선 대상으로 만든 Android용 Windows 앱 작업공간입니다.** Wine과 Box64를 바탕으로 Windows 애플리케이션을 실행하고, 자체 작업 표시줄·시작 메뉴·파일 탐색기·설정 앱을 제공합니다. 원본 Winlator의 게임 중심 사용 경험을 그대로 유지하는 것이 아니라, 일반 앱과 생산성 작업에 맞춘 별도 제품 경험을 만드는 것이 목표입니다.
 
-> 현재 최신 빌드: [Winlator S11 build 18 다운로드](https://github.com/kim-kyum/winlator-app/releases/tag/s11-build18) · [전체 릴리스](https://github.com/kim-kyum/winlator-app/releases)
+> 설치 파일: [최신 릴리스 다운로드](https://github.com/kim-kyum/winlator-app/releases/latest) · [전체 릴리스](https://github.com/kim-kyum/winlator-app/releases)
 
 ## 주요 기능
 
 - Windows 앱을 실행하는 Wine/Box64 기반 컨테이너
 - S11 Workspace 작업 표시줄, 시작 메뉴, 창 전환(Alt+Tab), 달력 및 알림 영역
-- 한국어 우선 UI와 S11 전용 파일 탐색기
-- 컨테이너 안에서 여는 설정 앱: 화면 해상도·배율(DPI), 마우스 가속, 밝게/어둡게/시스템 테마, 배경화면, 앱·글꼴 관리
-- 설정 앱에서 Wine Configuration(`winecfg`) 실행
+- 한국어 우선 UI, 둥근 S11 앱 아이콘, S11 전용 파일 탐색기
+- 컨테이너 안에서 여는 설정 앱: 화면 해상도·배율(DPI), Wine 호환성·마우스 가속, 밝게/어둡게/시스템 테마, 배경화면, 앱·글꼴 관리
+- `Win+Shift+S` 캡처와 컨테이너 안에서 캡처를 모아 보는 Gallery 앱
+- 설정 앱의 연결 페이지에서 Wi-Fi·Bluetooth 기기 제어로 이동
 - 명령 프롬프트를 `C:\`에서 시작
 - Android 기기의 기존 Winlator와 별도로 설치·실행
 
 ## 설치
 
-1. [최신 릴리스](https://github.com/kim-kyum/winlator-app/releases/latest)에서 `Winlator-S11-build*.apk`를 받습니다.
+1. [최신 릴리스](https://github.com/kim-kyum/winlator-app/releases/latest)에서 `S11-Workspace-build*.apk`를 받습니다.
 2. Android에서 APK를 설치하고 앱을 실행합니다. 최초 실행 시 필요한 호환성 환경을 준비하는 데 시간이 걸릴 수 있습니다.
 3. 컨테이너를 만든 뒤 시작 메뉴에서 앱을 실행하거나, 시작 메뉴의 **설정**에서 작업공간을 조정합니다.
 
@@ -34,7 +35,7 @@ S11 Workspace는 원본 Winlator와 다른 Android 애플리케이션 ID를 사�
 - Direct3D 경로는 API에 따라 다릅니다. WineD3D는 OpenGL 경로, DXVK는 Vulkan 기반 D3D9/10/11 경로, VKD3D는 D3D12 경로에 해당합니다. 드라이버가 필요한 기능을 지원하지 않거나 앱이 다른 API를 요구하면 렌더링 실패·검은 화면이 생길 수 있습니다.
 - 브라우저와 무거운 x86/x64 앱은 ARM 기기에서 CPU 변환과 호환성 계층 때문에 느릴 수 있습니다.
 - Autodesk Fusion 360 설치·실행을 비롯해 모든 Windows 앱의 호환성이 검증된 것은 아닙니다. 그래픽·전문 앱은 특히 기기 및 컨테이너 설정별 확인이 필요합니다.
-- 작업 표시줄의 Wi‑Fi·Bluetooth 항목은 컨테이너 안의 Wine 제어판 진입점입니다. 실제 Android 무선 라디오를 Wine이 직접 제어하거나 Bluetooth 장치 연결을 보장하지는 않습니다.
+- Wi‑Fi·Bluetooth 상태는 Android가 관리합니다. S11 설정의 연결 페이지에서 해당 시스템 제어 화면을 열며, Wine에서 무선 라디오를 직접 켜고 끄지는 않습니다.
 
 ## 소스에서 빌드
 
@@ -45,7 +46,7 @@ chmod +x gradlew
 ./gradlew assembleDebug
 ```
 
-Win32 작업 표시줄·설정·파일 탐색기 실행 파일은 Wine의 Windows 헤더와 import libraries를 사용하는 clang/lld 빌드 스크립트로 생성합니다.
+Win32 작업 표시줄·설정·파일 탐색기·Gallery 실행 파일은 Wine의 Windows 헤더와 import libraries를 사용하는 clang/lld 빌드 스크립트로 생성합니다.
 
 ```bash
 tools/s11/shell/build.sh <wine-11.x-directory> <output-directory>
