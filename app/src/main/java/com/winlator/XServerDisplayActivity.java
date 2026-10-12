@@ -30,7 +30,6 @@ import android.view.MotionEvent;
 import android.view.PixelCopy;
 import android.view.Surface;
 import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
@@ -648,7 +647,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             s11ScreenshotKeyCaptured = false;
             if (s11RegionDialog == dialog) s11RegionDialog = null;
         });
-        Window window = dialog.getWindow();
+        android.view.Window window = dialog.getWindow();
         if (window != null) {
             window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
