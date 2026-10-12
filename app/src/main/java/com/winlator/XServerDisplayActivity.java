@@ -30,7 +30,6 @@ import android.view.MotionEvent;
 import android.view.PixelCopy;
 import android.view.Surface;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
@@ -650,14 +649,14 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         android.view.Window window = dialog.getWindow();
         if (window != null) {
             window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-            window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN | android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
             window.setDimAmount(0f);
         }
         s11RegionDialog = dialog;
         dialog.show();
         window = dialog.getWindow();
-        if (window != null) window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+        if (window != null) window.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT, android.view.WindowManager.LayoutParams.MATCH_PARENT);
         selector.requestFocus();
     }
 
