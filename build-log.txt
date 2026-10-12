@@ -1,0 +1,448 @@
+run 26 commit 11249d2c8e1b20b53bb31db75a519c4465a8f806
+83:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:113: error: a type with the same simple name is already defined by the single-type-import of WindowManager
+86:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:286: error: reference to WindowManager is ambiguous
+90:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:287: error: method does not override or implement a method from a supertype
+93:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:292: error: method does not override or implement a method from a supertype
+96:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:309: error: method does not override or implement a method from a supertype
+99:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:653: error: reference to WindowManager is ambiguous
+103:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+107:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+111:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+115:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+119:Note: Some input files use or override a deprecated API.
+120:Note: Recompile with -Xlint:deprecation for details.
+121:Note: Some input files use unchecked or unsafe operations.
+122:Note: Recompile with -Xlint:unchecked for details.
+125:> Task :app:compileDebugJavaWithJavac FAILED
+131:* What went wrong:
+134:  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:286: error: reference to WindowManager is ambiguous
+138:  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:653: error: reference to WindowManager is ambiguous
+142:  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+146:  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+150:  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+154:  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+158:  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:113: error: a type with the same simple name is already defined by the single-type-import of WindowManager
+161:  Note: Recompile with -Xlint:deprecation for details.
+162:  Note: Recompile with -Xlint:unchecked for details.
+163:  Note: Some input files use or override a deprecated API.
+164:  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:287: error: method does not override or implement a method from a supertype
+167:  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:292: error: method does not override or implement a method from a supertype
+170:  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:309: error: method does not override or implement a method from a supertype
+173:  Note: Some input files use unchecked or unsafe operations.
+214:Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler output below.
+215:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:286: error: reference to WindowManager is ambiguous
+219:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:653: error: reference to WindowManager is ambiguous
+223:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+227:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+231:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+235:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+239:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:113: error: a type with the same simple name is already defined by the single-type-import of WindowManager
+242:Note: Recompile with -Xlint:deprecation for details.
+243:Note: Recompile with -Xlint:unchecked for details.
+244:Note: Some input files use or override a deprecated API.
+245:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:287: error: method does not override or implement a method from a supertype
+248:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:292: error: method does not override or implement a method from a supertype
+251:/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:309: error: method does not override or implement a method from a supertype
+254:Note: Some input files use unchecked or unsafe operations.
+416:BUILD FAILED in 18s
+----- tail -----
+WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 35
+
+This Android Gradle plugin (8.4.2) was tested up to compileSdk = 34.
+
+You are strongly encouraged to update your project to use a newer
+Android Gradle plugin that has been tested with compileSdk = 35.
+
+If you are already using the latest version of the Android Gradle plugin,
+you may need to wait until a newer version with support for compileSdk = 35 is available.
+
+To suppress this warning, add/update
+    android.suppressUnsupportedCompileSdk=35
+to this project's gradle.properties.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:javaPreCompileDebug
+> Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+
+> Task :app:processDebugMainManifest
+package="com.winlator" found in source AndroidManifest.xml: /home/runner/work/winlator-app/winlator-app/app/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.winlator" from the source AndroidManifest.xml: /home/runner/work/winlator-app/winlator-app/app/src/main/AndroidManifest.xml.
+/home/runner/work/winlator-app/winlator-app/app/src/main/AndroidManifest.xml:23:9-41 Warning:
+	android:extractNativeLibs should not be specified in this source AndroidManifest.xml file. See https://d.android.com/guide/topics/manifest/application-element#extractNativeLibs for more information.
+The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml file and update the build file accordingly. See https://d.android.com/studio/build/agp-upgrade-assistant for more information.
+
+> Task :app:mergeDebugResources
+/home/runner/work/winlator-app/winlator-app/app/src/main/res/values-pt/strings.xml:37:4: Multiple substitutions specified in non-positional format of string resource string/multiselection_combobox_display_text. Did you mean to add the formatted="false" attribute?
+/home/runner/work/winlator-app/winlator-app/app/src/main/res/values/strings.xml:41:4: Multiple substitutions specified in non-positional format of string resource string/multiselection_combobox_display_text. Did you mean to add the formatted="false" attribute?
+/home/runner/work/winlator-app/winlator-app/app/src/main/res/values-ru/strings.xml:37:4: Multiple substitutions specified in non-positional format of string resource string/multiselection_combobox_display_text. Did you mean to add the formatted="false" attribute?
+
+> Task :app:processDebugManifest
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:processDebugManifestForPackage
+> Task :app:compressDebugAssets
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mergeDebugArtProfile
+> Task :app:extractProguardFiles
+> Task :app:processDebugJavaRes NO-SOURCE
+> Task :app:mergeDebugStartupProfile
+> Task :app:mergeDebugJavaResource
+> Task :app:processDebugResources
+
+> Task :app:configureCMakeDebug[arm64-v8a]
+C/C++: CMake Warning (dev) in CMakeLists.txt:
+C/C++:   No project() command is present.  The top-level CMakeLists.txt file must
+C/C++:   contain a literal, direct call to the project() command.  Add a line of
+C/C++:   code such as
+C/C++:     project(ProjectName)
+C/C++:   near the top of the file, but after cmake_minimum_required().
+C/C++:   CMake is pretending there is a "project(Project)" command on the first
+C/C++:   line.
+C/C++: This warning is for project developers.  Use -Wno-dev to suppress it.
+
+> Task :app:compileDebugJavaWithJavac
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:113: error: a type with the same simple name is already defined by the single-type-import of WindowManager
+import com.winlator.xserver.WindowManager;
+^
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:286: error: reference to WindowManager is ambiguous
+        xServer.windowManager.addOnWindowModificationListener(new WindowManager.OnWindowModificationListener() {
+                                                                  ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:287: error: method does not override or implement a method from a supertype
+            @Override
+            ^
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:292: error: method does not override or implement a method from a supertype
+            @Override
+            ^
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:309: error: method does not override or implement a method from a supertype
+            @Override
+            ^
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:653: error: reference to WindowManager is ambiguous
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                              ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+            window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+                            ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+            window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+                                                                         ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+        if (window != null) window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+                                             ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+        if (window != null) window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+                                                                                      ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+10 errors
+
+> Task :app:compileDebugJavaWithJavac FAILED
+
+[Incubating] Problems report is available at: file:///home/runner/work/winlator-app/winlator-app/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugJavaWithJavac'.
+> Compilation failed; see the compiler output below.
+  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:286: error: reference to WindowManager is ambiguous
+          xServer.windowManager.addOnWindowModificationListener(new WindowManager.OnWindowModificationListener() {
+                                                                    ^
+    both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:653: error: reference to WindowManager is ambiguous
+              window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                                ^
+    both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+              window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+                              ^
+    both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+              window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+                                                                           ^
+    both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+          if (window != null) window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+                                               ^
+    both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+          if (window != null) window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+                                                                                        ^
+    both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:113: error: a type with the same simple name is already defined by the single-type-import of WindowManager
+  import com.winlator.xserver.WindowManager;
+  ^
+  Note: Recompile with -Xlint:deprecation for details.
+  Note: Recompile with -Xlint:unchecked for details.
+  Note: Some input files use or override a deprecated API.
+  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:287: error: method does not override or implement a method from a supertype
+              @Override
+              ^
+  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:292: error: method does not override or implement a method from a supertype
+              @Override
+              ^
+  /home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:309: error: method does not override or implement a method from a supertype
+              @Override
+              ^
+  Note: Some input files use unchecked or unsafe operations.
+  10 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugJavaWithJavac'.
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
+	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+	at org.gradle.api.internal.tasks.execution.ProblemsTaskPathTrackingTaskExecuter.execute(ProblemsTaskPathTrackingTaskExecuter.java:41)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler output below.
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:286: error: reference to WindowManager is ambiguous
+        xServer.windowManager.addOnWindowModificationListener(new WindowManager.OnWindowModificationListener() {
+                                                                  ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:653: error: reference to WindowManager is ambiguous
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                              ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+            window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+                            ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:654: error: reference to WindowManager is ambiguous
+            window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+                                                                         ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+        if (window != null) window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+                                             ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:660: error: reference to WindowManager is ambiguous
+        if (window != null) window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+                                                                                      ^
+  both interface android.view.WindowManager in android.view and class com.winlator.xserver.WindowManager in com.winlator.xserver match
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:113: error: a type with the same simple name is already defined by the single-type-import of WindowManager
+import com.winlator.xserver.WindowManager;
+^
+Note: Recompile with -Xlint:deprecation for details.
+Note: Recompile with -Xlint:unchecked for details.
+Note: Some input files use or override a deprecated API.
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:287: error: method does not override or implement a method from a supertype
+            @Override
+            ^
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:292: error: method does not override or implement a method from a supertype
+            @Override
+            ^
+/home/runner/work/winlator-app/winlator-app/app/src/main/java/com/winlator/XServerDisplayActivity.java:309: error: method does not override or implement a method from a supertype
+            @Override
+            ^
+Note: Some input files use unchecked or unsafe operations.
+10 errors
+	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:89)
+	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:50)
+	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.delegateAndHandleErrors(NormalizingJavaCompiler.java:98)
+	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.execute(NormalizingJavaCompiler.java:52)
+	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.execute(NormalizingJavaCompiler.java:38)
+	at org.gradle.api.internal.tasks.compile.AnnotationProcessorDiscoveringCompiler.execute(AnnotationProcessorDiscoveringCompiler.java:52)
+	at org.gradle.api.internal.tasks.compile.AnnotationProcessorDiscoveringCompiler.execute(AnnotationProcessorDiscoveringCompiler.java:38)
+	at org.gradle.api.internal.tasks.compile.ModuleApplicationNameWritingCompiler.execute(ModuleApplicationNameWritingCompiler.java:46)
+	at org.gradle.api.internal.tasks.compile.ModuleApplicationNameWritingCompiler.execute(ModuleApplicationNameWritingCompiler.java:36)
+	at org.gradle.jvm.toolchain.internal.DefaultToolchainJavaCompiler.execute(DefaultToolchainJavaCompiler.java:57)
+	at org.gradle.api.tasks.compile.JavaCompile.lambda$createToolchainCompiler$3(JavaCompile.java:206)
+	at org.gradle.api.internal.tasks.compile.CleaningJavaCompiler.execute(CleaningJavaCompiler.java:53)
+	at org.gradle.api.internal.tasks.compile.incremental.IncrementalCompilerFactory.lambda$createRebuildAllCompiler$0(IncrementalCompilerFactory.java:55)
+	at org.gradle.api.internal.tasks.compile.incremental.SelectiveCompiler.execute(SelectiveCompiler.java:70)
+	at org.gradle.api.internal.tasks.compile.incremental.SelectiveCompiler.execute(SelectiveCompiler.java:44)
+	at org.gradle.api.internal.tasks.compile.incremental.IncrementalResultStoringCompiler.execute(IncrementalResultStoringCompiler.java:66)
+	at org.gradle.api.internal.tasks.compile.incremental.IncrementalResultStoringCompiler.execute(IncrementalResultStoringCompiler.java:52)
+	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler$1.call(CompileJavaBuildOperationReportingCompiler.java:64)
+	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler$1.call(CompileJavaBuildOperationReportingCompiler.java:48)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler.execute(CompileJavaBuildOperationReportingCompiler.java:48)
+	at org.gradle.api.tasks.compile.JavaCompile.performCompilation(JavaCompile.java:224)
+	at org.gradle.api.tasks.compile.JavaCompile.performIncrementalCompilation(JavaCompile.java:165)
+	at org.gradle.api.tasks.compile.JavaCompile.compile(JavaCompile.java:150)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
+	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.doExecute(IncrementalTaskAction.java:45)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
+	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.execute(IncrementalTaskAction.java:26)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:244)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:30)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:27)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:48)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:229)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:212)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:195)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:162)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
+	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
+	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:75)
+	at org.gradle.internal.Either$Right.fold(Either.java:175)
+	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:46)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:75)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:35)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:49)
+	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:27)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:107)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:56)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:61)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:75)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:41)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$execute$0(AssignMutableWorkspaceStep.java:35)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:289)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:31)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:22)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:64)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+	at org.gradle.api.internal.tasks.execution.ProblemsTaskPathTrackingTaskExecuter.execute(ProblemsTaskPathTrackingTaskExecuter.java:41)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.5/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 18s
+22 actionable tasks: 22 executed
