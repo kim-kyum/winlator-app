@@ -182,34 +182,39 @@ static GpPen *make_pen(ARGB color, float width)
     return pen;
 }
 
-/* The S11 mark (tools/s11/branding/make_logo.py): three windows rising to the upper right */
+/* Start-button mark: keep the S11 windows, but omit the launcher tile so it reads as Start. */
 static void draw_logo(struct canvas *c, float cx, float cy, float size)
 {
     static const struct { float left, top, right, bottom; ARGB color; } panes[] = {
         {14, 44, 50, 84, 0xff55a7ff}, {28, 31, 66, 71, 0xff9ad5ff}, {44, 16, 86, 58, 0xffffffff},
     };
     float x = cx - size / 2, y = cy - size / 2, u = size / 100;
-    GpPointF p1 = {x, y}, p2 = {x + size, y + size};
-    GpLineGradient *gradient;
-    GpPath *path = round_rect_path(x, y, size, size, size * 0.23f);
     int i;
-
-    GdipCreateLineBrush(&p1, &p2, 0xff5cc0ff, 0xff568cff, WrapModeTile, &gradient);
-    GdipFillPath(c->g, (GpBrush *)gradient, path);
-    GdipDeletePath(path);
 
     for (i = 0; i < ARRAY_SIZE(panes); i++) {
         GpSolidFill *brush;
+        GpPath *path = round_rect_path(x + panes[i].left * u, y + panes[i].top * u,
+                                       (panes[i].right - panes[i].left) * u,
+                                       (panes[i].bottom - panes[i].top) * u, 8 * u);
         GdipCreateSolidFill(panes[i].color, &brush);
-        path = round_rect_path(x + panes[i].left * u, y + panes[i].top * u, (panes[i].right - panes[i].left) * u,
-                               (panes[i].bottom - panes[i].top) * u, 8 * u);
         GdipFillPath(c->g, (GpBrush *)brush, path);
         GdipDeletePath(path);
         GdipDeleteBrush((GpBrush *)brush);
+
+        if (i == ARRAY_SIZE(panes) - 1) {
+            GpPen *outline = make_pen(argb(pal.accent, 255), max(1.0f, size * 0.045f));
+            GpSolidFill *title_line;
+            path = round_rect_path(x + panes[i].left * u, y + panes[i].top * u,
+                                   (panes[i].right - panes[i].left) * u,
+                                   (panes[i].bottom - panes[i].top) * u, 8 * u);
+            GdipDrawPath(c->g, outline, path);
+            GdipDeletePath(path);
+            GdipDeletePen(outline);
+            GdipCreateSolidFill(argb(pal.accent, 255), &title_line);
+            GdipFillRectangle(c->g, (GpBrush *)title_line, x + 44 * u, y + 27 * u, 42 * u, 3.2f * u);
+            GdipDeleteBrush((GpBrush *)title_line);
+        }
     }
-    /* the line under the front window's title bar shows the tile through */
-    GdipFillRectangle(c->g, (GpBrush *)gradient, x + 44 * u, y + 27 * u, 42 * u, 3.2f * u);
-    GdipDeleteBrush((GpBrush *)gradient);
 }
 
 static void draw_search_glyph(struct canvas *c, float cx, float cy, float size, COLORREF color)

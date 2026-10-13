@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" width="376" height="128" alt="S11 Workspace logo" />
+  <img src="logo.png" width="128" height="128" alt="S11 Workspace logo" />
 </p>
 
 # S11 Workspace
@@ -12,7 +12,7 @@
 
 ## 구현된 기능
 
-- S11 작업 표시줄·시작 메뉴, Alt+Tab 창 전환, 달력·알림 영역, 통일된 내장 앱 아이콘
+- S11 작업 표시줄·시작 메뉴, Alt+Tab 창 전환, 달력·알림 영역, 통일된 내장 앱 아이콘. Windows 시작 표시는 앱 타일 배경 없이 별도 로고로 구분
 - 한국어 우선 인터페이스와 S11 스타일 파일 탐색기. 외부 UI는 개선했지만 내부 파일 목록은 아직 Wine ShellView를 사용합니다.
 - **내부 설정 앱:** 해상도·화면 배율, Wine 버전, 마우스 가속·포인터 속도(1–20), 테마·배경화면, 앱·글꼴 관리, `winecfg.exe` 실행
 - `Win+Shift+S`를 누르고 드래그해 **선택한 영역만 캡처**. PNG는 `C:\S11\Screenshots`에 저장되어 Gallery 앱에서 확인할 수 있습니다.
