@@ -4,38 +4,43 @@
 
 # S11 Workspace
 
-**Galaxy Tab S11을 우선 대상으로 만든 Android용 Windows 앱 작업공간입니다.** Wine과 Box64를 바탕으로 Windows 애플리케이션을 실행하고, 자체 작업 표시줄·시작 메뉴·파일 탐색기·설정 앱을 제공합니다. 원본 Winlator의 게임 중심 사용 경험을 그대로 유지하는 것이 아니라, 일반 앱과 생산성 작업에 맞춘 별도 제품 경험을 만드는 것이 목표입니다.
+**Galaxy Tab S11을 위한 생산성 중심 Android 작업공간입니다.** Wine과 Box64 기반 컨테이너에서 Windows 앱을 실행하고, 게임 런처가 아닌 작업 표시줄·시작 메뉴·파일 탐색기·내부 설정 앱을 제공합니다. 원본 Winlator를 그대로 포장하는 것이 아니라 Tab S11에 맞춘 별도 사용 경험을 만드는 프로젝트입니다.
 
-> 설치 파일: [최신 릴리스 다운로드](https://github.com/kim-kyum/winlator-app/releases/latest) · [전체 릴리스](https://github.com/kim-kyum/winlator-app/releases)
+> **다운로드:** [최신 공개 APK](https://github.com/kim-kyum/winlator-app/releases/latest) · [전체 릴리스](https://github.com/kim-kyum/winlator-app/releases)
+>
+> README를 갱신하기 전 마지막으로 확인한 공개 버전은 build 27(2026-10-12)입니다. `tab-s11` 브랜치 푸시마다 새 빌드가 생성되므로 현재 버전은 최신 릴리스 링크에서 확인하세요. 새 기능의 실제 사용 결과는 Galaxy Tab S11에서 별도로 확인해 주세요.
 
-## 주요 기능
+## 구현된 기능
 
-- Windows 앱을 실행하는 Wine/Box64 기반 컨테이너
-- S11 Workspace 작업 표시줄, 시작 메뉴, 창 전환(Alt+Tab), 달력 및 알림 영역
-- 한국어 우선 UI, 설정 앱과 통일한 내장 앱 아이콘, S11 전용 파일 탐색기
-- 컨테이너 안에서 여는 설정 앱: 화면 해상도·배율(DPI), Wine 호환성·마우스 가속·포인터 속도, 테마, 배경화면, 앱·글꼴 관리
-- `Win+Shift+S` 드래그 영역 캡처와 Gallery 앱 (`C:\S11\Screenshots`)
-- 작업 표시줄 Wi-Fi·Bluetooth 버튼과 설정 앱의 연결 페이지에서 Android 시스템 설정 열기
-- 명령 프롬프트를 `C:\`에서 시작
-- Android 기기의 기존 Winlator와 별도로 설치·실행
+- S11 작업 표시줄·시작 메뉴, Alt+Tab 창 전환, 달력·알림 영역, 통일된 내장 앱 아이콘
+- 한국어 우선 인터페이스와 S11 스타일 파일 탐색기. 외부 UI는 개선했지만 내부 파일 목록은 아직 Wine ShellView를 사용합니다.
+- **내부 설정 앱:** 해상도·화면 배율, Wine 버전, 마우스 가속·포인터 속도(1–20), 테마·배경화면, 앱·글꼴 관리, `winecfg.exe` 실행
+- `Win+Shift+S`를 누르고 드래그해 **선택한 영역만 캡처**. PNG는 `C:\S11\Screenshots`에 저장되어 Gallery 앱에서 확인할 수 있습니다.
+- 작업 표시줄과 설정의 Wi‑Fi·Bluetooth 버튼으로 Android 시스템 설정 열기
+- 명령 프롬프트는 `C:\`에서 시작
+- 원본 Winlator와 별도 설치 가능; 앱과 컨테이너 데이터가 분리됩니다.
 
-## 설치
+## 알려진 제한 및 진행 중인 작업
 
-1. [최신 릴리스](https://github.com/kim-kyum/winlator-app/releases/latest)에서 `S11-Workspace-build*.apk`를 받습니다.
-2. Android에서 APK를 설치하고 앱을 실행합니다. 최초 실행 시 필요한 호환성 환경을 준비하는 데 시간이 걸릴 수 있습니다.
-3. 컨테이너를 만든 뒤 시작 메뉴에서 앱을 실행하거나, 시작 메뉴의 **설정**에서 작업공간을 조정합니다.
-
-S11 Workspace는 원본 Winlator와 다른 Android 애플리케이션 ID를 사용하므로 두 앱을 나란히 설치할 수 있습니다. 컨테이너 데이터는 각각 분리됩니다.
+- Wi‑Fi와 Bluetooth는 Android가 관리합니다. 현재 버튼은 Android 시스템 설정으로 이동하며, S11 내부에서 무선 라디오를 직접 켜고 끄는 기능은 제공하지 않습니다.
+- 설정의 마우스 포인터 속도는 **컨테이너 안 Windows 포인터 속도**입니다. 실제 마우스 센서의 하드웨어 DPI를 변경하지 않습니다. 해상도·화면 배율 등 화면 구성 변경은 컨테이너 재시작이 필요할 수 있습니다.
+- 파일 탐색기 내부 목록은 Wine ShellView를 유지하고 있습니다. 전체를 자체 구현한 현대식 파일 목록으로 교체하는 작업은 아직 완료되지 않았습니다.
+- Android 쪽의 게임 중심 컨트롤·프로필 기능을 정리하는 작업도 진행 대상으로 남아 있습니다.
+- Direct3D 검은 화면 문제는 앱과 그래픽 API별 추가 진단이 필요합니다. Chrome·Firefox 등 x86/x64 브라우저의 성능 개선도 확정되지 않았습니다.
+- Autodesk Fusion 360의 설치·실행은 호환성이 검증되지 않았으며 지원을 보장하지 않습니다.
 
 ## 기기 및 호환성
 
-- **주 대상:** Samsung Galaxy Tab S11 계열(ARM64 Android). Tab S11은 MediaTek Dimensity 9400+를 사용합니다.
-- 다른 Android 기기에서도 실행될 수 있지만, GPU·드라이버·메모리와 Android 버전에 따라 결과가 달라집니다.
-- 이 앱은 Windows 자체가 아닙니다. Windows용 x86/x64 앱의 실행 가능 여부와 기능은 Wine 호환성, CPU 변환, 그래픽 드라이버 및 앱별 요구사항에 좌우됩니다.
-- Direct3D 경로는 API에 따라 다릅니다. WineD3D는 OpenGL 경로, DXVK는 Vulkan 기반 D3D9/10/11 경로, VKD3D는 D3D12 경로에 해당합니다. 드라이버가 필요한 기능을 지원하지 않거나 앱이 다른 API를 요구하면 렌더링 실패·검은 화면이 생길 수 있습니다.
-- 브라우저와 무거운 x86/x64 앱은 ARM 기기에서 CPU 변환과 호환성 계층 때문에 느릴 수 있습니다.
-- Autodesk Fusion 360 설치·실행을 비롯해 모든 Windows 앱의 호환성이 검증된 것은 아닙니다. 그래픽·전문 앱은 특히 기기 및 컨테이너 설정별 확인이 필요합니다.
-- Wi‑Fi·Bluetooth 상태는 Android가 관리합니다. 작업 표시줄 버튼과 S11 설정의 연결 페이지에서 Android 시스템 설정을 열며, Wine에서 무선 라디오를 직접 켜고 끄지는 않습니다.
+- **개발·검증 대상:** Samsung Galaxy Tab S11 계열, ARM64, MediaTek Dimensity 9400+, Mali Immortalis-G925. 다른 기기는 이 프로젝트의 지원·검증 대상이 아닙니다.
+- 이 앱은 Windows 자체가 아닙니다. Windows용 x86/x64 앱의 동작은 Wine 호환성, CPU 변환, 그래픽 드라이버 및 앱별 요구사항에 따라 달라집니다.
+- 그래픽 경로는 앱이 요구하는 API와 컨테이너 설정에 따라 다릅니다. WineD3D는 주로 Direct3D를 OpenGL로 변환하고, DXVK는 D3D 9/10/11을 Vulkan으로, VKD3D는 D3D 12를 Vulkan으로 변환합니다. 검은 화면이나 렌더링 오류가 발생하면 앱/API와 실제 드라이버·DX Wrapper 조합을 확인해야 합니다.
+- 브라우저와 무거운 x86/x64 앱은 ARM 환경의 CPU 변환 및 호환성 계층 때문에 느릴 수 있습니다. Galaxy Tab S11은 Mali GPU를 사용하므로 Adreno 전용 Turnip 경로를 전제로 하지 않습니다.
+
+## 설치
+
+1. [최신 공개 릴리스](https://github.com/kim-kyum/winlator-app/releases/latest)에서 APK를 받습니다.
+2. Android에 설치하고 실행합니다. 최초 실행 시 호환성 환경을 준비하는 데 시간이 걸릴 수 있습니다.
+3. 컨테이너를 만든 뒤 시작 메뉴에서 앱을 실행하고, **설정**에서 작업공간을 조정합니다.
 
 ## 소스에서 빌드
 
@@ -58,7 +63,7 @@ S11 rootfs overlay를 다시 만들 때는 `zstd`가 필요합니다.
 python3 tools/s11/build_overlay.py tools/s11/rootfs-overlay app/src/main/assets
 ```
 
-GitHub Actions 워크플로는 브랜치에 푸시될 때 overlay와 APK를 빌드하고, 서명 설정이 가능한 경우 릴리스를 생성합니다. [워크플로 실행 내역](https://github.com/kim-kyum/winlator-app/actions/workflows/build-s11.yml)
+`tab-s11` 브랜치에 푸시하면 [GitHub Actions](https://github.com/kim-kyum/winlator-app/actions/workflows/build-s11.yml)가 overlay와 APK를 빌드합니다. 저장소의 서명 설정이 가능하면 공개 릴리스도 생성합니다.
 
 ## 기반 프로젝트 및 크레딧
 
@@ -68,7 +73,7 @@ S11 Workspace는 [Winlator](https://github.com/brunodev85/winlator) 소스에서
 
 - [Wine](https://www.winehq.org/)
 - [Box86/Box64](https://github.com/ptitSeb)
-- [Mesa](https://www.mesa3d.org/) — Turnip, Zink, VirGL 등
+- [Mesa](https://www.mesa3d.org/) — Zink, VirGL 등
 - [DXVK](https://github.com/doitsujin/dxvk)
 - [VKD3D](https://gitlab.winehq.org/wine/vkd3d)
 - [CNC DDraw](https://github.com/FunkyFr3sh/cnc-ddraw)
