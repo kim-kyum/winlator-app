@@ -125,6 +125,14 @@ to the container in Winlator, so it sends them to winhandler's UDP port (codes 1
 banner offers to restart right away. The S11 pictures are packed into the overlay from the
 app's assets by `build_overlay.py`.
 
+The full container settings open from the Settings app as well (code 108,
+`S11ContainerSettingsActivity`), while the container runs. Most of them are container data
+that apply at the next start anyway. The system font, dpi, mouse warp and Windows version
+are registry values, and wineserver writes its copy of the registry over `user.reg` and
+`system.reg` while it runs, so `PendingRegistry` keeps the ones changed there in the
+container data and writes them before Wine starts the next time. The page shows them in
+the meantime.
+
 The display size is fixed when the X server starts (`XServer.screenInfo` is immutable), so a
 resolution change still requires restarting the container; changing it live needs coordinated
 X-server, renderer, Wine desktop and window-manager resize support.

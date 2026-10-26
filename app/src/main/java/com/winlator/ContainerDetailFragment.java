@@ -58,6 +58,7 @@ import com.winlator.core.WineInstaller;
 import com.winlator.core.WineRegistryEditor;
 import com.winlator.core.WineThemeManager;
 import com.winlator.s11.ModernLook;
+import com.winlator.s11.PendingRegistry;
 import com.winlator.core.WineUtils;
 import com.winlator.widget.CPUListView;
 import com.winlator.widget.ColorPickerView;
@@ -89,18 +90,33 @@ public class ContainerDetailFragment extends Fragment {
         {R.id.LLTabEnvVars, R.string.environment_variables, R.drawable.s11_ic_env},
         {R.id.LLTabAdvanced, R.string.advanced, R.drawable.s11_ic_advanced},
     };
+    private static final String ARG_CONTAINER_ID = "container_id";
     private ContainerManager manager;
-    private final int containerId;
     private Container container;
     private PreloaderDialog preloaderDialog;
     private Callback<String> openDirectoryCallback;
+    // Winlator S11: the registry values the page showed when it opened, to tell which ones were changed
+    private String shownSystemFont;
+    private int shownLogPixels;
+    private String shownMouseWarpOverride;
 
-    public ContainerDetailFragment() {
-        this(0);
-    }
+    public ContainerDetailFragment() {}
 
     public ContainerDetailFragment(int containerId) {
-        this.containerId = containerId;
+        // in the arguments, so a page Android recreates (dark mode switched, say) keeps its container
+        Bundle args = new Bundle();
+        args.putInt(ARG_CONTAINER_ID, containerId);
+        setArguments(args);
+    }
+
+    private int getContainerId() {
+        Bundle args = getArguments();
+        return args != null ? args.getInt(ARG_CONTAINER_ID, 0) : 0;
+    }
+
+    /** Opened from a running session (the S11 Settings app), not from the container list. */
+    private boolean isOpenFromSession() {
+        return getActivity() instanceof S11ContainerSettingsActivity;
     }
 
     @Override
@@ -138,6 +154,7 @@ public class ContainerDetailFragment extends Fragment {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
         final View view = inflater.inflate(R.layout.container_detail_fragment, root, false);
         manager = new ContainerManager(context);
+        int containerId = getContainerId();
         container = containerId > 0 ? manager.getContainerById(containerId) : null;
 
         final EditText etName = view.findViewById(R.id.ETName);
@@ -256,15 +273,15 @@ public class ContainerDetailFragment extends Fragment {
                     container.setStartupSelection(startupSelection);
                     container.setBox64Preset(box64Preset);
                     container.setDesktopTheme(desktopTheme);
+                    // before saveData: from a running session this keeps registry values in the container data
+                    saveWineRegistryKeys(view);
                     container.saveData();
 
-                    saveWineRegistryKeys(view);
-
                     boolean requireRestart = graphicsDriver.equals(GraphicsDrivers.VORTEK) && VortekConfigDialog.isRequireRestart(oldGraphicsDriverConfig, graphicsDriverConfig);
-                    if (requireRestart && !(getActivity() instanceof S11ContainerSettingsActivity))
+                    if (requireRestart && !isOpenFromSession())
                         ContentDialog.confirm(context, R.string.the_settings_have_been_changed_do_you_want_to_restart_the_app, () -> AppUtils.restartApplication(context));
 
-                    if (getActivity() instanceof S11ContainerSettingsActivity)
+                    if (isOpenFromSession())
                         ((S11ContainerSettingsActivity)getActivity()).markContainerProfileSaved();
                     getActivity().onBackPressed();
                 }
@@ -384,27 +401,42 @@ public class ContainerDetailFragment extends Fragment {
     }
 
     private void saveWineRegistryKeys(View view) {
+        Spinner sSystemFont = view.findViewById(R.id.SSystemFont);
+        String systemFont = sSystemFont.getSelectedItem().toString();
+        SeekBar sbLogPixels = view.findViewById(R.id.SBLogPixels);
+        int logPixels = Math.round(sbLogPixels.getValue());
+        Spinner sMouseWarpOverride = view.findViewById(R.id.SMouseWarpOverride);
+        String mouseWarpOverride = MOUSE_WARP_OVERRIDE_VALUES[sMouseWarpOverride.getSelectedItemPosition()];
+        // the tag is the version shown when the page was read, -1 when it was never opened
+        Spinner sWinVersion = view.findViewById(R.id.SWinVersion);
+        int oldWinVersion = (byte)sWinVersion.getTag();
+        int newWinVersion = sWinVersion.getSelectedItemPosition();
+        boolean winVersionChanged = oldWinVersion != -1 && oldWinVersion != newWinVersion;
+
+        if (isOpenFromSession()) {
+            // Winlator S11: Wine is running and wineserver would write its copy of the registry
+            // over the files, so the values changed here wait for the next start (PendingRegistry).
+            // Only those, so that values Windows programs changed in the meantime are kept.
+            if (!systemFont.equals(shownSystemFont)) container.putExtra(PendingRegistry.SYSTEM_FONT, systemFont);
+            if (logPixels != shownLogPixels) container.putExtra(PendingRegistry.LOG_PIXELS, String.valueOf(logPixels));
+            if (!mouseWarpOverride.equals(shownMouseWarpOverride)) container.putExtra(PendingRegistry.MOUSE_WARP_OVERRIDE, mouseWarpOverride);
+            if (winVersionChanged) container.putExtra(PendingRegistry.WIN_VERSION, WinVersions.getWinVersions()[newWinVersion].version);
+            return;
+        }
+
+        // Wine is not running: first what a session left for its next start, then this page
+        PendingRegistry.applyIfNeeded(container);
+
         File userRegFile = new File(container.getRootDir(), ".wine/user.reg");
         try (WineRegistryEditor registryEditor = new WineRegistryEditor(userRegFile)) {
-            Spinner sSystemFont = view.findViewById(R.id.SSystemFont);
-            WineUtils.setSystemFont(registryEditor, sSystemFont.getSelectedItem().toString());
-
-            SeekBar sbLogPixels = view.findViewById(R.id.SBLogPixels);
-            registryEditor.setDwordValue("Control Panel\\Desktop", "LogPixels", (int)sbLogPixels.getValue());
-
-            Spinner sMouseWarpOverride = view.findViewById(R.id.SMouseWarpOverride);
-            registryEditor.setStringValue("Software\\Wine\\DirectInput", "MouseWarpOverride", MOUSE_WARP_OVERRIDE_VALUES[sMouseWarpOverride.getSelectedItemPosition()]);
-
+            WineUtils.setSystemFont(registryEditor, systemFont);
+            registryEditor.setDwordValue("Control Panel\\Desktop", "LogPixels", logPixels);
+            registryEditor.setStringValue("Software\\Wine\\DirectInput", "MouseWarpOverride", mouseWarpOverride);
             registryEditor.setStringValue("Software\\Wine\\Direct3D", "shader_backend", "glsl");
             registryEditor.setStringValue("Software\\Wine\\Direct3D", "UseGLSL", "enabled");
         }
 
-        Spinner sWinVersion = view.findViewById(R.id.SWinVersion);
-        int oldPosition = (byte)sWinVersion.getTag();
-        if (oldPosition != -1) {
-            int newPosition = sWinVersion.getSelectedItemPosition();
-            if (oldPosition != newPosition) WineUtils.setWinVersion(container, newPosition);
-        }
+        if (winVersionChanged) WineUtils.setWinVersion(container, newWinVersion);
     }
 
     private void createWineConfigurationTab(View view) {
@@ -442,22 +474,29 @@ public class ContainerDetailFragment extends Fragment {
         File containerDir = isEditMode() ? container.getRootDir() : null;
         File userRegFile = new File(containerDir, ".wine/user.reg");
 
+        // Winlator S11: values saved while the container was running, which Wine gets at its next
+        // start, are shown instead of the ones in the registry files (PendingRegistry)
         try (WineRegistryEditor registryEditor = new WineRegistryEditor(userRegFile)) {
             Spinner sSystemFont = view.findViewById(R.id.SSystemFont);
             MSLogFont msLogFont = (new MSLogFont()).fromByteArray(registryEditor.getHexValues("Control Panel\\Desktop\\WindowMetrics", "CaptionFont"));
-            AppUtils.setSpinnerSelectionFromValue(sSystemFont, msLogFont.getFaceName());
+            AppUtils.setSpinnerSelectionFromValue(sSystemFont, PendingRegistry.get(container, PendingRegistry.SYSTEM_FONT, msLogFont.getFaceName()));
+            shownSystemFont = sSystemFont.getSelectedItem().toString();
 
             SeekBar sbLogPixels = view.findViewById(R.id.SBLogPixels);
             // Winlator S11: new containers start at 144 dpi, which goes with the 1920x1200 default
-            sbLogPixels.setValue(registryEditor.getDwordValue("Control Panel\\Desktop", "LogPixels", isEditMode() ? 96 : ModernLook.DEFAULT_DPI));
+            Integer logPixels = registryEditor.getDwordValue("Control Panel\\Desktop", "LogPixels", isEditMode() ? 96 : ModernLook.DEFAULT_DPI);
+            sbLogPixels.setValue(PendingRegistry.getLogPixels(container, logPixels));
+            shownLogPixels = Math.round(sbLogPixels.getValue());
 
             List<String> mouseWarpOverrideList = Arrays.asList(context.getString(R.string.disable), context.getString(R.string.enable), context.getString(R.string.force));
             Spinner sMouseWarpOverride = view.findViewById(R.id.SMouseWarpOverride);
             sMouseWarpOverride.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, mouseWarpOverrideList));
             // by value, not by the (translated) text
             String mouseWarpOverride = registryEditor.getStringValue("Software\\Wine\\DirectInput", "MouseWarpOverride", "disable");
+            mouseWarpOverride = PendingRegistry.get(container, PendingRegistry.MOUSE_WARP_OVERRIDE, mouseWarpOverride);
             int mouseWarpOverrideIndex = Arrays.asList(MOUSE_WARP_OVERRIDE_VALUES).indexOf(mouseWarpOverride.toLowerCase(Locale.ENGLISH));
             sMouseWarpOverride.setSelection(Math.max(0, mouseWarpOverrideIndex), false);
+            shownMouseWarpOverride = MOUSE_WARP_OVERRIDE_VALUES[sMouseWarpOverride.getSelectedItemPosition()];
         }
     }
 

@@ -119,6 +119,7 @@ import com.winlator.s11.KoreanFonts;
 import com.winlator.s11.LegacyBrowserCleanup;
 import com.winlator.s11.MetaKeyCapture;
 import com.winlator.s11.ModernLook;
+import com.winlator.s11.PendingRegistry;
 import com.winlator.s11.PowerMenu;
 import com.winlator.s11.RootfsOverlay;
 import com.winlator.s11.S11Settings;
@@ -932,6 +933,9 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
         if (KoreanFonts.applyIfNeeded(container, rootFS.getRootDir())) containerDataChanged = true;
         if (ModernLook.applyIfNeeded(container, rootFS.getRootDir())) containerDataChanged = true;
+        // Winlator S11: registry settings saved in the container settings while it was running
+        // (after the defaults above, so the user's choice wins)
+        if (PendingRegistry.applyIfNeeded(container)) containerDataChanged = true;
 
         // Winlator S11: our taskbar and start menu instead of explorer's
         s11ShellEnabled = S11Shell.isEnabled(preferences, rootFS.getRootDir());

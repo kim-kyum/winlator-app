@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 
 import com.winlator.container.Container;
 import com.winlator.core.WineRegistryEditor;
+import com.winlator.s11.PendingRegistry;
 
 import java.io.File;
 import java.util.concurrent.Executors;
@@ -92,6 +93,11 @@ public abstract class WinVersions {
                         }
                     }
                 }
+
+                // Winlator S11: a version saved while the container was running, which Wine
+                // gets at its next start (PendingRegistry)
+                int pendingPosition = PendingRegistry.getWinVersionIndex(container);
+                if (pendingPosition != -1) position = (byte)pendingPosition;
 
                 final byte newPosition = position;
                 sWinVersion.post(() -> {
