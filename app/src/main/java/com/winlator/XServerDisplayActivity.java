@@ -338,6 +338,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
                 editInputControlsCallback = null;
             }
         }
+        if (requestCode == S11_CONTAINER_SETTINGS_REQUEST_CODE && resultCode == Activity.RESULT_OK && container != null) {
+            Container updated = new ContainerManager(this).getContainerById(container.id);
+            if (updated != null) container = updated;
+        }
     }
 
     @Override
@@ -604,15 +608,6 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             intent.putExtra(S11ContainerSettingsActivity.EXTRA_CONTAINER_ID, container.id);
             startActivityForResult(intent, S11_CONTAINER_SETTINGS_REQUEST_CODE);
         });
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == S11_CONTAINER_SETTINGS_REQUEST_CODE && resultCode == Activity.RESULT_OK && container != null) {
-            Container updated = new ContainerManager(this).getContainerById(container.id);
-            if (updated != null) container = updated;
-        }
     }
 
     /** Opens the device-owned controls from the S11 Connectivity page. Android keeps radio
