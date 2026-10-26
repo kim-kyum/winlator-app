@@ -416,4 +416,5 @@
     <string name="s11_cs_cpu">Processor</string>
     <string name="s11_cs_cpu_desc">Cores the programs may run on.</string>
     <string name="s11_containers_empty">No containers yet. Tap + at the top to make one.</string>
+    <string name="s11_container_settings_restart_hint">Edit the active container here without returning to the container list. Save your changes, then restart the container from the Windows Start menu to apply them.</string>
 </resources>

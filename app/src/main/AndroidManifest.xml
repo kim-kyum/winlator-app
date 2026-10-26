@@ -44,6 +44,12 @@
             android:windowSoftInputMode="stateAlwaysHidden"
             android:screenOrientation="sensorLandscape" />
 
+        <activity android:name="com.winlator.S11ContainerSettingsActivity"
+            android:exported="false"
+            android:theme="@style/AppThemeDark"
+            android:screenOrientation="sensor"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density|navigation" />
+
         <activity android:name="com.winlator.ControlsEditorActivity"
             android:exported="false"
             android:theme="@style/AppThemeFullscreenDark"

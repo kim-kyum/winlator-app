@@ -34,4 +34,5 @@ abstract class RequestCodes {
     public static final byte S11_OPEN_WIFI = 105;
     public static final byte S11_OPEN_BLUETOOTH = 106;
     public static final byte S11_SCREENSHOT = 107;
+    public static final byte S11_OPEN_CONTAINER_SETTINGS = 108;
 }

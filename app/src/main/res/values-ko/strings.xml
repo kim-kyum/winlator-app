@@ -360,4 +360,5 @@
     <string name="s11_screenshot_failed">캡처를 저장하지 못했어요.</string>
     <string name="s11_screenshot_not_ready">화면이 준비된 뒤 다시 시도해 주세요.</string>
     <string name="s11_connectivity_unavailable">기기 연결 설정을 열지 못했어요.</string>
+    <string name="s11_container_settings_restart_hint">컨테이너 목록으로 나가지 않고 현재 컨테이너를 편집합니다. 저장한 뒤 Windows 시작 메뉴에서 컨테이너를 다시 시작해야 변경 사항이 적용됩니다.</string>
 </resources>

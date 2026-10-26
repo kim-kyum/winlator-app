@@ -261,8 +261,11 @@ public class ContainerDetailFragment extends Fragment {
                     saveWineRegistryKeys(view);
 
                     boolean requireRestart = graphicsDriver.equals(GraphicsDrivers.VORTEK) && VortekConfigDialog.isRequireRestart(oldGraphicsDriverConfig, graphicsDriverConfig);
-                    if (requireRestart) ContentDialog.confirm(context, R.string.the_settings_have_been_changed_do_you_want_to_restart_the_app, () -> AppUtils.restartApplication(context));
+                    if (requireRestart && !(getActivity() instanceof S11ContainerSettingsActivity))
+                        ContentDialog.confirm(context, R.string.the_settings_have_been_changed_do_you_want_to_restart_the_app, () -> AppUtils.restartApplication(context));
 
+                    if (getActivity() instanceof S11ContainerSettingsActivity)
+                        ((S11ContainerSettingsActivity)getActivity()).markContainerProfileSaved();
                     getActivity().onBackPressed();
                 }
                 else {

@@ -140,6 +140,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.Executors;
 
 public class XServerDisplayActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+    private static final int S11_CONTAINER_SETTINGS_REQUEST_CODE = 812;
     private XServerView xServerView;
     private InputControlsView inputControlsView;
     private TouchpadView touchpadView;
@@ -593,6 +594,25 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             if (container == null || isFinishing()) return;
             if (S11Settings.apply(this, container, code, value)) container.saveData();
         });
+    }
+
+    /** Opens the full container profile editor without returning to the container list. */
+    public void openS11ContainerSettings() {
+        runOnUiThread(() -> {
+            if (container == null || isFinishing()) return;
+            Intent intent = new Intent(this, S11ContainerSettingsActivity.class);
+            intent.putExtra(S11ContainerSettingsActivity.EXTRA_CONTAINER_ID, container.id);
+            startActivityForResult(intent, S11_CONTAINER_SETTINGS_REQUEST_CODE);
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == S11_CONTAINER_SETTINGS_REQUEST_CODE && resultCode == Activity.RESULT_OK && container != null) {
+            Container updated = new ContainerManager(this).getContainerById(container.id);
+            if (updated != null) container = updated;
+        }
     }
 
     /** Opens the device-owned controls from the S11 Connectivity page. Android keeps radio

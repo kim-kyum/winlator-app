@@ -21,6 +21,7 @@
 #define WINLATOR_SET_SCREEN 102
 #define WINLATOR_SET_THEME 103
 #define WINLATOR_SET_WALLPAPER 104
+#define WINLATOR_OPEN_CONTAINER_SETTINGS 108
 
 #define S11_KEY L"Software\\Winlator\\S11"
 #define WALLPAPER_DIR L"Z:\\usr\\share\\s11\\wallpapers"
@@ -34,7 +35,8 @@ enum page { PAGE_SYSTEM, PAGE_WINE, PAGE_CONNECTIVITY, PAGE_PERSONALIZE, PAGE_AP
 
 enum control_id {
     ID_SCALE = 100, ID_RESOLUTION, ID_WINVER, ID_RESTART, ID_MODE, ID_ALIGN, ID_MOUSE, ID_OPEN_WIFI, ID_OPEN_BLUETOOTH,
-    ID_APP_LIST, ID_UNINSTALL, ID_INSTALL, ID_FONT_LIST, ID_FONT_INSTALL, ID_BROWSE, ID_MOUSE_SPEED
+    ID_APP_LIST, ID_UNINSTALL, ID_INSTALL, ID_FONT_LIST, ID_FONT_INSTALL, ID_BROWSE, ID_MOUSE_SPEED,
+    ID_CONTAINER_SETTINGS
 };
 
 static HINSTANCE instance;
@@ -48,7 +50,7 @@ static int scroll_y, content_bottom;
 
 /* controls of each page */
 static HWND scale_box, resolution_box, winver_box, restart_button, mode_box, align_box, mouse_box, mouse_speed_box, browse_button;
-static HWND wifi_button, bluetooth_button;
+static HWND wifi_button, bluetooth_button, container_settings_button;
 static HWND app_list, uninstall_button, install_button, font_list, font_install_button;
 static HIMAGELIST app_images, font_images;
 
@@ -891,6 +893,9 @@ static void build_rows(void)
     r = add_row(PAGE_WINE, TR(L"마우스 포인터 속도", L"Mouse pointer speed"), &mouse_speed_box);
     lstrcpyW(r->detail, TR(L"컨테이너 안 포인터 감도(1–20)예요. 실제 마우스 센서 DPI는 바꾸지 않아요.",
                            L"Sets the guest pointer speed (1–20), not the mouse sensor's hardware DPI."));
+    r = add_row(PAGE_WINE, TR(L"컨테이너 전체 설정", L"Full container settings"), &container_settings_button);
+    lstrcpyW(r->detail, TR(L"그래픽, Wine, Box64, 드라이브, 환경 변수 등 나머지 설정을 엽니다. 저장한 뒤 컨테이너를 다시 시작해야 적용됩니다.",
+                           L"Edit graphics, Wine, Box64, drives and environment variables. Restart the container after saving to apply changes."));
 
     r = add_row(PAGE_CONNECTIVITY, TR(L"Wi-Fi 및 네트워크", L"Wi-Fi and network"), &wifi_button);
     lstrcpyW(r->detail, TR(L"Wi-Fi 설정은 Android가 관리하며, 버튼을 누르면 Android 설정이 열립니다.",
@@ -1346,6 +1351,7 @@ static void create_controls(void)
     fill_mouse_acceleration();
     mouse_speed_box = make_combo(ID_MOUSE_SPEED);
     fill_mouse_speed();
+    container_settings_button = make_button(ID_CONTAINER_SETTINGS, TR(L"전체 설정 열기", L"Open full settings"));
     wifi_button = make_button(ID_OPEN_WIFI, TR(L"Wi-Fi 설정 열기", L"Open Wi-Fi settings"));
     bluetooth_button = make_button(ID_OPEN_BLUETOOTH, TR(L"Bluetooth 설정 열기", L"Open Bluetooth settings"));
     restart_button = make_button(ID_RESTART, TR(L"지금 다시 시작", L"Restart now"));
@@ -1588,6 +1594,9 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             break;
         case ID_OPEN_BLUETOOTH:
             send_winlator_request(WINLATOR_OPEN_BLUETOOTH);
+            break;
+        case ID_CONTAINER_SETTINGS:
+            send_winlator_request(WINLATOR_OPEN_CONTAINER_SETTINGS);
             break;
         case ID_BROWSE:
             browse_wallpaper();

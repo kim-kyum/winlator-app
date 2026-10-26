@@ -418,6 +418,9 @@ public class WinHandler {
             case RequestCodes.S11_SCREENSHOT:
                 activity.captureS11Screenshot();
                 break;
+            case RequestCodes.S11_OPEN_CONTAINER_SETTINGS:
+                activity.openS11ContainerSettings();
+                break;
             case RequestCodes.S11_SET_SCREEN:
             case RequestCodes.S11_SET_THEME:
             case RequestCodes.S11_SET_WALLPAPER: {
