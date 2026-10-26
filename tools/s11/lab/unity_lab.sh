@@ -88,11 +88,24 @@ preset_env() {   # Box64PresetManager
 }
 
 # --- prefix update, once, outside the timed runs -------------------------------------------
-log "wineboot"
-start=$(date +%s)
-env $(base_env) $(preset_env STABILITY) BOX64_UNITYPLAYER=0 timeout 900 "$BOX64" "$WINE" wineboot -u > "$OUT/wineboot.log" 2>&1
-env $(base_env) timeout 120 "$BOX64" "$WINESERVER" -w
-log "wineboot done in $(( $(date +%s) - start )) s"
+log "wine --version: $(env $(base_env) timeout 120 "$BOX64" "$WINE" --version 2>&1 | tail -1)"
+wineboot_prefix() {
+    local start=$(date +%s)
+    env $(base_env) $(preset_env STABILITY) BOX64_UNITYPLAYER=0 BOX64_LOG=1 WINEDEBUG=err+all,+module,+loaddll \
+        timeout 900 "$BOX64" "$WINE" wineboot -u > "$OUT/wineboot-full.log" 2>&1
+    env $(base_env) timeout 120 "$BOX64" "$WINESERVER" -w
+    { head -250 "$OUT/wineboot-full.log"; echo "....."; tail -120 "$OUT/wineboot-full.log"; } > "$OUT/wineboot-$1.log"
+    rm -f "$OUT/wineboot-full.log"
+    log "wineboot ($1) done in $(( $(date +%s) - start )) s; kernel32 errors: $(grep -c 'could not load kernel32' "$OUT/wineboot-$1.log")"
+    ! grep -q "could not load kernel32" "$OUT/wineboot-$1.log"
+}
+if ! wineboot_prefix pattern; then
+    log "the container pattern does not start; trying a new prefix"
+    mv "$WINEPREFIX" "$WINEPREFIX.pattern"
+    wineboot_prefix fresh || log "a new prefix does not start either"
+fi
+ls "$WINEPREFIX/drive_c/windows/system32" 2>/dev/null | head -20 >> "$SUMMARY"
+ls "$ROOTFS/opt/wine/lib/wine/" >> "$SUMMARY"
 
 # --- the test program ----------------------------------------------------------------------
 APPDIR="$WINEPREFIX/drive_c/apps"
