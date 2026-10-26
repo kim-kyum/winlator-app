@@ -42,22 +42,25 @@ BOX64="$LAB/box64-build/box64"
 log "box64: $("$BOX64" --version 2>&1 | head -1)"
 
 # --- Winlator's Wine and container prefix ------------------------------------------------
+# Winlator's Wine keeps its paths under /data/data/com.winlator/files/rootfs (wineserver's
+# socket directory, for one), so the rootfs goes there, as on the device.
+ROOTFS=/data/data/com.winlator/files/rootfs
 if [ ! -x "$LAB/rootfs/opt/wine/bin/wine" ]; then
     mkdir -p "$LAB/rootfs"
-    zstd -dc "$REPO/app/src/main/assets/rootfs.tzst" | tar -x -C "$LAB/rootfs" ./opt/wine ./usr/lib/x86_64-linux-gnu
+    zstd -dc "$REPO/app/src/main/assets/rootfs.tzst" | tar -x -C "$LAB/rootfs"
 fi
-WINE="$LAB/rootfs/opt/wine/bin/wine"
-WINESERVER="$LAB/rootfs/opt/wine/bin/wineserver"
-export WINEPREFIX="$LAB/prefix"
+sudo mkdir -p /data/data/com.winlator/files
+sudo ln -sfn "$LAB/rootfs" "$ROOTFS"
+mkdir -p "$LAB/rootfs/tmp" "$LAB/rootfs/home/xuser"
+chmod 1777 "$LAB/rootfs/tmp"
+WINE="$ROOTFS/opt/wine/bin/wine"
+WINESERVER="$ROOTFS/opt/wine/bin/wineserver"
+export HOME="$ROOTFS/home/xuser" USER=xuser TMPDIR="$ROOTFS/tmp"
+export WINEPREFIX="$HOME/.wine"
 if [ ! -d "$WINEPREFIX" ]; then
-    mkdir -p "$LAB/pattern"
-    zstd -dc "$REPO/app/src/main/assets/container_pattern.tzst" | tar -x -C "$LAB/pattern"
-    mv "$LAB/pattern/.wine" "$WINEPREFIX"
-    ln -sfn / "$WINEPREFIX/dosdevices/z:"
+    zstd -dc "$REPO/app/src/main/assets/container_pattern.tzst" | tar -x -C "$HOME"
 fi
-
-export HOME="$LAB/home" USER=xuser
-mkdir -p "$HOME"
+ls -la "$WINEPREFIX/dosdevices" >> "$SUMMARY"
 export BOX64_LD_LIBRARY_PATH="$LAB/rootfs/usr/lib/x86_64-linux-gnu:$LAB/box64-src/x64lib"
 export WINEDEBUG="${WINEDEBUG:--all}"
 export WINEDLLOVERRIDES="winemenubuilder.exe=d"
