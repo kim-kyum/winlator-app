@@ -1,0 +1,46 @@
+name: S11 Lab (Unity on ARM64)
+
+# Experiments that need an ARM64 CPU: Winlator's Wine under Box64 with S11's settings.
+# Results are pushed to the s11-lab-results branch (job logs are not reachable from the
+# build session).
+on:
+  push:
+    branches: [ s11-lab ]
+  workflow_dispatch:
+
+concurrency:
+  group: s11-lab
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  unity:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run the Unity lab
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          if [ -f tools/s11/lab/lab.env ]; then set -a; . tools/s11/lab/lab.env; set +a; fi
+          bash tools/s11/lab/unity_lab.sh . "$RUNNER_TEMP/results"
+          echo "lab exit: $?" >> "$RUNNER_TEMP/results/summary.txt"
+
+      - name: Publish results
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd "$RUNNER_TEMP/results" || exit 0
+          echo "run ${GITHUB_RUN_NUMBER} commit ${GITHUB_SHA}" > run.txt
+          git init -q
+          git config user.name "s11-lab"
+          git config user.email "s11-lab@users.noreply.github.com"
+          git add -A
+          git commit -qm "lab run ${GITHUB_RUN_NUMBER}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/s11-lab-results
