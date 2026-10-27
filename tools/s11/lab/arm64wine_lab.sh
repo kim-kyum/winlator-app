@@ -54,11 +54,42 @@ rm -rf "$W64" && mkdir -p "$W64"
 cp -a "$LAB/hangover/stage/usr/." "$W64/"
 du -sh "$W64" >> "$SUMMARY"
 ls "$W64/bin" "$W64/lib/wine" >> "$SUMMARY" 2>&1
+ELFS=""
 for b in "$W64"/bin/*; do
-    if file "$b" | grep -q "ELF.*aarch64"; then
-        patchelf --set-interpreter "$INTERP" "$b" 2>> "$SUMMARY" && log "interpreter set: $(basename "$b")"
-    fi
+    file "$b" | grep -q "ELF.*aarch64" && { ELFS="$ELFS $b"; cp -a "$b" "$b.orig"; }
 done
+# run 11: every program dumped core (SIGBUS) right away after patchelf; find out why
+sudo apt-get install -y -qq strace gdb binutils > /dev/null 2>&1
+LIBS="$ROOTFS/usr/lib"
+works() { env -i LD_LIBRARY_PATH="$LIBS" timeout 60 "$1" --version > /dev/null 2>&1; }
+patch_all() {   # patchelf options...
+    for b in $ELFS; do cp -a "$b.orig" "$b"; patchelf "$@" --set-interpreter "$INTERP" "$b" 2>> "$SUMMARY"; done
+}
+{
+    echo "== page size: $(getconf PAGESIZE); patchelf $(patchelf --version)"
+    echo "== readelf original wine"; readelf -lW "$W64/bin/wine.orig"
+    echo "== T1 /usr/bin/true with the rootfs interpreter"
+    cp /usr/bin/true "$LAB/true-rootfs" && patchelf --set-interpreter "$INTERP" "$LAB/true-rootfs"
+    env -i LD_LIBRARY_PATH="$LIBS" "$LAB/true-rootfs"; echo "exit $?"
+    echo "== T2 wine.orig --version (Ubuntu's glibc)"; timeout 60 "$W64/bin/wine.orig" --version; echo "exit $?"
+    echo "== T4 the rootfs loader, explicitly"; env -i timeout 60 "$INTERP" --library-path "$LIBS" "$W64/bin/wine.orig" --version; echo "exit $?"
+    for opts in "" "--page-size 4096" "--page-size 65536"; do
+        patch_all $opts
+        echo "== T3 patchelf $opts"; readelf -lW "$W64/bin/wine" | sed -n '/Program Headers/,/Section to Segment/p'
+        env -i LD_LIBRARY_PATH="$LIBS" timeout 60 "$W64/bin/wine" --version; echo "exit $?"
+        if works "$W64/bin/wine"; then PATCH_OPTS="$opts"; break; fi
+        strace -f -o "$OUT/strace-wine${opts// /}.txt" env -i LD_LIBRARY_PATH="$LIBS" timeout 60 "$W64/bin/wine" --version
+        tail -25 "$OUT/strace-wine${opts// /}.txt"
+        LD_LIBRARY_PATH="$LIBS" timeout 120 gdb -q -batch -ex run -ex bt -ex "info proc mappings" -ex "x/4i \$pc" --args "$W64/bin/wine" --version 2>&1 | tail -60
+    done
+} >> "$OUT/diag.txt" 2>&1
+log "patchelf options that work: ${PATCH_OPTS-none}"
+if [ -z "${PATCH_OPTS+x}" ]; then
+    log "no patched Wine starts; see diag.txt"
+    tail -150 "$OUT/diag.txt" >> "$SUMMARY"
+    exit 0
+fi
+patch_all $PATCH_OPTS
 
 # --- what Wine's Unix side would load from the rootfs ----------------------------------------
 LIBS="$ROOTFS/usr/lib"
