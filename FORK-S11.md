@@ -242,6 +242,56 @@ X-server, renderer, Wine desktop and window-manager resize support.
 Licences: the visual style and Marlett come from Wine (LGPL 2.1); S11 Sans keeps
 Selawik's OFL (`S11Sans-OFL.txt` next to the fonts).
 
+## Android screens
+
+The app's own screens (containers, drawer, settings, input controls, dialogs, loading) follow
+One UI rather than Winlator's look: neutral greys and Samsung's blue (`#3e91ff` dark,
+`#0381fe` light), one colour for the window, the toolbar and the status bar, cards without
+frames (`s11_card`, radius 20dp), group titles inside the cards in blue (`FieldSet`,
+`FieldSetLabel`), filled fields, pill buttons, plain dialogs with text buttons and no icons,
+and a spinner with one line while something loads. Gradients stay on app icons only.
+
+The icons are Material Symbols Rounded (Apache 2.0) under Winlator's resource names, so every
+screen that used Winlator's bitmaps gets them: `tools/s11/branding/android_icons.py` maps the
+names and writes the vectors from a checkout of google/material-design-icons. The power menu
+keeps its own coloured icons.
+
+On a wide tablet the containers, settings and input controls pages keep a readable width
+(`s11_page_side_padding`, by screen width). `tools/s11/ui/shots.sh` (workflow `s11-ui.yml`,
+branch `s11-ui`) takes screenshots of these screens in an emulator, dark and light.
+
+## ARM64 Wine (beta)
+
+Containers can use Hangover's Wine 11.16 instead of Winlator's x64 Wine under Box64: an
+ARM64 Wine with ARM64EC, which runs Windows programs built for ARM64 as they are, x64 ones
+with the FEX inside it and 32-bit ones with its Box64 (WowBox64). Settings > Wine > ARM64 Wine
+downloads it (124 MB, about 1 GB unpacked) and installs it like a Wine picked from a file:
+its version, then a prefix made by that Wine; new containers can then choose
+"Wine 11.16 ARM64".
+
+- Package: `.github/workflows/s11-wine-arm64.yml` (branch `s11-wine-arm64`) runs
+  `tools/s11/wine-arm64/package.sh`: Hangover's Ubuntu 24.04 packages laid out as an installed
+  Wine (bin, lib/wine, share/wine), stripped, with every program that has an ELF interpreter
+  pointed at the rootfs's loader (`patchelf`; Wine re-executes `lib/wine/aarch64-unix/wine`,
+  directly or through the static `wine-preloader`). It is tried in the repository's rootfs
+  with /tmp hidden and published as the release `s11-wine-arm64-11.16`.
+- /tmp: Android has none, and Wine's Linux build keeps its server socket in
+  `/tmp/.wine-<uid>` (Winlator's own Wine has the rootfs's path compiled in). The package's
+  `lib/libs11tmp.so` (`tools/s11/wine-arm64/s11tmp.c`), preloaded by
+  `GuestProgramLauncherComponent`, sends the /tmp paths Wine gives to mkdir, chdir, stat,
+  open and the like to `$TMPDIR`.
+- Launch: `WineInfo` has an architecture (`wine-11.16-arm64`); for an ARM64 Wine the launcher
+  runs `<wine>/bin/wine` itself instead of Box64.
+- Direct3D and the Windows components stay Wine's own in an ARM64 prefix for now: the DXVK and
+  the components in the assets are x64 and x86 builds. Games stay in the default containers.
+- Firefox for ARM64 cannot start its tab processes in its sandbox under Wine: ARM64 containers
+  set `MOZ_DISABLE_*_SANDBOX`.
+
+The lab (`tools/s11/lab/arm64wine_lab.sh`, an ARM64 server, the app's rootfs) measured:
+Firefox's JavaScript 4x as fast in its ARM64 build as in its x64 one (0.48 s against 1.94 s),
+up in 4 s instead of 17; Node 1.7x and Python 1.5x their x64 builds; 7-Zip 20-28% faster;
+Notepad's window in 0.2 s. x64 code through FEX runs about as fast as through Box64.
+
 ## Builds
 
 Every push to the `tab-s11` branch runs `.github/workflows/build-s11.yml`, which

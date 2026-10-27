@@ -391,7 +391,7 @@
     <string name="s11_cs_footer_hint">Changes apply the next time this container starts.</string>
     <string name="s11_cs_name_desc">Shown in the container list and on shortcuts.</string>
     <string name="s11_cs_screen_size_desc">The size of the Windows desktop. Native uses the whole screen of this device.</string>
-    <string name="s11_cs_wine_version_desc">Chosen when the container is created.</string>
+    <string name="s11_cs_wine_version_desc">Chosen when the container is created. ARM64 (from Settings) is faster for programs and has an ARM64 build of theirs to use; keep the default one for games.</string>
     <string name="s11_cs_graphics">Graphics and sound</string>
     <string name="s11_cs_graphics_driver_desc">How Vulkan and OpenGL reach the GPU. The default suits most programs.</string>
     <string name="s11_cs_dxwrapper">DirectX</string>
