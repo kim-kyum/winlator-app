@@ -98,17 +98,31 @@ patch_all
     echo "== processes"; grep -E "execve\(" "$OUT/strace-cmd.txt" | cut -c1-220 | head -40
 } >> "$OUT/diag.txt" 2>&1
 gzip -9 "$OUT/strace-cmd.txt"
-if ! env -i DISPLAY=$DISPLAY $WENV timeout 120 "$W64/bin/wine" cmd /c exit > /dev/null 2>&1; then
-    {
-        echo "== gdb: wine cmd /c exit"
-        env -i DISPLAY=$DISPLAY $WENV timeout 300 gdb -q -batch -iex "set debuginfod enabled off" \
-            -ex "set startup-with-shell off" -ex "handle SIGUSR1 SIGUSR2 SIGPIPE nostop noprint" -ex run -ex bt \
-            -ex "info sharedlibrary" -ex "x/6i \$pc-12" -ex "info registers" --args "$W64/bin/wine" cmd /c exit 2>&1 | tail -120
-    } >> "$OUT/diag.txt" 2>&1
-    log "the patched Wine does not start; see diag.txt"
-    tail -250 "$OUT/diag.txt" >> "$SUMMARY"
-    exit 0
+# run 13: Wine re-executes itself through lib/wine/aarch64-unix/wine-preloader, which maps wine
+# and the rootfs's ld.so; the first malloc then faults (SIGBUS, misaligned). Without it?
+PRELOADER="$W64/lib/wine/aarch64-unix/wine-preloader"
+starts() { env -i DISPLAY=$DISPLAY $WENV timeout 300 "$W64/bin/wine" cmd /c exit > "$OUT/start-$1.log" 2>&1; local st=$?; log "start ($1): exit $st"; return $st; }
+if starts with-preloader; then
+    PRELOAD_MODE=with
+else
+    rm -rf "$PFX"; env -i $WENV "$W64/bin/wineserver" -k > /dev/null 2>&1
+    mv "$PRELOADER" "$PRELOADER.off"
+    if starts without-preloader; then
+        PRELOAD_MODE=without
+    else
+        {
+            echo "== without the preloader, strace"
+            strace -f -s 200 -o "$OUT/strace-nopre.txt" env -i DISPLAY=$DISPLAY $WENV timeout 300 "$W64/bin/wine" cmd /c exit
+            echo "exit $?"; crash_context "$OUT/strace-nopre.txt"
+            tail -40 "$OUT/start-without-preloader.log"
+        } >> "$OUT/diag.txt" 2>&1
+        gzip -9 "$OUT/strace-nopre.txt"
+        log "the patched Wine does not start; see diag.txt"
+        tail -200 "$OUT/diag.txt" >> "$SUMMARY"
+        exit 0
+    fi
 fi
+log "preloader: $PRELOAD_MODE"
 log "the patched Wine starts"
 
 # --- what Wine's Unix side would load from the rootfs ----------------------------------------
