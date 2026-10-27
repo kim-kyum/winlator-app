@@ -199,7 +199,7 @@ DXVK_ENV="WINEDLLOVERRIDES=mscoree,mshtml=;winemenubuilder.exe=d;d3d11,dxgi,d3d1
 # --- the Steam client: Steam games quit when started without it -----------------------------
 STEAM_ARGS="${STEAM_ARGS:--no-cef-sandbox -cef-disable-gpu -cef-disable-gpu-compositing -cef-disable-d3d11}"
 run_steam() {
-    local setup="$LAB/SteamSetup.exe" started pid t status alive=yes steamdir
+    local setup="$APPDIR/SteamSetup.exe" started pid t status alive=yes steamdir   # inside a Wine drive
     curl -sSL -o "$setup" https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe || { log "steam: download failed"; return; }
     log "steam: installer $(stat -c %s "$setup") bytes, $(file -b "$setup" | cut -c1-60)"
     started=$(date +%s)
