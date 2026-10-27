@@ -134,11 +134,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (wanted == sidePane && drawerLayout.isDrawerOpen(GravityCompat.START) == wanted) return;
         sidePane = wanted;
 
+        // beside the drawer by its left padding (DrawerLayout, fitting the system windows, sets
+        // its content's margins to the window insets)
         com.winlator.widget.S11PaneContent content = findViewById(R.id.LLMainContent);
         View navigationView = findViewById(R.id.NavigationView);
-        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams)content.getLayoutParams();
-        params.leftMargin = wanted ? navigationView.getLayoutParams().width : 0;
-        content.setLayoutParams(params);
+        content.setPadding(wanted ? navigationView.getLayoutParams().width : 0, content.getPaddingTop(), content.getPaddingRight(), content.getPaddingBottom());
         content.setPinned(wanted);
         drawerLayout.setPinned(wanted);
 

@@ -12,8 +12,8 @@ import java.util.ArrayList;
 
 /**
  * Winlator S11: a DrawerLayout whose drawer can be pinned beside the content, as One UI's side
- * pane on a wide screen. Pinned, the drawer is locked open, the content (laid out beside it by
- * its left margin) gets its touches, keys, focus and accessibility as when no drawer is open;
+ * pane on a wide screen. Pinned, the drawer is locked open, the content (beside it by its left
+ * padding) gets its touches, keys, focus and accessibility as when no drawer is open;
  * DrawerLayout itself would take every touch on the content to close the drawer.
  */
 public class S11DrawerLayout extends DrawerLayout {
