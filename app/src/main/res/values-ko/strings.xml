@@ -472,4 +472,5 @@
     <string name="s11_arm64_wine_get">받기</string>
     <string name="s11_arm64_wine_installed">설치됨</string>
     <string name="s11_arm64_wine_failed">ARM64 Wine을 받지 못했어요. 인터넷 연결을 확인해 주세요.</string>
+    <string name="s11_arm64_wine_no_output">ARM64 Wine이 시작되지 않았어요 (아무것도 출력하지 않았어요).</string>
 </resources>

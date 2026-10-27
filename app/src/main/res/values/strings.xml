@@ -529,4 +529,5 @@
     <string name="s11_arm64_wine_get">Download</string>
     <string name="s11_arm64_wine_installed">Installed</string>
     <string name="s11_arm64_wine_failed">Could not download the ARM64 Wine. Check the internet connection.</string>
+    <string name="s11_arm64_wine_no_output">The ARM64 Wine did not start (it printed nothing).</string>
 </resources>
