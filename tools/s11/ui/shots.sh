@@ -97,8 +97,8 @@ log "system files installed after $(( $(date +%s) - start )) s"
 sleep 5
 shot containers-empty
 
-drawer; shot drawer; back
-in_front || crashes drawer-back
+drawer; shot drawer
+in_front || crashes drawer
 page "설정" && { shot settings; scroll; shot settings-2; scroll; shot settings-3; scroll; shot settings-4; }
 page "입력 컨트롤" && shot input-controls
 page "정보" && { shot about; back; }
@@ -155,7 +155,7 @@ if page "설정"; then
     fi
     ensure light
     page "컨테이너" && shot light-containers
-    drawer; shot light-drawer; back
+    drawer; shot light-drawer
     tap resource-id "$PKG:id/BTMenu" && { shot light-container-menu; back; }
     if tap resource-id "$PKG:id/BTMenu" && tap text "편집"; then shot light-container-edit; back; fi
     page "설정" && { shot light-settings; scroll; shot light-settings-2; }
