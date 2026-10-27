@@ -205,9 +205,14 @@ run_steam() {
     started=$(date +%s)
     env $(base_env) $(preset_env PERFORMANCE) timeout 900 "$BOX64" "$WINE" "$setup" /S > "$OUT/steam-setup.log" 2>&1
     log "steam: installer exit $? after $(( $(date +%s) - started )) s"
-    env $(base_env) timeout 60 "$BOX64" "$WINESERVER" -w
-    steamdir=$(find "$WINEPREFIX/drive_c" -maxdepth 3 -iname steam -type d | head -1)
-    STEAM="$steamdir/steam.exe"
+    # the installer starts its own child and returns at once: wait for steam.exe
+    for t in $(seq 1 60); do
+        STEAM=$(find "$WINEPREFIX/drive_c" -maxdepth 4 -iname steam.exe 2>/dev/null | head -1)
+        [ -n "$STEAM" ] && break
+        sleep 3
+    done
+    env $(base_env) timeout 120 "$BOX64" "$WINESERVER" -w
+    steamdir=$(dirname "${STEAM:-/nonexistent/x}")
     [ -f "$STEAM" ] || { log "steam: steam.exe missing"; ls -la "$WINEPREFIX/drive_c/Program Files (x86)" "$WINEPREFIX/drive_c/Program Files" >> "$SUMMARY" 2>&1; tail -40 "$OUT/steam-setup.log" > "$OUT/steam-setup-tail.txt"; return; }
     log "steam: $STEAM ($(file -b "$STEAM" | cut -c1-50))"
     started=$(date +%s)
