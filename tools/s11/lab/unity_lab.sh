@@ -138,18 +138,21 @@ EOF
     log "download $url"
     curl -sSL -o "$LAB/$(basename "$1").zip" "$url" && unzip -q -o "$LAB/$(basename "$1").zip" -d "$APPDIR/$(basename "$1")"
 }
-if [ -n "${TEST_EXE:-}" ]; then EXE="$TEST_EXE"; else
+if [ "${CONFIGS:-}" = "steam" ]; then EXE=none
+elif [ -n "${TEST_EXE:-}" ]; then EXE="$TEST_EXE"; else
     fetch_github_zip Arcthesia/ArcCreate "win" || log "no ArcCreate windows zip"
     EXE=$(find "$APPDIR" -maxdepth 4 -iname "*.exe" ! -iname "UnityCrashHandler*" | head -1)
 fi
 [ -n "$EXE" ] || { log "no test program"; exit 1; }
 GAMEDIR="$(dirname "$EXE")"
-log "test program: $EXE"
-if [ -d "$GAMEDIR/MonoBleedingEdge" ]; then log "scripting: Mono"; elif [ -f "$GAMEDIR/GameAssembly.dll" ]; then log "scripting: IL2CPP"; else log "scripting: unknown"; fi
-ls "$GAMEDIR" >> "$SUMMARY"
-find "$GAMEDIR" -maxdepth 2 \( -name globalgamemanagers -o -name data.unity3d \) | head -2 | while read -r f; do
-    log "unity version: $(strings "$f" | grep -m1 -E '^20[0-9]{2}\.[0-9]+\.[0-9]+[abfp][0-9]+')"
-done
+if [ "$EXE" != none ]; then
+    log "test program: $EXE"
+    if [ -d "$GAMEDIR/MonoBleedingEdge" ]; then log "scripting: Mono"; elif [ -f "$GAMEDIR/GameAssembly.dll" ]; then log "scripting: IL2CPP"; else log "scripting: unknown"; fi
+    ls "$GAMEDIR" >> "$SUMMARY"
+    find "$GAMEDIR" -maxdepth 2 \( -name globalgamemanagers -o -name data.unity3d \) | head -2 | while read -r f; do
+        log "unity version: $(strings "$f" | grep -m1 -E '^20[0-9]{2}\.[0-9]+\.[0-9]+[abfp][0-9]+')"
+    done
+fi
 
 # --- runs ------------------------------------------------------------------------------------
 declare -A RUNS
@@ -193,6 +196,43 @@ install_dxvk() {
 }
 DXVK_ENV="WINEDLLOVERRIDES=mscoree,mshtml=;winemenubuilder.exe=d;d3d11,dxgi,d3d10core,d3d9,d3d8=n,b VK_ICD_FILENAMES=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -1) DXVK_LOG_LEVEL=info"
 
+# --- the Steam client: Steam games quit when started without it -----------------------------
+STEAM_ARGS="${STEAM_ARGS:--no-cef-sandbox -cef-disable-gpu -cef-disable-gpu-compositing -cef-disable-d3d11}"
+run_steam() {
+    local setup="$LAB/SteamSetup.exe" started pid t status alive=yes steamdir
+    curl -sSL -o "$setup" https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe || { log "steam: download failed"; return; }
+    log "steam: installer $(stat -c %s "$setup") bytes, $(file -b "$setup" | cut -c1-60)"
+    started=$(date +%s)
+    env $(base_env) $(preset_env PERFORMANCE) timeout 900 "$BOX64" "$WINE" "$setup" /S > "$OUT/steam-setup.log" 2>&1
+    log "steam: installer exit $? after $(( $(date +%s) - started )) s"
+    env $(base_env) timeout 60 "$BOX64" "$WINESERVER" -w
+    steamdir=$(find "$WINEPREFIX/drive_c" -maxdepth 3 -iname steam -type d | head -1)
+    STEAM="$steamdir/steam.exe"
+    [ -f "$STEAM" ] || { log "steam: steam.exe missing"; ls -la "$WINEPREFIX/drive_c/Program Files (x86)" "$WINEPREFIX/drive_c/Program Files" >> "$SUMMARY" 2>&1; tail -40 "$OUT/steam-setup.log" > "$OUT/steam-setup-tail.txt"; return; }
+    log "steam: $STEAM ($(file -b "$STEAM" | cut -c1-50))"
+    started=$(date +%s)
+    ( cd "$steamdir" && env $(base_env) $(preset_env PERFORMANCE) ${STEAM_ENV:-} timeout "${STEAM_SECONDS:-1500}" "$BOX64" "$WINE" "$STEAM" $STEAM_ARGS > "$OUT/steam-wine.log" 2>&1 ) &
+    pid=$!
+    for t in 60 120 240 360 480 600 780 960 1140 1320 1480; do
+        while [ $(( $(date +%s) - started )) -lt "$t" ]; do
+            kill -0 "$pid" 2>/dev/null || break
+            sleep 5
+        done
+        if ! kill -0 "$pid" 2>/dev/null; then alive=no; break; fi
+        import -window root -resize 50% -quality 70 "$OUT/steam-${t}s.jpg" 2>/dev/null
+        log "steam ${t}s: windows: $(xwininfo -root -children 2>/dev/null | grep -c '"'), $(xwininfo -root -children 2>/dev/null | grep -o '"[^"]*"' | sort -u | grep -v '"Wine' | head -6 | tr '\n' ' ')"
+        log "steam ${t}s: bootstrap: $(tail -1 "$steamdir/logs/bootstrap_log.txt" 2>/dev/null | cut -c1-200)"
+        log "steam ${t}s: processes: $(ps -eo args | grep -io '[a-z_]*\.exe' | sort | uniq -c | tr '\n' ' ' | cut -c1-300)"
+    done
+    wait "$pid"; status=$?
+    log "steam: exit status $status after $(( $(date +%s) - started )) s (alive at end: $alive)"
+    env $(base_env) timeout 60 "$BOX64" "$WINESERVER" -k > /dev/null 2>&1
+    mkdir -p "$OUT/steam-logs"
+    cp "$steamdir"/logs/*.txt "$OUT/steam-logs/" 2>/dev/null
+    tail -80 "$OUT/steam-wine.log" > "$OUT/steam-wine-tail.txt"
+    du -sh "$steamdir" >> "$SUMMARY" 2>&1
+}
+
 IFS=',' read -r -a CONFIGS <<< "${CONFIGS:-perf_unity0,perf_unity1,perf_unity0,perf_unity1,stability}"
 for c in "${CONFIGS[@]}"; do
     case "$c" in
@@ -205,6 +245,7 @@ for c in "${CONFIGS[@]}"; do
         perf_unity0_dxvk) install_dxvk; run_config "$c" $(preset_env PERFORMANCE) BOX64_UNITYPLAYER=0 $DXVK_ENV ;;
         perf_unity1_dxvk) install_dxvk; run_config "$c" $(preset_env PERFORMANCE) BOX64_UNITYPLAYER=1 $DXVK_ENV ;;
         stability_dxvk) install_dxvk; run_config "$c" $(preset_env STABILITY) BOX64_UNITYPLAYER=0 $DXVK_ENV ;;
+        steam) run_steam ;;
     esac
 done
 log "done $(date -u)"
