@@ -8,8 +8,11 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
@@ -39,7 +42,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public static final byte OPEN_FILE_REQUEST_CODE = 2;
     public static final byte EDIT_INPUT_CONTROLS_REQUEST_CODE = 3;
     public static final byte OPEN_DIRECTORY_REQUEST_CODE = 4;
-    private DrawerLayout drawerLayout;
+    private com.winlator.widget.S11DrawerLayout drawerLayout;
+    /** Winlator S11: on a wide screen the pages stay listed beside the content (One UI's side
+     *  pane); the toolbar's button hides and shows them. Narrower, they are in the drawer. */
+    private static final int SIDE_PANE_MIN_WIDTH_DP = 900;
+    private boolean sidePane = false;
+    private int drawerScrimColor = 0x99000000;
+    private float drawerElevation = 0;
     public final PreloaderDialog preloaderDialog = new PreloaderDialog(this);
     private boolean editInputControls = false;
     private int selectedProfileId;
@@ -54,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setContentView(R.layout.main_activity);
 
         drawerLayout = findViewById(R.id.DrawerLayout);
+        drawerElevation = drawerLayout.getDrawerElevation();
         NavigationView navigationView = findViewById(R.id.NavigationView);
         navigationView.setNavigationItemSelectedListener(this);
 
@@ -80,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             onNavigationItemSelected(navigationView.getMenu().findItem(menuItemId));
             navigationView.setCheckedItem(menuItemId);
             if (!requestAppPermissions()) RootFSInstaller.installIfNeeded(this);
+            updateSidePane();
 
             int containerId = intent.getIntExtra("container_id", 0);
             String startPath = intent.getStringExtra("start_path");
@@ -116,9 +127,41 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
+    /** shows the pages beside the content on a wide screen (unless hidden with the toolbar's button) */
+    private void updateSidePane() {
+        boolean wide = getResources().getConfiguration().screenWidthDp >= SIDE_PANE_MIN_WIDTH_DP;
+        boolean wanted = wide && !editInputControls && preferences.getBoolean("s11_side_pane", true);
+        if (wanted == sidePane && drawerLayout.isDrawerOpen(GravityCompat.START) == wanted) return;
+        sidePane = wanted;
+
+        com.winlator.widget.S11PaneContent content = findViewById(R.id.LLMainContent);
+        View navigationView = findViewById(R.id.NavigationView);
+        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams)content.getLayoutParams();
+        params.leftMargin = wanted ? navigationView.getLayoutParams().width : 0;
+        content.setLayoutParams(params);
+        content.setPinned(wanted);
+        drawerLayout.setPinned(wanted);
+
+        drawerLayout.setScrimColor(wanted ? Color.TRANSPARENT : drawerScrimColor);
+        drawerLayout.setDrawerElevation(wanted ? 0 : drawerElevation);
+        if (wanted) {
+            drawerLayout.openDrawer(GravityCompat.START, false);
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_OPEN);
+        }
+        else {
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+            drawerLayout.closeDrawer(GravityCompat.START, false);
+        }
+    }
+
+    private void closeDrawerUnlessSidePane() {
+        if (!sidePane) drawerLayout.closeDrawer(GravityCompat.START);
+    }
+
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        if (!editInputControls) updateSidePane();
         if ((newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE ||
             newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) && currentFragment instanceof BaseFileManagerFragment) {
             ((BaseFileManagerFragment)currentFragment).onOrientationChanged();
@@ -128,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public void onBackPressed() {
         // Winlator S11: Back closes an open drawer first (it used to leave the app)
-        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+        if (!sidePane && drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START);
             return;
         }
@@ -177,7 +220,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     BaseFileManagerFragment fileManagerFragment = (BaseFileManagerFragment)currentFragment;
                     if (fileManagerFragment.onOptionsMenuClicked()) return true;
                 }
-                drawerLayout.openDrawer(GravityCompat.START);
+                // Winlator S11: on a wide screen the button hides or shows the side pane
+                if (getResources().getConfiguration().screenWidthDp >= SIDE_PANE_MIN_WIDTH_DP) {
+                    preferences.edit().putBoolean("s11_side_pane", !sidePane).apply();
+                    updateSidePane();
+                }
+                else drawerLayout.openDrawer(GravityCompat.START);
             }
             return true;
         }
@@ -206,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 showFragment(new SettingsFragment());
                 break;
             case R.id.menu_item_about:
-                drawerLayout.closeDrawer(GravityCompat.START);
+                closeDrawerUnlessSidePane();
                 (new AboutDialog(this)).show();
                 break;
         }
@@ -219,7 +267,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             .replace(R.id.FLFragmentContainer, fragment)
             .commit();
 
-        drawerLayout.closeDrawer(GravityCompat.START);
+        closeDrawerUnlessSidePane();
         currentFragment = fragment;
     }
 }
