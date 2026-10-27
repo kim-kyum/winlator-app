@@ -22,6 +22,14 @@ shot() {   # name
 dump() {
     adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1
     adb pull /sdcard/ui.xml "$OUT/ui.xml" > /dev/null 2>&1
+    # the emulator's launcher sometimes stops answering while the app unpacks: wait for it
+    if grep -q "responding" "$OUT/ui.xml" 2>/dev/null; then
+        local xy
+        xy=$(python3 "$HERE/find.py" "$OUT/ui.xml" text "Wait")
+        if [ -n "$xy" ]; then adb shell input tap $xy; log "dismissed a 'not responding' dialog"; sleep 3; fi
+        adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1
+        adb pull /sdcard/ui.xml "$OUT/ui.xml" > /dev/null 2>&1
+    fi
 }
 find_xy() { dump; python3 "$HERE/find.py" "$OUT/ui.xml" "$1" "$2"; }
 # taps the first view whose text, content-desc or resource-id matches (a leading ~ matches a part)
