@@ -75,6 +75,10 @@ adb logcat -c
 adb shell getprop ro.dalvik.vm.native.bridge | tee -a "$LOG"
 adb shell wm size | tee -a "$LOG"
 adb shell settings put secure navigation_mode 0 2>/dev/null   # three-button navigation
+# no "isn't responding" dialogs (the emulator's launcher stalls while the app unpacks); the
+# setting is read when the configuration changes
+adb shell settings put global hide_error_dialogs 1
+adb shell cmd uimode night yes > /dev/null 2>&1; adb shell cmd uimode night no > /dev/null 2>&1
 adb install -r -g "$APK" >> "$LOG" 2>&1 || { log "install failed"; exit 1; }
 adb shell cmd locale set-app-locales $PKG --locales ko-KR >> "$LOG" 2>&1
 adb shell appops set $PKG MANAGE_EXTERNAL_STORAGE allow >> "$LOG" 2>&1
