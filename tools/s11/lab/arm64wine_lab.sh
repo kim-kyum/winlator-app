@@ -200,13 +200,69 @@ measure rootfs-x64 node 600 'C:\bench\node-x64\node.exe' 'C:\bench\bench.js'
 measure rootfs-x64 7zip-1t 600 'C:\bench\7z\x64\7za.exe' b 2 -mmt1 -md22
 measure rootfs-x86 7zip-1t 600 'C:\bench\7z\7za.exe' b 2 -mmt1 -md22
 
-# Notepad's window
-t0=$(date +%s.%N)
-( cd "$PFX/drive_c" && env -i DISPLAY=$DISPLAY $WENV "$W64/bin/wine" notepad > "$OUT/notepad.log" 2>&1 & )
-for i in $(seq 1 300); do xwininfo -root -tree 2>/dev/null | grep -qi notepad && break; sleep 0.2; done
-log "notepad window after $(python3 -c "print(round($(date +%s.%N) - $t0, 2))") s"
-import -window root -resize 50% -quality 70 "$OUT/notepad.jpg" 2>/dev/null
-env -i $WENV "$W64/bin/wineserver" -k
+# --- windows ------------------------------------------------------------------------------------
+# run 15: no Notepad window. The rootfs's libxcb may look for the X socket under the rootfs's
+# /tmp (Winlator's X server listens at <rootfs>/tmp/.X11-unix/X0)
+{
+    echo "== X socket paths in the rootfs's libxcb / libX11"
+    strings "$LIBS/libxcb.so.1" 2>/dev/null | grep -i "x11-unix" | head
+    strings "$LIBS/libX11.so.6" 2>/dev/null | grep -i "x11-unix" | head
+} >> "$OUT/diag.txt"
+if [ ! -e "$ROOTFS/tmp/.X11-unix/X1" ]; then
+    rm -rf "$ROOTFS/tmp/.X11-unix"; ln -s /tmp/.X11-unix "$ROOTFS/tmp/.X11-unix"
+fi
+GUIENV="$WENV"
+GUIENV="${GUIENV/WINEDEBUG=-all,err+module/WINEDEBUG=fixme-all}"
+window() {   # name, window title pattern, program...
+    local name="$1" title="$2"; shift 2
+    local t0=$(date +%s.%N)
+    ( cd "$PFX/drive_c" && env -i DISPLAY=$DISPLAY $GUIENV "$W64/bin/wine" "$@" > "$OUT/$name.log" 2>&1 & )
+    local found=no
+    for i in $(seq 1 300); do xwininfo -root -tree 2>/dev/null | grep -qiE "$title" && { found=yes; break; }; sleep 0.2; done
+    local secs=$(python3 -c "print(round($(date +%s.%N) - $t0, 2))")
+    log "$name window: $found after $secs s"
+    [ "$found" = yes ] && result "$WINCONF" "$name-window-s" "$secs"
+    sleep 2
+    import -window root -resize 50% -quality 70 "$OUT/$name.jpg" 2>/dev/null
+    [ "$found" = no ] && tail -20 "$OUT/$name.log" | sed 's/^/    /' >> "$SUMMARY"
+    env -i $WENV "$W64/bin/wineserver" -k > /dev/null 2>&1
+    sleep 1
+}
+WINCONF=rootfs-arm64
+window notepad "notepad|메모장" notepad
+window notepad-again "notepad|메모장" notepad
+# 7-Zip's File Manager, from its installers (which 7-Zip unpacks)
+REL=$(gh_latest ip7z/7zip)
+for a in arm64 x64 x86; do
+    if [ $a = x86 ]; then pat='^7z[0-9]+[.]exe$'; else pat="^7z[0-9]+-$a[.]exe$"; fi
+    url=$(echo "$REL" | jq -r --arg p "$pat" '.assets[] | select(.name | test($p)) | .browser_download_url' | head -1)
+    fetch "$url" "$B/7z-setup-$a.exe"
+    mkdir -p "$B/7zfm-$a" && 7z x -y -o"$B/7zfm-$a" "$B/7z-setup-$a.exe" > /dev/null
+done
+ls "$B"/7zfm-* >> "$OUT/diag.txt" 2>&1
+window 7zfm-arm64 "7-zip" 'C:\bench\7zfm-arm64\7zFM.exe'
+WINCONF=rootfs-x64
+window 7zfm-x64 "7-zip" 'C:\bench\7zfm-x64\7zFM.exe'
+WINCONF=rootfs-x86
+window 7zfm-x86 "7-zip" 'C:\bench\7zfm-x86\7zFM.exe'
+
+# --- size: what an app package of this Wine would weigh ----------------------------------------
+{
+    echo "== sizes"
+    du -sh "$W64" "$W64"/lib/wine/* "$W64/share" 2>/dev/null
+    S="$LAB/strip-test"; rm -rf "$S"; mkdir -p "$S"; cp -a "$W64/lib" "$W64/bin" "$S/"
+    find "$S" -name "*.so" -exec strip --strip-unneeded {} + 2>/dev/null
+    for f in "$S"/bin/*; do strip --strip-unneeded "$f" 2>/dev/null; done
+    sudo apt-get install -y -qq llvm > /dev/null 2>&1
+    STRIP_PE=$(ls /usr/bin/llvm-strip* 2>/dev/null | head -1)
+    echo "llvm-strip: $STRIP_PE"
+    [ -n "$STRIP_PE" ] && find "$S/lib/wine" -name "*.dll" -o -name "*.exe" -o -name "*.drv" -o -name "*.sys" | while read -r f; do "$STRIP_PE" --strip-debug "$f" 2>/dev/null; done
+    du -sh "$S" "$S"/lib/wine/*
+    tar -C "$S" -cf - . | zstd -19 -T0 -q -o "$LAB/wine-arm64.tzst" && ls -la "$LAB/wine-arm64.tzst"
+    echo "== hangover's dxvk"
+    tar -tzf "$LAB/hangover/dxvk-v2.7.1.tar.gz" | head -30
+} >> "$OUT/diag.txt" 2>&1
+grep -A40 "== sizes" "$OUT/diag.txt" >> "$SUMMARY"
 
 python3 - "$RESULTS" > "$OUT/table.txt" <<'EOF'
 import csv, sys
