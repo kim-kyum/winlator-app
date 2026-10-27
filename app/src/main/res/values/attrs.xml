@@ -12,6 +12,7 @@
     <!-- Winlator S11: fields, cards and navigation -->
     <attr name="s11FieldBorder" format="color" />
     <attr name="s11FieldPressed" format="color" />
+    <attr name="s11FieldFill" format="color" />
     <attr name="s11CardBorder" format="color" />
     <attr name="s11NavSelected" format="color" />
     <attr name="s11NeutralButton" format="color" />

@@ -127,6 +127,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public void onBackPressed() {
+        // Winlator S11: Back closes an open drawer first (it used to leave the app)
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return;
+        }
         if (currentFragment != null && currentFragment.isVisible()) {
             if (currentFragment instanceof BaseFileManagerFragment) {
                 BaseFileManagerFragment fileManagerFragment = (BaseFileManagerFragment)currentFragment;
@@ -201,6 +206,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 showFragment(new SettingsFragment());
                 break;
             case R.id.menu_item_about:
+                drawerLayout.closeDrawer(GravityCompat.START);
                 (new AboutDialog(this)).show();
                 break;
         }

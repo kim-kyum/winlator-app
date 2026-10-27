@@ -9,9 +9,7 @@
         android:id="@+id/S11ContainerSettingsToolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        android:elevation="4dp"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
+        android:background="?attr/colorPrimary" />
 
     <TextView
         android:id="@+id/TVS11ContainerSettingsHint"
@@ -23,7 +21,7 @@
         android:paddingEnd="16dp"
         android:paddingBottom="12dp"
         android:text="@string/s11_container_settings_restart_hint"
-        android:textColor="?attr/colorPrimaryText"
+        android:textColor="?attr/colorSecondaryText"
         android:textSize="14sp" />
 
     <FrameLayout

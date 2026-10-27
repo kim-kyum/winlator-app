@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Winlator S11: dialogs and pop-up menus (One UI: a plain rounded surface) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="24dp" />
+    <solid android:color="#1b1b1b" />
+    <padding android:top="6dp" android:bottom="6dp" />
+</shape>

@@ -19,7 +19,7 @@
             android:layout_height="36dp"
             android:src="@drawable/icon_gamepad"
             android:layout_marginRight="8dp"
-            app:tint="?attr/colorPrimaryDark" />
+            app:tint="?attr/colorSecondaryText" />
 
         <LinearLayout
             android:layout_width="0dp"

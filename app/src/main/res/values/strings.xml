@@ -515,4 +515,12 @@
     <string name="s11_problem_clear">Clear the list</string>
     <string name="s11_problem_clear_desc">Empties the list of recent problems. The reports stay in C:\\S11\\Logs.</string>
     <string name="s11_problem_clear_button">Clear</string>
+    <string name="s11_problem_hint_unity">A Unity game needs UnityPlayer.dll and its _Data folder next to the exe: move or extract the whole game folder and start the exe inside it.</string>
+    <string name="s11_problem_hint_runtime">It is part of the Visual C++ runtime: install the program’s vc_redist (x64 or x86) first.</string>
+    <string name="s11_problem_hint_local">It usually comes with the program: if only the exe was moved or extracted, move the whole folder.</string>
+    <string name="s11_cs_box64_cache">Translation cache</string>
+    <string name="s11_cs_box64_cache_desc">Box64 keeps the code it translated, so programs start faster the second time. Turn it off if a program misbehaves after an update.</string>
+    <string name="s11_cs_box64_cache_clear">Clear the translation cache</string>
+    <string name="s11_cs_box64_cache_size">%1$d MB now; programs translate their code again the next time they start.</string>
+    <string name="s11_cs_box64_cache_clear_button">Clear</string>
 </resources>

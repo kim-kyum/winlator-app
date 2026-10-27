@@ -96,7 +96,7 @@ struct row {
     const WCHAR *title;
     WCHAR detail[320];
     BOOL detail_is_path;  /* long paths lose their middle, not their end */
-    BOOL detail_wrap;     /* the detail may take two lines (the card is taller) */
+    BOOL detail_wrap;     /* the detail may take several lines (the card is taller) */
     HWND *control;      /* on the right of the card */
     HWND *control2;     /* a second control left of it */
     HWND *control3;     /* and a third (adding an environment variable) */
@@ -1399,7 +1399,7 @@ static void add_field_rows(void)
         case FIELD_INFO:
             if (f->page == PAGE_PROBLEMS) {
                 r->detail_wrap = TRUE;
-                r->height = 88;
+                r->height = 104;   /* three lines: a reason and what to do about it */
             }
             break;
         default:

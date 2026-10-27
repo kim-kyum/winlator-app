@@ -249,8 +249,10 @@ public final class S11Problems {
             }
             if (root == null && !pendingImports.isEmpty()) root = pendingImports.get(0);
             String reason = root != null ? describeImport(root) : startReason(status);
+            String hint = root != null && root[2] == null ? hintFor(root[0]) : "";
             pendingImports.clear();
-            Problem problem = newProblem(fileName(program), activity.getString(R.string.s11_problem_cannot_start, reason),
+            String detail = activity.getString(R.string.s11_problem_cannot_start, reason);
+            Problem problem = newProblem(fileName(program), hint.isEmpty() ? detail : detail + ". " + hint,
                                          program + "\n" + report + recentLines(40));
             notice(problem);
             write();
@@ -272,6 +274,19 @@ public final class S11Problems {
         }
         pendingImports.clear();
         write();
+    }
+
+    /**
+     * What to do about a DLL that was not found. Wine has its own copy of nearly every Windows
+     * DLL, so a missing one usually ships with the program: the exe was moved or extracted alone.
+     */
+    private String hintFor(String dll) {
+        String name = dll.toLowerCase(Locale.ENGLISH);
+        if (name.equals("unityplayer.dll")) return activity.getString(R.string.s11_problem_hint_unity);
+        if (name.startsWith("api-ms-") || name.startsWith("ext-ms-")) return "";
+        if (name.matches("(msvcp|msvcr|vcruntime|mfc|vcomp|concrt|vccorlib|atl)\\d.*\\.dll"))
+            return activity.getString(R.string.s11_problem_hint_runtime);
+        return activity.getString(R.string.s11_problem_hint_local);
     }
 
     /** {dll, needer, status}: status null = not found, "init" = its DllMain failed */

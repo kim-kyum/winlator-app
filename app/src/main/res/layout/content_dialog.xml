@@ -4,7 +4,10 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:paddingLeft="24dp"
+    android:paddingRight="24dp"
+    android:paddingTop="20dp"
+    android:paddingBottom="12dp">
 
     <LinearLayout
         android:id="@+id/LLTitleBar"
@@ -31,12 +34,14 @@
                 android:id="@+id/TVTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="?attr/colorPrimaryVariant"
+                android:textColor="?attr/colorPrimaryText"
                 android:textStyle="bold"
-                android:textSize="18sp" />
+                android:textSize="20sp" />
         </LinearLayout>
 
-        <View style="@style/HorizontalLine" />
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="16dp" />
     </LinearLayout>
 
     <LinearLayout
@@ -89,21 +94,22 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <View style="@style/HorizontalLine" />
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="right">
+            android:gravity="right|center_vertical">
 
             <TextView
                 android:id="@+id/TVBottomBarText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="?attr/colorPrimaryVariant"
-                android:textStyle="bold"
+                android:textColor="?attr/colorSecondaryText"
                 android:visibility="gone" />
 
             <LinearLayout
@@ -115,18 +121,18 @@
                 android:visibility="gone" />
 
             <Button
-                style="@style/ButtonNeutral"
+                style="@style/ButtonText"
                 android:id="@+id/BTReset"
                 android:text="@string/reset"
                 android:visibility="gone" />
 
             <Button
-                style="@style/ButtonNeutral"
+                style="@style/ButtonText"
                 android:text="@string/cancel"
                 android:id="@+id/BTCancel" />
 
             <Button
-                style="@style/ButtonPositive"
+                style="@style/ButtonText"
                 android:text="@string/ok"
                 android:id="@+id/BTConfirm" />
         </LinearLayout>

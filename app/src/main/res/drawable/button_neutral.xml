@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Winlator S11: a rounded (pill) button -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <corners android:radius="21dp" />
+            <solid android:color="?attr/s11FieldPressed" />
+        </shape>
+    </item>
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
-            <corners android:radius="8dp" />
+            <corners android:radius="21dp" />
             <solid android:color="?attr/s11NeutralButtonPressed" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
-            <corners android:radius="8dp" />
+            <corners android:radius="21dp" />
             <solid android:color="?attr/s11NeutralButton" />
         </shape>
     </item>
