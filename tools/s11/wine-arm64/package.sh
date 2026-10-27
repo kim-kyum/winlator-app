@@ -22,7 +22,7 @@ LOG="$OUT/package.log"
 log() { echo "[wine-arm64] $*" | tee -a "$LOG"; }
 
 sudo apt-get update -qq > /dev/null
-for p in zstd patchelf file llvm xvfb x11-utils 7zip jq; do
+for p in zstd patchelf file llvm xvfb x11-utils 7zip jq gcc; do
     sudo apt-get install -y -qq "$p" > /dev/null 2>&1 || log "package missing: $p"
 done
 LLVM_STRIP=$(ls /usr/bin/llvm-strip* | head -1)
@@ -70,6 +70,15 @@ while IFS= read -r f; do
     fi
 done < <(find "$DEST/bin" "$DEST/lib/wine/aarch64-unix" -maxdepth 1 -type f)
 
+# --- /tmp: Android has none; Wine's Linux build keeps its server socket there -------------------
+# (Winlator's own Wine has the rootfs's path compiled in.) libs11tmp.so, preloaded by the app,
+# sends Wine's /tmp paths to $TMPDIR, the rootfs's tmp.
+gcc -O2 -Wall -shared -fPIC -o "$DEST/lib/libs11tmp.so" "$REPO/tools/s11/wine-arm64/s11tmp.c" -ldl
+strip --strip-unneeded "$DEST/lib/libs11tmp.so"
+log "libs11tmp.so: $(stat -c %s "$DEST/lib/libs11tmp.so") bytes"
+nm -D --undefined-only "$DEST/lib/wine/aarch64-unix/ntdll.so" "$DEST/bin/wineserver" 2>/dev/null \
+    | grep -E " (mkdir|chdir|l?stat(64)?|fstatat(64)?|open(64|at)?|unlink|rmdir|access|opendir)(@|$)" | sort -u >> "$LOG"
+
 # --- the package ----------------------------------------------------------------------------------
 tar -C "$WORK" -cf - "$NAME" | zstd -19 -T0 -q -o "$OUT/$NAME.tzst"
 ( cd "$OUT" && sha256sum "$NAME.tzst" > "$NAME.tzst.sha256" )
@@ -90,16 +99,29 @@ zstd -dc "$OUT/$NAME.tzst" | tar -x -C "$TEST/opt/installed-wine"
 W="$APP_ROOTFS/opt/installed-wine/$NAME"
 Xvfb :5 -screen 0 1600x1000x24 -nolisten tcp > "$WORK/xvfb.log" 2>&1 &
 sleep 3
-# the app's X server listens at <rootfs>/tmp/.X11-unix/X0; here Xvfb is :5 under /tmp
-rm -rf "$TEST/tmp/.X11-unix" && ln -s /tmp/.X11-unix "$TEST/tmp/.X11-unix"
+# the app's X server listens at <rootfs>/tmp/.X11-unix/X0; here Xvfb is :5, its socket mounted
+# there (below), since the tests hide /tmp as the device has none
+rm -rf "$TEST/tmp/.X11-unix" && mkdir -p "$TEST/tmp/.X11-unix"
 ENVS="HOME=$APP_ROOTFS/home/xuser USER=xuser TMPDIR=$APP_ROOTFS/tmp DISPLAY=:5 WINEPREFIX=$APP_ROOTFS/home/xuser/.wine \
 LD_LIBRARY_PATH=$APP_ROOTFS/usr/lib PATH=$W/bin:$APP_ROOTFS/usr/bin:/usr/bin:/bin WINEDEBUG=-all \
 WINEDLLOVERRIDES=mscoree,mshtml=;winemenubuilder.exe=d"
+PRELOAD="LD_PRELOAD=$W/lib/libs11tmp.so"
+ME=$(id -un)
+# a command without /tmp: an empty read-only one over it, X's socket in the rootfs
+notmp() {
+    sudo unshare -m -- bash -c 'mount --bind /tmp/.X11-unix "$1" && mount -t tmpfs -o ro,size=1m tmpfs /tmp && shift && exec sudo -u "$1" -- "${@:2}"' \
+        _ "$TEST/tmp/.X11-unix" "$ME" "$@"
+}
+# without the shim Wine cannot make its server directory (as on the device)
+notmp env -i $ENVS timeout 60 "$W/bin/wine" cmd /c exit > "$OUT/test-no-shim.log" 2>&1
+log "test without /tmp and without libs11tmp.so: exit $? ($(grep -m1 -oE "wine(server)?: .*" "$OUT/test-no-shim.log" | head -c 160))"
+ENVS="$ENVS $PRELOAD"
 t0=$(date +%s)
-env -i $ENVS timeout 600 "$W/bin/wine" wineboot -i > "$OUT/test-wineboot.log" 2>&1 && st=0 || st=$?
-env -i $ENVS timeout 60 "$W/bin/wineserver" -w || true
+notmp env -i $ENVS timeout 600 "$W/bin/wine" wineboot -i > "$OUT/test-wineboot.log" 2>&1 && st=0 || st=$?
+notmp env -i $ENVS timeout 60 "$W/bin/wineserver" -w || true
+log "server directory: $(ls -d "$TEST"/tmp/.wine-* 2>/dev/null)"
 log "test: new prefix, exit $st after $(( $(date +%s) - t0 )) s; system32 $(ls "$TEST/home/xuser/.wine/drive_c/windows/system32" 2>/dev/null | wc -l) files"
-env -i $ENVS timeout 120 "$W/bin/wine" cmd /c "echo arm64 ok" > "$OUT/test-cmd.log" 2>&1 && log "test: cmd: $(tr -d '\r' < "$OUT/test-cmd.log" | tail -1)" || log "test: cmd failed"
+notmp env -i $ENVS timeout 120 "$W/bin/wine" cmd /c "echo arm64 ok" > "$OUT/test-cmd.log" 2>&1 && log "test: cmd: $(tr -d '\r' < "$OUT/test-cmd.log" | tail -1)" || log "test: cmd failed"
 # a window of each kind: 7-Zip's File Manager, from its installers
 REL=$(curl -sSL -H "Authorization: Bearer ${GH_TOKEN:-}" https://api.github.com/repos/ip7z/7zip/releases/latest)
 mkdir -p "$TEST/home/xuser/.wine/drive_c/test"
@@ -107,11 +129,11 @@ for a in arm64 x64 x86; do
     if [ $a = x86 ]; then pat='^7z[0-9]+[.]exe$'; else pat="^7z[0-9]+-$a[.]exe$"; fi
     url=$(echo "$REL" | jq -r --arg p "$pat" '.assets[] | select(.name | test($p)) | .browser_download_url' | head -1)
     curl -sSL -o "$WORK/7z-$a.exe" "$url" && 7z x -y -o"$TEST/home/xuser/.wine/drive_c/test/7z-$a" "$WORK/7z-$a.exe" > /dev/null
-    ( env -i $ENVS "$W/bin/wine" "C:\\test\\7z-$a\\7zFM.exe" > "$OUT/test-7zfm-$a.log" 2>&1 & )
+    ( notmp env -i $ENVS "$W/bin/wine" "C:\\test\\7z-$a\\7zFM.exe" > "$OUT/test-7zfm-$a.log" 2>&1 & )
     found=no
     for i in $(seq 1 150); do xwininfo -display :5 -root -tree 2>/dev/null | grep -qi "7-zip" && { found=yes; break; }; sleep 0.2; done
     log "test: 7-Zip File Manager ($a) window: $found"
-    env -i $ENVS "$W/bin/wineserver" -k > /dev/null 2>&1 || true
+    notmp env -i $ENVS "$W/bin/wineserver" -k > /dev/null 2>&1 || true
     sleep 1
 done
 
