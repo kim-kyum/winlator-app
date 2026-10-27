@@ -118,6 +118,16 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
 
         if (this.envVars != null) envVars.putAll(this.envVars);
 
+        // Winlator S11: an ARM64 Wine is a Linux build: it keeps its server socket under /tmp,
+        // which Android does not have; libs11tmp.so (in its package) sends those paths to TMPDIR
+        if (nativeWine) {
+            File tmpShim = new File(rootDir, rootFS.getWinePath()+"/lib/libs11tmp.so");
+            if (tmpShim.isFile()) {
+                String preload = envVars.get("LD_PRELOAD");
+                envVars.put("LD_PRELOAD", tmpShim.getPath()+(preload != null && !preload.isEmpty() ? ":"+preload : ""));
+            }
+        }
+
         File shmDir = new File(rootDir, "/tmp/shm");
         if (!shmDir.isDirectory()) shmDir.mkdirs();
 
