@@ -19,7 +19,7 @@ printf 'config\ttest\tvalue\n' > "$RESULTS"
 log "start $(date -u)"
 
 sudo apt-get update -qq > /dev/null
-for p in xvfb zstd unzip 7zip curl jq patchelf imagemagick x11-utils file; do
+for p in xvfb zstd unzip 7zip curl jq patchelf imagemagick x11-utils x11-apps file; do
     sudo apt-get install -y -qq "$p" > /dev/null 2>&1 || log "package missing: $p"
 done
 gh_latest() { curl -sSL -H "Authorization: Bearer ${GH_TOKEN:-}" "https://api.github.com/repos/$1/releases/latest"; }
@@ -245,6 +245,55 @@ WINCONF=rootfs-x64
 window 7zfm-x64 "7-zip" 'C:\bench\7zfm-x64\7zFM.exe'
 WINCONF=rootfs-x86
 window 7zfm-x86 "7-zip" 'C:\bench\7zfm-x86\7zFM.exe'
+
+# run 16: windows were found but the root window screenshots were black; list them
+( cd "$PFX/drive_c" && env -i DISPLAY=$DISPLAY $GUIENV "$W64/bin/wine" notepad > /dev/null 2>&1 & )
+sleep 4
+{ echo "== windows with Notepad open"; xwininfo -root -tree 2>&1 | grep -v "has no name" | head -40; } >> "$OUT/diag.txt"
+xwd -root -silent 2>/dev/null | convert xwd:- -resize 50% "$OUT/notepad-xwd.png" 2>> "$OUT/diag.txt"
+env -i $WENV "$W64/bin/wineserver" -k > /dev/null 2>&1; sleep 1
+
+# --- a browser: Firefox for Windows on ARM and for x64, headless, a JavaScript page -----------
+cat > "$B/ff.html" <<'HTMLEOF'
+<!doctype html><meta charset="utf-8"><body style="font:28px monospace;background:#fff;color:#000;margin:24px">
+<div id="out">running</div>
+<script>
+function fib(n) { return n < 2 ? n : fib(n - 1) + fib(n - 2); }
+const lines = [];
+function time(name, f) { const t = performance.now(); f(); const ms = Math.round(performance.now() - t); lines.push(name + " " + ms); return ms; }
+let total = 0;
+total += time("fib30", () => fib(30));
+total += time("sort", () => { const a = []; for (let i = 0; i < 1000000; i++) a.push((i * 7919) % 1000003); a.sort((x, y) => x - y); });
+total += time("map", () => { const m = new Map(); for (let i = 0; i < 300000; i++) m.set("k" + i, {i, s: "v" + i}); let s = 0; for (const [k, v] of m) s += v.i; });
+total += time("json", () => { const o = []; for (let i = 0; i < 100000; i++) o.push({id: i, name: "item" + i, tags: ["a", "b", i]}); JSON.parse(JSON.stringify(o)); });
+total += time("regex", () => { const s = "abc123def456 ".repeat(100000); let c = 0; for (const m of s.matchAll(/[a-z]+(\d+)/g)) c += m[1].length; });
+total += time("dom", () => { const d = document.createElement("div"); for (let i = 0; i < 20000; i++) { const e = document.createElement("span"); e.textContent = "x" + i; d.appendChild(e); } document.body.appendChild(d); d.getBoundingClientRect(); d.remove(); });
+lines.push("total " + total);
+document.getElementById("out").innerHTML = lines.join("<br>");
+</script>
+HTMLEOF
+for a in aarch64 x64; do
+    os=$([ $a = aarch64 ] && echo win64-aarch64 || echo win64)
+    fetch "https://download.mozilla.org/?product=firefox-latest-ssl&os=$os&lang=en-US" "$B/firefox-$a.exe"
+    [ -d "$B/firefox-$a" ] || { mkdir -p "$B/ff-$a-x" && 7z x -y -o"$B/ff-$a-x" "$B/firefox-$a.exe" > /dev/null && mv "$B/ff-$a-x/core" "$B/firefox-$a"; }
+    ls "$B/firefox-$a" | head -5 >> "$OUT/diag.txt"
+done
+browser() {   # config, arch, run name
+    local config="$1" arch="$2" name="$3"
+    local t0=$(date +%s.%N)
+    ( cd "$PFX/drive_c" && env -i DISPLAY=$DISPLAY $GUIENV MOZ_HEADLESS=1 timeout 600 "$W64/bin/wine" "C:\\bench\\firefox-$arch\\firefox.exe" \
+        --headless --no-remote --window-size=1100,700 --screenshot "C:\\bench\\$name.png" "file:///C:/bench/ff.html" > "$OUT/$name.log" 2>&1 )
+    local st=$? secs=$(python3 -c "print(round($(date +%s.%N) - $t0, 2))")
+    log "$config $name: exit $st after $secs s; screenshot: $(ls "$B/$name.png" 2>/dev/null || echo none)"
+    result "$config" "$name-wall-s" "$secs"
+    [ -f "$B/$name.png" ] && cp "$B/$name.png" "$OUT/"
+    [ $st -ne 0 ] && tail -15 "$OUT/$name.log" | sed 's/^/    /' >> "$SUMMARY"
+    env -i $WENV "$W64/bin/wineserver" -k > /dev/null 2>&1; sleep 1
+}
+browser rootfs-arm64 aarch64 firefox-arm64-first
+browser rootfs-arm64 aarch64 firefox-arm64
+browser rootfs-x64 x64 firefox-x64-first
+browser rootfs-x64 x64 firefox-x64
 
 # --- size: what an app package of this Wine would weigh ----------------------------------------
 {
