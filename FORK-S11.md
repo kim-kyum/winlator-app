@@ -287,10 +287,19 @@ its version, then a prefix made by that Wine; new containers can then choose
 - Firefox for ARM64 cannot start its tab processes in its sandbox under Wine: ARM64 containers
   set `MOZ_DISABLE_*_SANDBOX`.
 
-The lab (`tools/s11/lab/arm64wine_lab.sh`, an ARM64 server, the app's rootfs) measured:
-Firefox's JavaScript 4x as fast in its ARM64 build as in its x64 one (0.48 s against 1.94 s),
-up in 4 s instead of 17; Node 1.7x and Python 1.5x their x64 builds; 7-Zip 20-28% faster;
-Notepad's window in 0.2 s. x64 code through FEX runs about as fast as through Box64.
+The labs (an ARM64 server, the app's rootfs; `tools/s11/lab/arm64wine_lab.sh`,
+`browser_lab.sh`, `java_lab.sh`) measured, against today's containers (x64 builds under
+Winlator's Wine 10.10 and Box64 0.4.4):
+
+| | today (Box64) | ARM64 Wine, x64 build (FEX) | ARM64 Wine, ARM64 build |
+|---|---|---|---|
+| ImageJ macro (Microsoft JDK 21) | 10.7 s | 4.7 s | 3.1 s |
+| Java start-up | 2.6 s | 0.7 s | 0.4 s |
+| Firefox, JavaScript page | did not start | 2.0 s | 0.57 s |
+| Chromium (ungoogled), same page | did not start | did not start | 0.77 s (`--no-sandbox`) |
+| Node 22 benchmark | 1.73 s | 1.61 s | 0.97 s |
+
+Python is 1.5x and 7-Zip 20-28% faster in their ARM64 builds; Notepad's window shows in 0.2 s.
 
 ## Builds
 
