@@ -85,7 +85,7 @@ for line in open(sys.argv[1], errors="replace").read().splitlines():
         print("-----")
 PYEOF
 }
-Xvfb :1 -screen 0 1920x1080x24 -nolisten tcp > "$OUT/xvfb.log" 2>&1 &
+Xvfb :1 -screen 0 1920x1080x24 -nolisten tcp -extension MIT-SHM > "$OUT/xvfb.log" 2>&1 &
 export DISPLAY=:1
 sleep 3
 patch_all
@@ -278,11 +278,27 @@ for a in aarch64 x64; do
     [ -d "$B/firefox-$a" ] || { mkdir -p "$B/ff-$a-x" && 7z x -y -o"$B/ff-$a-x" "$B/firefox-$a.exe" > /dev/null && mv "$B/ff-$a-x/core" "$B/firefox-$a"; }
     ls "$B/firefox-$a" | head -5 >> "$OUT/diag.txt"
 done
+mkdir -p "$B/ffprofile"
+cat > "$B/ffprofile/user.js" <<'JSEOF'
+user_pref("security.sandbox.content.level", 0);
+user_pref("security.sandbox.gpu.level", 0);
+user_pref("security.sandbox.rdd.level", 0);
+user_pref("security.sandbox.socket.process.level", 0);
+user_pref("browser.shell.checkDefaultBrowser", false);
+user_pref("browser.startup.homepage_override.mstone", "ignore");
+user_pref("datareporting.policy.dataSubmissionEnabled", false);
+user_pref("toolkit.telemetry.reportingpolicy.firstRunURL", "");
+user_pref("layers.acceleration.disabled", true);
+user_pref("gfx.direct2d.disabled", true);
+JSEOF
 browser() {   # config, arch, run name
     local config="$1" arch="$2" name="$3"
+    rm -rf "$B/ffprofile-$arch"; mkdir -p "$B/ffprofile-$arch"; cp "$B/ffprofile/user.js" "$B/ffprofile-$arch/"
     local t0=$(date +%s.%N)
-    ( cd "$PFX/drive_c" && env -i DISPLAY=$DISPLAY $GUIENV MOZ_HEADLESS=1 timeout 600 "$W64/bin/wine" "C:\\bench\\firefox-$arch\\firefox.exe" \
-        --headless --no-remote --window-size=1100,700 --screenshot "C:\\bench\\$name.png" "file:///C:/bench/ff.html" > "$OUT/$name.log" 2>&1 )
+    ( cd "$PFX/drive_c" && env -i DISPLAY=$DISPLAY $GUIENV MOZ_HEADLESS=1 MOZ_DISABLE_CONTENT_SANDBOX=1 MOZ_DISABLE_GPU_SANDBOX=1 MOZ_DISABLE_RDD_SANDBOX=1 \
+        MOZ_DISABLE_SOCKET_PROCESS_SANDBOX=1 MOZ_DISABLE_UTILITY_SANDBOX=1 MOZ_DISABLE_GMP_SANDBOX=1 \
+        timeout 600 "$W64/bin/wine" "C:\\bench\\firefox-$arch\\firefox.exe" \
+        --headless --no-remote -profile "C:\\bench\\ffprofile-$arch" --window-size=1100,700 --screenshot "C:\\bench\\$name.png" "file:///C:/bench/ff.html" > "$OUT/$name.log" 2>&1 )
     local st=$? secs=$(python3 -c "print(round($(date +%s.%N) - $t0, 2))")
     log "$config $name: exit $st after $secs s; screenshot: $(ls "$B/$name.png" 2>/dev/null || echo none)"
     result "$config" "$name-wall-s" "$secs"
