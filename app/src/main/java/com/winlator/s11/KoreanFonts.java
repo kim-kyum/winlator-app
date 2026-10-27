@@ -20,14 +20,19 @@ import java.util.Arrays;
  * Text in a Latin font (the UI font, Arial, ...) gets Hangul through font linking:
  * [HKLM\...\FontLink\SystemLink] lists fallback fonts by file name, and Wine's defaults
  * name Windows files (GULIM.TTC, MALGUN.TTF) that are not there. NanumGothic goes first.
+ *
+ * Wine's Notepad starts with the "System" bitmap font at 12 pixels: no Hangul, and tiny on a
+ * tablet. Unless the user picked another font, it gets the UI font at 11 points (as Windows
+ * 11's Notepad) and wraps long lines (the Troubleshooting page opens logs in it).
  */
 public final class KoreanFonts {
-    private static final String VERSION = "2";
+    private static final String VERSION = "3";
     private static final String EXTRA_KEY = "s11KoreanFonts";
     private static final String FAMILY = "NanumGothic";
     private static final String LINK = "NanumGothic-Regular.ttf,NanumGothic";
     private static final String REPLACEMENTS_KEY = "Software\\Wine\\Fonts\\Replacements";
     private static final String SYSTEM_LINK_KEY = "Software\\Microsoft\\Windows NT\\CurrentVersion\\FontLink\\SystemLink";
+    private static final String NOTEPAD_KEY = "Software\\Microsoft\\Notepad";
     private static final String[] ALIASES = {
         "Gulim", "GulimChe", "Dotum", "DotumChe", "Batang", "BatangChe", "Gungsuh", "GungsuhChe",
         "Malgun Gothic", "굴림", "굴림체", "돋움", "돋움체", "바탕", "바탕체", "궁서", "궁서체", "맑은 고딕"
@@ -50,6 +55,14 @@ public final class KoreanFonts {
 
         try (WineRegistryEditor registryEditor = new WineRegistryEditor(userRegFile)) {
             for (String alias : ALIASES) registryEditor.setStringValue(REPLACEMENTS_KEY, alias, FAMILY);
+            String notepadFont = registryEditor.getStringValue(NOTEPAD_KEY, "lfFaceName", "");
+            if (notepadFont.isEmpty() || notepadFont.equalsIgnoreCase("System")) {
+                registryEditor.setStringValue(NOTEPAD_KEY, "lfFaceName", "Segoe UI");
+                registryEditor.setDwordValue(NOTEPAD_KEY, "iPointSize", 110);
+                registryEditor.setDwordValue(NOTEPAD_KEY, "lfPitchAndFamily", 0);
+                registryEditor.setDwordValue(NOTEPAD_KEY, "lfCharSet", 1);   // DEFAULT_CHARSET
+                registryEditor.setDwordValue(NOTEPAD_KEY, "fWrap", 1);
+            }
         }
 
         try (WineRegistryEditor registryEditor = new WineRegistryEditor(systemRegFile)) {

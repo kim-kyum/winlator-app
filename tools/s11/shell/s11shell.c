@@ -20,7 +20,7 @@
 #include "s11ui.h"
 
 static HINSTANCE instance;
-static HWND taskbar, start_menu, search_edit, tooltip, hover_window, calendar;
+static HWND taskbar, start_menu, search_edit, tooltip, hover_window, calendar, notice;
 static HFONT ui_font, small_font, menu_title_font, search_font, calendar_title_font;
 static ULONG_PTR gdiplus_token;
 
@@ -51,6 +51,8 @@ static void read_settings(void)
 #define TIMER_TIP 3
 #define TIMER_ANNOUNCE 4
 #define TIMER_HOVER 5
+#define TIMER_NOTICE 6         /* looks for a new notice (S11Problems.java) */
+#define TIMER_NOTICE_HIDE 7
 
 /* ---------------------------------------------------------------------------------------- */
 /* Windows on the taskbar                                                                   */
@@ -77,7 +79,9 @@ static BOOL fullscreen_app;
 static BOOL is_shell_window(HWND hwnd)
 {
     WCHAR cls[64];
-    if (hwnd == taskbar || hwnd == start_menu || hwnd == tooltip || hwnd == hover_window || hwnd == calendar) return TRUE;
+    if (hwnd == taskbar || hwnd == start_menu || hwnd == tooltip || hwnd == hover_window || hwnd == calendar ||
+        hwnd == notice)
+        return TRUE;
     if (!GetClassNameW(hwnd, cls, ARRAY_SIZE(cls))) return TRUE;
     return !lstrcmpW(cls, L"Shell_TrayWnd") || !lstrcmpW(cls, L"Progman") || !lstrcmpW(cls, L"#32769") ||
            !lstrcmpW(cls, L"WorkerW") || !lstrcmpW(cls, L"tooltips_class32") || !lstrcmpW(cls, L"#32768");
@@ -1218,6 +1222,226 @@ static LRESULT CALLBACK calendar_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 }
 
 /* ---------------------------------------------------------------------------------------- */
+/* Notices: a program could not start or quit with an error                                 */
+/* ---------------------------------------------------------------------------------------- */
+
+/*
+ * A program that Wine cannot start shows nothing at all. Winlator reads why from Wine's output
+ * and Unity's logs (S11Problems.java) and writes the latest notice to a file; a card like a
+ * Windows notification shows it once, bottom right. Clicking it opens Settings > Troubleshoot.
+ */
+#define NOTICE_FILE L"Z:\\home\\xuser\\.config\\s11-notice.txt"
+#define NOTICE_SECONDS 12
+
+static WCHAR notice_title[160], notice_text[400];
+static DWORD notice_serial;          /* the last one seen */
+static FILETIME notice_written;
+static int notice_hot;               /* 0: none, 1: the card, 2: its close button */
+
+static BOOL read_notice(DWORD *serial)
+{
+    HANDLE file = CreateFileW(NOTICE_FILE, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                              OPEN_EXISTING, 0, NULL);
+    char bytes[2048];
+    WCHAR text[2048], *line, *next, *parts[3];
+    DWORD got = 0;
+    int chars, n = 0;
+    BOOL ok;
+
+    if (file == INVALID_HANDLE_VALUE) return FALSE;
+    ok = ReadFile(file, bytes, sizeof(bytes) - 1, &got, NULL);
+    CloseHandle(file);
+    if (!ok || !got) return FALSE;
+    chars = MultiByteToWideChar(CP_UTF8, 0, bytes, (int)got, text, ARRAY_SIZE(text) - 1);
+    text[chars] = 0;
+
+    /* "S11NOTICE TAB 1 TAB serial", the title, the text */
+    notice_title[0] = notice_text[0] = 0;
+    *serial = 0;
+    for (line = text; line && *line; line = next, n++) {
+        if ((next = wcschr(line, '\n'))) *next++ = 0;
+        if (n == 0) {
+            WCHAR *p = line;
+            int k = 0;
+            parts[k++] = p;
+            for (; *p && k < 3; p++) if (*p == '\t') { *p = 0; parts[k++] = p + 1; }
+            if (k < 3 || lstrcmpW(parts[0], L"S11NOTICE")) return FALSE;
+            *serial = wcstoul(parts[2], NULL, 10);
+        }
+        else if (n == 1) lstrcpynW(notice_title, line, ARRAY_SIZE(notice_title));
+        else if (n == 2) lstrcpynW(notice_text, line, ARRAY_SIZE(notice_text));
+    }
+    return *serial != 0;
+}
+
+static int notice_w(void) { return SC(380); }
+
+static void notice_close_rect(RECT *rc)
+{
+    SetRect(rc, notice_w() - SC(40), SC(8), notice_w() - SC(8), SC(40));
+}
+
+/* Where the title and the text go (the text wraps; three lines at most) */
+static void notice_layout(RECT *title, RECT *text)
+{
+    HDC dc = GetDC(notice);
+    int width = notice_w() - SC(44) - SC(32), title_h, text_h;
+    HFONT old = SelectObject(dc, menu_title_font);
+    RECT measure = {0, 0, width, 0};
+    TEXTMETRICW tm;
+
+    DrawTextW(dc, notice_title, -1, &measure, DT_CALCRECT | DT_SINGLELINE | DT_NOPREFIX);
+    title_h = measure.bottom - measure.top;
+    SelectObject(dc, small_font);
+    GetTextMetricsW(dc, &tm);
+    SetRect(&measure, 0, 0, width, 0);
+    DrawTextW(dc, notice_text, -1, &measure, DT_CALCRECT | DT_WORDBREAK | DT_EDITCONTROL | DT_NOPREFIX);
+    text_h = min(measure.bottom - measure.top, tm.tmHeight * 3);
+    SelectObject(dc, old);
+    ReleaseDC(notice, dc);
+
+    SetRect(title, SC(44), SC(44), SC(44) + width, SC(44) + title_h);
+    SetRect(text, SC(44), title->bottom + SC(4), SC(44) + width, title->bottom + SC(4) + text_h);
+}
+
+static int notice_height(void)
+{
+    RECT title, text;
+    notice_layout(&title, &text);
+    return max(SC(96), text.bottom + SC(16));
+}
+
+static void hide_notice(void)
+{
+    KillTimer(taskbar, TIMER_NOTICE_HIDE);
+    if (IsWindowVisible(notice)) ShowWindow(notice, SW_HIDE);
+}
+
+static void show_notice(void)
+{
+    int w = notice_w(), h;
+    choose_palette();
+    notice_hot = 0;
+    h = notice_height();
+    SetWindowPos(notice, HWND_TOPMOST, screen_w - w - SC(12), screen_h - (fullscreen_app ? 0 : bar_h) - h - SC(12), w, h,
+                 SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    InvalidateRect(notice, NULL, FALSE);
+    SetTimer(taskbar, TIMER_NOTICE_HIDE, NOTICE_SECONDS * 1000, NULL);
+}
+
+/* Shows a notice written since the last look (not the ones from before the shell started) */
+static void poll_notice(BOOL first)
+{
+    WIN32_FILE_ATTRIBUTE_DATA data;
+    DWORD serial;
+    if (!GetFileAttributesExW(NOTICE_FILE, GetFileExInfoStandard, &data)) return;
+    if (!CompareFileTime(&data.ftLastWriteTime, &notice_written)) return;
+    notice_written = data.ftLastWriteTime;
+    if (!read_notice(&serial) || serial == notice_serial) return;
+    notice_serial = serial;
+    if (!first && notice_title[0]) show_notice();
+}
+
+/* A warning sign: an amber triangle with an exclamation mark */
+static void draw_warning_glyph(struct canvas *c, float cx, float cy, float s)
+{
+    GpPath *path;
+    GpSolidFill *fill;
+    GpPen *pen;
+    GdipCreatePath(FillModeWinding, &path);
+    GdipAddPathLine(path, cx, cy - s * 0.46f, cx + s * 0.50f, cy + s * 0.40f);
+    GdipAddPathLine(path, cx + s * 0.50f, cy + s * 0.40f, cx - s * 0.50f, cy + s * 0.40f);
+    GdipClosePathFigure(path);
+    GdipCreateSolidFill(argb(RGB(0xf2, 0xa9, 0x00), 255), &fill);
+    GdipFillPath(c->g, (GpBrush *)fill, path);
+    GdipDeleteBrush((GpBrush *)fill);
+    GdipDeletePath(path);
+    pen = make_pen(argb(RGB(0x1a, 0x1a, 0x1a), 255), s * 0.11f);
+    GdipDrawLine(c->g, pen, cx, cy - s * 0.16f, cx, cy + s * 0.12f);
+    GdipDrawLine(c->g, pen, cx, cy + s * 0.24f, cx, cy + s * 0.25f);
+    GdipDeletePen(pen);
+}
+
+static void paint_notice(HDC hdc)
+{
+    struct canvas c;
+    RECT client, rc, close;
+
+    GetClientRect(notice, &client);
+    if (!canvas_begin(&c, hdc, client.right, client.bottom)) return;
+    fill_rect(&c, 0, 0, client.right, client.bottom, argb(pal.menu, 255));
+    if (notice_hot == 1) fill_rect(&c, 0, 0, client.right, client.bottom, pal.hover);
+    stroke_round_rect(&c, &client, 0, argb(pal.menu_border, 255), 1);
+
+    /* who is telling: the settings page this opens */
+    draw_warning_glyph(&c, (float)SC(28), (float)SC(26), (float)SC(16));
+    SetRect(&rc, SC(44), SC(12), client.right - SC(48), SC(40));
+    draw_text(&c, TR(L"문제 해결", L"Troubleshoot"), &rc, small_font, pal.text_dim, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+    notice_close_rect(&close);
+    if (notice_hot == 2) fill_round_rect(&c, &close, (float)SC(4), pal.hover);
+    {
+        GpPen *pen = make_pen(argb(pal.text_dim, 255), (float)max(1, SC(1)));
+        float cx = (close.left + close.right) / 2.0f, cy = (close.top + close.bottom) / 2.0f, h = (float)SC(5);
+        GdipDrawLine(c.g, pen, cx - h, cy - h, cx + h, cy + h);
+        GdipDrawLine(c.g, pen, cx - h, cy + h, cx + h, cy - h);
+        GdipDeletePen(pen);
+    }
+
+    {
+        RECT title, text;
+        notice_layout(&title, &text);
+        draw_text(&c, notice_title, &title, menu_title_font, pal.text, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_END_ELLIPSIS);
+        draw_text(&c, notice_text, &text, small_font, pal.text_dim, DT_LEFT | DT_TOP | DT_WORDBREAK | DT_EDITCONTROL | DT_END_ELLIPSIS);
+    }
+    canvas_end(&c, hdc, 0, 0);
+}
+
+static LRESULT CALLBACK notice_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+    switch (msg) {
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        paint_notice(hdc);
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
+    case WM_ERASEBKGND:
+        return 1;
+    case WM_MOUSEACTIVATE:
+        return MA_NOACTIVATE;   /* the program in front keeps the keyboard */
+    case WM_MOUSEMOVE: {
+        POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
+        RECT close;
+        int hot;
+        notice_close_rect(&close);
+        hot = PtInRect(&close, pt) ? 2 : 1;
+        if (hot != notice_hot) {
+            TRACKMOUSEEVENT tme = {sizeof(tme), TME_LEAVE, hwnd, 0};
+            notice_hot = hot;
+            TrackMouseEvent(&tme);
+            InvalidateRect(hwnd, NULL, FALSE);
+        }
+        return 0;
+    }
+    case WM_MOUSELEAVE:
+        notice_hot = 0;
+        InvalidateRect(hwnd, NULL, FALSE);
+        return 0;
+    case WM_LBUTTONUP: {
+        POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
+        RECT close;
+        notice_close_rect(&close);
+        hide_notice();
+        if (!PtInRect(&close, pt)) open_settings(L"problems");
+        return 0;
+    }
+    }
+    return DefWindowProcW(hwnd, msg, wp, lp);
+}
+
+/* ---------------------------------------------------------------------------------------- */
 /* Start menu: the programs                                                                  */
 /* ---------------------------------------------------------------------------------------- */
 
@@ -2190,6 +2414,18 @@ static LRESULT CALLBACK taskbar_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         case TIMER_HOVER:
             poll_hover();
             break;
+        case TIMER_NOTICE:
+            poll_notice(FALSE);
+            break;
+        case TIMER_NOTICE_HIDE: {
+            POINT pt;
+            RECT rc;
+            GetCursorPos(&pt);
+            GetWindowRect(notice, &rc);
+            if (IsWindowVisible(notice) && PtInRect(&rc, pt)) SetTimer(hwnd, TIMER_NOTICE_HIDE, 3000, NULL);   /* being read */
+            else hide_notice();
+            break;
+        }
         case TIMER_ANNOUNCE:
             KillTimer(hwnd, TIMER_ANNOUNCE);
             /* programs started before us put their icons in explorer's tray: ask again */
@@ -2411,6 +2647,11 @@ static void create_windows(void)
     wc.style = CS_DROPSHADOW;
     RegisterClassExW(&wc);
 
+    wc.lpfnWndProc = notice_proc;
+    wc.lpszClassName = L"S11Notice";
+    wc.style = CS_DROPSHADOW;
+    RegisterClassExW(&wc);
+
     taskbar = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOACTIVATE, L"Shell_TrayWnd", L"",
                               WS_POPUP | WS_CLIPCHILDREN, 0, 0, 100, 10, NULL, NULL, instance, NULL);
     start_menu = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST, L"S11StartMenu", TR(L"시작", L"Start"),
@@ -2423,6 +2664,8 @@ static void create_windows(void)
     SetLayeredWindowAttributes(hover_window, 0, 255, LWA_ALPHA);
     calendar = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST, L"S11Calendar", TR(L"달력", L"Calendar"),
                                WS_POPUP | WS_CLIPCHILDREN, 0, 0, 100, 100, NULL, NULL, instance, NULL);
+    notice = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOACTIVATE, L"S11Notice", TR(L"알림", L"Notification"),
+                             WS_POPUP, 0, 0, 100, 100, NULL, NULL, instance, NULL);
     search_edit = CreateWindowExW(0, WC_EDITW, L"", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
                                   0, 0, 100, 20, start_menu, (HMENU)1, instance, NULL);
     SendMessageW(search_edit, WM_SETFONT, (WPARAM)search_font, FALSE);
@@ -2466,6 +2709,8 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
     SetTimer(taskbar, TIMER_CLOCK, 1000, NULL);
     SetTimer(taskbar, TIMER_ANNOUNCE, 400, NULL);
     SetTimer(taskbar, TIMER_HOVER, 40, NULL);
+    poll_notice(TRUE);   /* notices from before we started are old news */
+    SetTimer(taskbar, TIMER_NOTICE, 1500, NULL);
     SetWindowsHookExW(WH_KEYBOARD_LL, keyboard_hook, inst, 0);
 
     session_end = make_system_process();

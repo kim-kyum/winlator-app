@@ -35,19 +35,20 @@
 #define USER_WALLPAPER L"Z:\\home\\xuser\\.config\\user-wallpaper.png"
 #define CONTAINER_FILE L"Z:\\home\\xuser\\.config\\s11-container.txt"
 #define CONNECTIVITY_FILE L"Z:\\home\\xuser\\.config\\s11-connectivity.txt"   /* S11Connectivity.java */
+#define PROBLEMS_FILE L"Z:\\home\\xuser\\.config\\s11-problems.txt"           /* S11Problems.java */
 
 #define WM_APP_REFRESH_APPS (WM_APP + 20)
 #define WM_APP_SELECT_PAGE (WM_APP + 21)   /* another start asked for a page */
 
 enum page {
     PAGE_SYSTEM, PAGE_GRAPHICS, PAGE_AUDIO, PAGE_WINE, PAGE_COMPAT, PAGE_COMPONENTS, PAGE_DRIVES, PAGE_ENV,
-    PAGE_CONNECTIVITY, PAGE_PERSONALIZE, PAGE_APPS, PAGE_FONTS, PAGE_ABOUT, PAGE_COUNT
+    PAGE_CONNECTIVITY, PAGE_PERSONALIZE, PAGE_APPS, PAGE_FONTS, PAGE_PROBLEMS, PAGE_ABOUT, PAGE_COUNT
 };
 
 /* pages whose settings Winlator applies when the container starts again */
 static BOOL page_needs_restart(enum page page)
 {
-    return page != PAGE_CONNECTIVITY && page != PAGE_APPS && page != PAGE_FONTS;
+    return page != PAGE_CONNECTIVITY && page != PAGE_APPS && page != PAGE_FONTS && page != PAGE_PROBLEMS;
 }
 
 /* pages filled from the container settings file */
@@ -93,8 +94,9 @@ struct row {
     enum page page;
     enum row_kind kind;
     const WCHAR *title;
-    WCHAR detail[200];
+    WCHAR detail[320];
     BOOL detail_is_path;  /* long paths lose their middle, not their end */
+    BOOL detail_wrap;     /* the detail may take two lines (the card is taller) */
     HWND *control;      /* on the right of the card */
     HWND *control2;     /* a second control left of it */
     HWND *control3;     /* and a third (adding an environment variable) */
@@ -138,6 +140,7 @@ static const WCHAR *page_title(enum page page)
     case PAGE_PERSONALIZE: return TR(L"개인 설정", L"Personalization");
     case PAGE_APPS: return TR(L"앱", L"Apps");
     case PAGE_FONTS: return TR(L"글꼴", L"Fonts");
+    case PAGE_PROBLEMS: return TR(L"문제 해결", L"Troubleshoot");
     case PAGE_ABOUT: return TR(L"정보", L"About");
     default: return L"";
     }
@@ -938,6 +941,8 @@ enum field_type {
     FIELD_ENVVAR, FIELD_ADD_ENV,
     /* the Connectivity page (S11Connectivity.java) */
     FIELD_TOGGLE, FIELD_ACTION, FIELD_NETWORK, FIELD_INFO,
+    /* the Troubleshooting page (S11Problems.java): a text file to open or share */
+    FIELD_LOG,
     FIELD_UNKNOWN
 };
 
@@ -964,17 +969,19 @@ static WCHAR *container_text;        /* the file; the fields point into it */
 static DWORD container_revision;     /* 0: no file (an older Winlator) */
 static WCHAR *connectivity_text;     /* Wi-Fi and Bluetooth, the same way */
 static DWORD connectivity_revision;
+static WCHAR *problems_text;         /* and why programs failed */
+static DWORD problems_revision;
 static DWORD waiting_since;          /* a change went out; the file is read again once it changes */
 
 #define TIMER_RELOAD 2
-#define TIMER_NET 3         /* the Connectivity page follows Wi-Fi and Bluetooth while it is open */
+#define TIMER_NET 3         /* the Connectivity and Troubleshooting pages follow their files while open */
 
 static enum page page_from_schema(const WCHAR *name)
 {
     static const struct { const WCHAR *name; enum page page; } pages[] = {
         {L"graphics", PAGE_GRAPHICS}, {L"audio", PAGE_AUDIO}, {L"compat", PAGE_COMPAT}, {L"components", PAGE_COMPONENTS},
         {L"drives", PAGE_DRIVES}, {L"env", PAGE_ENV}, {L"about", PAGE_ABOUT}, {L"system", PAGE_SYSTEM}, {L"wine", PAGE_WINE},
-        {L"connectivity", PAGE_CONNECTIVITY}
+        {L"connectivity", PAGE_CONNECTIVITY}, {L"problems", PAGE_PROBLEMS}
     };
     int i;
     for (i = 0; i < ARRAY_SIZE(pages); i++) if (!lstrcmpW(name, pages[i].name)) return pages[i].page;
@@ -984,7 +991,7 @@ static enum page page_from_schema(const WCHAR *name)
 static enum field_type type_from_schema(const WCHAR *name)
 {
     static const WCHAR *const types[] = {L"section", L"choice", L"text", L"cpu", L"checklist", L"drive", L"adddrive",
-                                         L"envvar", L"addenv", L"toggle", L"action", L"network", L"info"};
+                                         L"envvar", L"addenv", L"toggle", L"action", L"network", L"info", L"log"};
     int i;
     for (i = 0; i < ARRAY_SIZE(types); i++) if (!lstrcmpW(name, types[i])) return (enum field_type)i;
     return FIELD_UNKNOWN;
@@ -1047,6 +1054,7 @@ static DWORD read_revision(const WCHAR *path, const WCHAR *magic)
 
 static DWORD read_container_revision(void) { return read_revision(CONTAINER_FILE, L"S11CONTAINER"); }
 static DWORD read_connectivity_revision(void) { return read_revision(CONNECTIVITY_FILE, L"S11CONNECTIVITY"); }
+static DWORD read_problems_revision(void) { return read_revision(PROBLEMS_FILE, L"S11PROBLEMS"); }
 
 static void free_container_settings(void)
 {
@@ -1061,8 +1069,9 @@ static void free_container_settings(void)
     if (fields) HeapFree(GetProcessHeap(), 0, fields);
     if (container_text) HeapFree(GetProcessHeap(), 0, container_text);
     if (connectivity_text) HeapFree(GetProcessHeap(), 0, connectivity_text);
+    if (problems_text) HeapFree(GetProcessHeap(), 0, problems_text);
     fields = NULL;
-    container_text = connectivity_text = NULL;
+    container_text = connectivity_text = problems_text = NULL;
     field_count = field_capacity = 0;
 }
 
@@ -1127,10 +1136,11 @@ static void parse_settings(WCHAR *text, const WCHAR *magic, DWORD *revision)
 static void load_container_settings(void)
 {
     free_container_settings();
-    container_revision = connectivity_revision = 0;
+    container_revision = connectivity_revision = problems_revision = 0;
     if ((container_text = read_utf8_file(CONTAINER_FILE))) parse_settings(container_text, L"S11CONTAINER", &container_revision);
     if ((connectivity_text = read_utf8_file(CONNECTIVITY_FILE)))
         parse_settings(connectivity_text, L"S11CONNECTIVITY", &connectivity_revision);
+    if ((problems_text = read_utf8_file(PROBLEMS_FILE))) parse_settings(problems_text, L"S11PROBLEMS", &problems_revision);
 }
 
 static int field_index(const struct field *f) { return (int)(f - fields); }
@@ -1278,6 +1288,11 @@ static void create_field_controls(struct field *f)
         else f->controls[0] = make_button(field_id(f, 0), TR(L"연결", L"Connect"));
         if (!lstrcmpW(f->value, L"secured")) f->controls[1] = make_password(field_id(f, 1));
         break;
+    case FIELD_LOG:
+        if (!f->value[0]) break;   /* nothing saved to open */
+        f->controls[0] = make_button(field_id(f, 0), TR(L"공유", L"Share"));
+        f->controls[1] = make_button(field_id(f, 1), TR(L"열기", L"Open"));
+        break;
     default:
         break;
     }
@@ -1376,10 +1391,35 @@ static void add_field_rows(void)
                 r->widths[1] = 200;
             }
             break;
+        case FIELD_LOG:
+            r->control = &f->controls[0];
+            r->control2 = &f->controls[1];
+            r->widths[0] = r->widths[1] = 80;
+            /* fall through: a reason can be long */
+        case FIELD_INFO:
+            if (f->page == PAGE_PROBLEMS) {
+                r->detail_wrap = TRUE;
+                r->height = 88;
+            }
+            break;
         default:
             break;
         }
     }
+    /* an app without S11Problems */
+    if (!problems_revision) {
+        struct row *r = add_row(PAGE_PROBLEMS, TR(L"문제 기록을 아직 불러오지 못했어요", L"The troubleshooting records are not available yet"), NULL);
+        lstrcpyW(r->detail, TR(L"컨테이너를 다시 시작하면 여기에 나타나요.", L"They appear here after the container restarts."));
+    }
+}
+
+/* A text file in Notepad (a report, a Player.log) */
+static void open_text_file(const WCHAR *path)
+{
+    WCHAR args[1100];   /* wsprintfW writes 1024 characters at most */
+    if (!path[0] || GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES) return;
+    wsprintfW(args, L"\"%s\"", path);
+    ShellExecuteW(main_window, NULL, L"notepad.exe", args, NULL, SW_SHOWNORMAL);
 }
 
 static void send_container_setting(const WCHAR *key, const WCHAR *value)
@@ -1555,6 +1595,11 @@ static void field_command(struct field *f, int slot, int code)
     case FIELD_ACTION:
         if (code != BN_CLICKED) return;
         send_container_setting(f->key, L"1");
+        return;
+    case FIELD_LOG:
+        if (code != BN_CLICKED) return;
+        if (slot == 0) send_container_setting(L"problems.share", f->value);   /* Android's share sheet */
+        else open_text_file(f->value);
         return;
     case FIELD_NETWORK:
         if (slot == 1 && (code == EN_SETFOCUS || code == EN_KILLFOCUS)) {
@@ -1826,11 +1871,11 @@ static void layout(void)
         right = x + w - SC(16);
         for (k = 0; k < 3; k++) {
             HWND c = slots[k] ? *slots[k] : NULL;
-            int width;
+            int width, top = r->detail_wrap ? y + (SC(r->height) - SC(68)) / 2 : y;
             if (!c) continue;
             width = r->widths[k] ? SC(r->widths[k]) : default_width(c);
-            if (f && f->type == FIELD_NETWORK && c == f->controls[1]) right = place_framed_edit(f, c, right, width, y) - SC(8);
-            else right = place_control(c, right, width, y) - SC(8);
+            if (f && f->type == FIELD_NETWORK && c == f->controls[1]) right = place_framed_edit(f, c, right, width, top) - SC(8);
+            else right = place_control(c, right, width, top) - SC(8);
         }
         r->text_right = right < x + w - SC(16) ? right - SC(8) : x + w - SC(20);
 
@@ -1992,6 +2037,13 @@ static void draw_nav_glyph(struct canvas *c, enum page page, float cx, float cy,
         GdipDrawLine(c->g, pen, cx - s * 0.08f, cy, cx - s * 0.36f, cy + s * 0.24f);
         GdipDrawLine(c->g, pen, cx + s * 0.04f, cy + s * 0.28f, cx + s * 0.38f, cy + s * 0.28f);
         break;
+    case PAGE_PROBLEMS: {  /* a triangle with an exclamation mark */
+        GpPointF corners[3] = {{cx, cy - s * 0.40f}, {cx + s * 0.44f, cy + s * 0.36f}, {cx - s * 0.44f, cy + s * 0.36f}};
+        GdipDrawPolygon(c->g, pen, corners, 3);
+        GdipDrawLine(c->g, pen, cx, cy - s * 0.12f, cx, cy + s * 0.12f);
+        GdipDrawLine(c->g, pen, cx, cy + s * 0.22f, cx, cy + s * 0.23f);
+        break;
+    }
     case PAGE_ABOUT:       /* an i in a circle */
         GdipDrawEllipse(c->g, pen, cx - s * 0.40f, cy - s * 0.40f, s * 0.80f, s * 0.80f);
         GdipDrawLine(c->g, pen, cx, cy - s * 0.04f, cx, cy + s * 0.22f);
@@ -2074,7 +2126,12 @@ static void paint(HDC hdc)
             SetRect(&text, r->rc.left + SC(20), r->rc.top + SC(14), text_right, r->rc.top + SC(38));
         else SetRect(&text, r->rc.left + SC(20), r->rc.top, text_right, r->rc.top + SC(68));
         draw_text(&c, r->title, &text, ui_font, pal.text, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
-        if (r->detail[0]) {
+        if (r->detail[0] && r->detail_wrap) {
+            SetRect(&text, r->rc.left + SC(20), r->rc.top + SC(40), text_right, r->rc.bottom - SC(8));
+            draw_text(&c, r->detail, &text, small_font, pal.text_dim,
+                      DT_LEFT | DT_TOP | DT_WORDBREAK | DT_EDITCONTROL | DT_END_ELLIPSIS | DT_NOPREFIX);
+        }
+        else if (r->detail[0]) {
             SetRect(&text, r->rc.left + SC(20), r->rc.top + SC(38), text_right, r->rc.top + SC(60));
             draw_text(&c, r->detail, &text, small_font, pal.text_dim,
                       DT_LEFT | DT_VCENTER | DT_SINGLELINE | (r->detail_is_path ? DT_PATH_ELLIPSIS : DT_END_ELLIPSIS));
@@ -2190,6 +2247,10 @@ static void select_page(enum page page)
     scroll_y = 0;
     if (page == PAGE_CONNECTIVITY && connectivity_revision) {
         send_container_setting(L"net.refresh", L"1");   /* fresh signal levels and a new scan */
+        SetTimer(main_window, TIMER_NET, 1000, NULL);
+    }
+    else if (page == PAGE_PROBLEMS && problems_revision) {
+        send_container_setting(L"problems.refresh", L"1");   /* the Unity logs read again */
         SetTimer(main_window, TIMER_NET, 1000, NULL);
     }
     else KillTimer(main_window, TIMER_NET);
@@ -2468,12 +2529,12 @@ static void create_controls(void)
 static enum page initial_page;
 
 /* "system", "graphics", "sound", "wine", "compatibility", "components", "drives", "environment",
- * "connectivity", "personalization", "apps", "fonts" or "about" */
+ * "connectivity", "personalization", "apps", "fonts", "problems" or "about" */
 static enum page page_from_name(const WCHAR *name)
 {
     static const WCHAR *const names[PAGE_COUNT] = {
         L"system", L"graphics", L"sound", L"wine", L"compatibility", L"components", L"drives", L"environment",
-        L"connectivity", L"personalization", L"apps", L"fonts", L"about"
+        L"connectivity", L"personalization", L"apps", L"fonts", L"problems", L"about"
     };
     int i;
     for (i = 0; i < PAGE_COUNT; i++) if (name && !lstrcmpiW(name, names[i])) return (enum page)i;
@@ -2610,16 +2671,21 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         if (wp == TIMER_RELOAD) {
             /* Winlator writes the file again after each change; wait for it (a few seconds at most) */
             if (read_container_revision() != container_revision || read_connectivity_revision() != connectivity_revision ||
-                GetTickCount() - waiting_since > 5000) {
+                read_problems_revision() != problems_revision || GetTickCount() - waiting_since > 5000) {
                 KillTimer(hwnd, TIMER_RELOAD);
                 reload_container_settings();
             }
             return 0;
         }
         if (wp == TIMER_NET) {
-            /* Wi-Fi and Bluetooth change by themselves (a scan ends, a device connects) */
-            if (current_page != PAGE_CONNECTIVITY) KillTimer(hwnd, TIMER_NET);
-            else if (read_connectivity_revision() != connectivity_revision && !typing_password()) reload_container_settings();
+            /* Wi-Fi and Bluetooth change by themselves (a scan ends, a device connects), and so do problems */
+            if (current_page == PAGE_CONNECTIVITY) {
+                if (read_connectivity_revision() != connectivity_revision && !typing_password()) reload_container_settings();
+            }
+            else if (current_page == PAGE_PROBLEMS) {
+                if (read_problems_revision() != problems_revision) reload_container_settings();
+            }
+            else KillTimer(hwnd, TIMER_NET);
             return 0;
         }
         if (wp == TIMER_REPAINT) {

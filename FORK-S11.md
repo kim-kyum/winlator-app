@@ -121,6 +121,7 @@ Win+I, or the taskbar's menu:
 - **Apps**: installed programs from the Uninstall keys, with their icons; uninstall, or
   start an installer.
 - **Fonts**: installed scalable fonts with a preview; install .ttf/.otf/.ttc files.
+- **Troubleshoot**: why programs did not start or quit, and the games' Unity logs (below).
 - **About**: S11 Workspace version, container, Wine, Windows, processor, memory, display, and
   the container's name.
 
@@ -154,6 +155,29 @@ The app targets API 28, so Android still lets it use the calls newer targets los
   error, otherwise after 25 s.
 - The password field never keeps what was typed: it is cleared after sending and the buffers
   are zeroed; a reload of the page while typing keeps the text.
+
+## Troubleshooting
+
+A program Wine cannot start shows nothing at all: a missing DLL ends it before it has a window,
+and Wine says why only in its output, which Winlator threw away. `S11Problems` now reads Wine's
+output (`ProcessHelper.exec` passes every line to it, debug log or not) and Unity's logs:
+
+- `WINEDEBUG` keeps the module channel's errors when the user has no debug log on
+  (`-all,err+module`): "Library X (which is needed by Y) not found" and "Importing dlls for Z
+  failed" become "Z: couldn't start, X is missing" (the first DLL not found is the cause).
+  DLLs a running program fails to load (plugins) are listed without a notice.
+- Wine prints unhandled exceptions whatever `WINEDEBUG` says; winedbg's report that follows names
+  the program (the "(D)" line of its thread list) and the faulting module.
+- Unity catches its own crashes, so Wine never hears of them: every `Player.log` under
+  `AppData\LocalLow\company\product` is summarised (a crash with its exception, Steam's
+  `RestartAppIfNecessary` quit, a missing plugin, a graphics or script error, or the last line).
+- Each problem's report goes to `C:\S11\Logs` (UTF-8 with a BOM), with `wine-errors.txt`, the
+  last error lines. `~/.config/s11-problems.txt` holds the Settings page's rows (`log` rows have
+  Open, in Notepad, and Share, which sends `problems.share` and Android's share sheet gets a copy
+  through the FileProvider); `~/.config/s11-notice.txt` holds the latest notice, which the
+  taskbar shows once as a card bottom right (clicking it opens the page).
+- Wine's Notepad started with the "System" bitmap font at 12 pixels: no Hangul and tiny.
+  `KoreanFonts` gives it the UI font at 11 points with wrapping, unless the user picked a font.
 
 ## Korean in Wine's shell
 

@@ -29,6 +29,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
     private EnvVars envVars;
     private String box64Preset = Box64Preset.CONSERVATIVE;
     private Callback<Integer> terminationCallback;
+    private Callback<String> outputCallback;
     private static final Object lock = new Object();
 
     @Override
@@ -75,6 +76,11 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         this.envVars = envVars;
     }
 
+    /** Winlator S11: every line Wine prints (S11Problems) */
+    public void setOutputCallback(Callback<String> outputCallback) {
+        this.outputCallback = outputCallback;
+    }
+
     public String getBox64Preset() {
         return box64Preset;
     }
@@ -112,7 +118,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
                 pid = -1;
             }
             if (terminationCallback != null) terminationCallback.call(status);
-        });
+        }, outputCallback);
     }
 
     private void extractBox64File() {

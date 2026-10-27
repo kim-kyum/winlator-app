@@ -125,6 +125,7 @@ import com.winlator.s11.PowerMenu;
 import com.winlator.s11.RootfsOverlay;
 import com.winlator.s11.S11ContainerSettings;
 import com.winlator.s11.S11Connectivity;
+import com.winlator.s11.S11Problems;
 import com.winlator.s11.S11Settings;
 import com.winlator.s11.S11Shell;
 import com.winlator.s11.TimeZones;
@@ -154,6 +155,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private final AtomicBoolean sessionTransitionStarted = new AtomicBoolean(false);
     private boolean s11ShellEnabled;
     private volatile S11Connectivity s11Connectivity;
+    private volatile S11Problems s11Problems;
     private boolean s11ScreenshotKeyCaptured;
     private Dialog s11RegionDialog;
     private XEnvironment environment;
@@ -413,6 +415,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     @Override
     protected void onDestroy() {
         if (s11Connectivity != null) s11Connectivity.stop();
+        if (s11Problems != null) s11Problems.stop();
         winHandler.stop();
         if (environment != null) environment.stopEnvironmentComponents();
         ForegroundService.stopSession(this);
@@ -621,6 +624,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     public void onS11ContainerSetting(String key, String value) {
         if (S11Connectivity.isCommand(key)) {
             if (s11Connectivity != null) s11Connectivity.apply(key, value);
+            return;
+        }
+        if (S11Problems.isCommand(key)) {
+            if (s11Problems != null) s11Problems.apply(key, value);
             return;
         }
         runOnUiThread(() -> {
@@ -995,11 +1002,17 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
         boolean enableWineDebug = preferences.getBoolean("enable_wine_debug", false);
         String wineDebugChannels = preferences.getString("wine_debug_channels", SettingsFragment.DEFAULT_WINE_DEBUG_CHANNELS);
-        envVars.put("WINEDEBUG", enableWineDebug && !wineDebugChannels.isEmpty() ? "+"+wineDebugChannels.replace(",", ",+") : "-all");
+        // Winlator S11: without a debug log, keep the module channel's errors (S11Problems: a missing DLL)
+        envVars.put("WINEDEBUG", enableWineDebug && !wineDebugChannels.isEmpty() ? "+"+wineDebugChannels.replace(",", ",+") : S11Problems.WINEDEBUG);
 
         FileUtils.clear(rootFS.getTmpDir());
 
         GuestProgramLauncherComponent guestProgramLauncherComponent = new GuestProgramLauncherComponent();
+        // Winlator S11: why programs fail, for the Settings app's Troubleshooting page
+        if (s11Problems == null) s11Problems = new S11Problems(this);
+        final S11Problems problems = s11Problems;
+        guestProgramLauncherComponent.setOutputCallback(problems::onWineOutput);
+        problems.start();
 
         if (container != null) {
             if (container.getHUDMode() == FrameRating.Mode.FULL.ordinal()) envVars.put("X11_WND_GPU_INFO", "1");

@@ -68,10 +68,21 @@ public abstract class ProcessHelper {
     }
 
     public static int exec(String command, EnvVars envVars, File workingDir, Callback<Integer> terminationCallback) {
+        return exec(command, envVars, workingDir, terminationCallback, null);
+    }
+
+    /**
+     * Winlator S11: outputCallback (may be null) gets every line the process prints, whether the
+     * debug log is on or not (S11Problems reads why programs fail from Wine's output).
+     */
+    public static int exec(String command, EnvVars envVars, File workingDir, Callback<Integer> terminationCallback,
+                           Callback<String> outputCallback) {
         int pid = -1;
         try {
             ProcessBuilder processBuilder = (new ProcessBuilder(splitCommand(command))).directory(workingDir);
-            if (debugCallbacks.isEmpty()) processBuilder.redirectOutput(new File("/dev/null")).redirectErrorStream(true);
+            boolean debug = !debugCallbacks.isEmpty();
+            if (!debug && outputCallback == null) processBuilder.redirectOutput(new File("/dev/null")).redirectErrorStream(true);
+            else if (!debug) processBuilder.redirectErrorStream(true);
 
             Map<String, String> environment = processBuilder.environment();
             for (String name : envVars) environment.put(name, envVars.get(name));
@@ -82,10 +93,11 @@ public abstract class ProcessHelper {
             pid = pidField.getInt(process);
             pidField.setAccessible(false);
 
-            if (!debugCallbacks.isEmpty()) {
-                createDebugThread(process.getInputStream());
-                createDebugThread(process.getErrorStream());
+            if (debug) {
+                createDebugThread(process.getInputStream(), outputCallback);
+                createDebugThread(process.getErrorStream(), outputCallback);
             }
+            else if (outputCallback != null) createDebugThread(process.getInputStream(), outputCallback);
 
             if (terminationCallback != null) createWaitForThread(process, terminationCallback);
         }
@@ -93,11 +105,17 @@ public abstract class ProcessHelper {
         return pid;
     }
 
-    private static void createDebugThread(final InputStream inputStream) {
+    private static void createDebugThread(final InputStream inputStream, final Callback<String> outputCallback) {
         Executors.newSingleThreadExecutor().execute(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    if (outputCallback != null) {
+                        try {
+                            outputCallback.call(line);
+                        }
+                        catch (RuntimeException e) {}
+                    }
                     synchronized (debugCallbacks) {
                         if (!debugCallbacks.isEmpty()) {
                             for (Callback<String> callback : debugCallbacks) callback.call(line);
