@@ -33,23 +33,37 @@ tap() {   # attribute value
     sleep 2
 }
 has() { find_xy "$1" "$2" > /dev/null; }
+scroll() { adb shell input swipe 1280 1300 1280 600 400; sleep 2; }
+scroll_up() { adb shell input swipe 1280 500 1280 1400 300; sleep 1; }
+# scrolls down until a view shows (or gives up)
+scroll_to() {   # attribute value [tries]
+    for i in $(seq 1 "${3:-10}"); do has "$1" "$2" && return 0; scroll; done
+    has "$1" "$2"
+}
+back() { adb shell input keyevent KEYCODE_BACK; sleep 2; }
 in_front() { adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" | grep -q "$PKG"; }
+crashes() {   # where the app went: its crash, if any
+    log "app not in front ($1); its crash, if any:"
+    adb logcat -d -b crash 2>/dev/null | tail -60 >> "$OUT/crash-$1.txt"
+    adb logcat -d 2>/dev/null | grep -E "AndroidRuntime|FATAL|DEBUG +:|libc +:|$PKG" | tail -80 >> "$OUT/crash-$1.txt"
+    head -30 "$OUT/crash-$1.txt" | sed 's/^/    /' | tee -a "$LOG"
+}
 launch() { adb shell am start -W -n $PKG/com.winlator.MainActivity >> "$LOG" 2>&1; sleep 4; }
-ensure() { in_front || { log "app not in front; starting it again"; launch; }; }
+ensure() { in_front || { crashes "${1:-unknown}"; launch; }; }
+drawer_open() { has text "정보" && has text "입력 컨트롤"; }
 # the drawer opens with the toolbar's button (an edge swipe is Android's back gesture)
 drawer() {
-    ensure
-    tap content-desc "~위로" 2>/dev/null || tap content-desc "~Navigate" 2>/dev/null || adb shell input tap 56 110
-    sleep 2
+    ensure drawer
+    drawer_open && return 0
+    tap content-desc "~위로" 2>/dev/null || tap content-desc "~Navigate" 2>/dev/null || { adb shell input tap 56 110; sleep 2; }
 }
 page() {   # drawer item text
     drawer
     tap text "$1" || return 1
     sleep 3
 }
-scroll() { adb shell input swipe 1280 1350 1280 500 500; sleep 2; }
-back() { adb shell input keyevent KEYCODE_BACK; sleep 2; }
 
+adb logcat -c
 adb shell getprop ro.dalvik.vm.native.bridge | tee -a "$LOG"
 adb shell wm size | tee -a "$LOG"
 adb shell settings put secure navigation_mode 0 2>/dev/null   # three-button navigation
@@ -65,7 +79,7 @@ for t in "허용" "Allow" "ALLOW"; do tap text "$t" > /dev/null 2>&1 && break; d
 # the rootfs is unpacked on the first start (a progress dialog); wait until it is gone
 start=$(date +%s)
 while [ $(( $(date +%s) - start )) -lt 1800 ]; do
-    ensure
+    ensure install
     dump
     grep -q "설치하는 중\|Installing\|%" "$OUT/ui.xml" || break
     [ $(( ($(date +%s) - start) / 60 )) -eq 3 ] && [ ! -f "$OUT/.mid" ] && { shot installing; touch "$OUT/.mid"; }
@@ -76,38 +90,69 @@ sleep 5
 shot containers-empty
 
 drawer; shot drawer; back
+in_front || crashes drawer-back
 page "설정" && { shot settings; scroll; shot settings-2; scroll; shot settings-3; scroll; shot settings-4; }
 page "입력 컨트롤" && shot input-controls
-page "바로 가기" && shot shortcuts
 page "정보" && { shot about; back; }
+
+# a new container: the settings pages, then create it
 page "컨테이너"
 tap content-desc "추가" || tap resource-id "$PKG:id/menu_item_add" || adb shell input tap 2510 110
-sleep 5
-shot container-new
-for i in 1 2 3 4 5 6; do scroll; shot container-new-$i; done
-# create it, then the list with one container and its menu
-if tap resource-id "$PKG:id/BTConfirm"; then
-    start=$(date +%s)
-    while [ $(( $(date +%s) - start )) -lt 900 ]; do
-        ensure
-        has resource-id "$PKG:id/BTRun" && break
-        sleep 10
-    done
-    log "container ready after $(( $(date +%s) - start )) s"
-    shot containers-one
-    tap resource-id "$PKG:id/BTMenu" && { shot container-menu; back; }
+sleep 6
+if in_front; then
+    shot container-new
+    for i in 1 2 3; do scroll; shot container-new-$i; done
+    if scroll_to resource-id "$PKG:id/BTConfirm" 8 && tap resource-id "$PKG:id/BTConfirm"; then
+        start=$(date +%s)
+        while [ $(( $(date +%s) - start )) -lt 900 ]; do
+            in_front || { crashes create; break; }
+            has resource-id "$PKG:id/BTRun" && break
+            sleep 10
+        done
+        log "container ready after $(( $(date +%s) - start )) s"
+    fi
+else
+    crashes container-new
+    launch
+fi
+ensure list
+shot containers-one
+if tap resource-id "$PKG:id/BTMenu"; then
+    shot container-menu
+    if tap text "삭제"; then shot dialog-remove; tap text "취소" || back; else back; fi
+fi
+if tap resource-id "$PKG:id/BTMenu" && tap text "편집"; then
+    shot container-edit; scroll; shot container-edit-2; back
 fi
 
-# the light theme: Settings > Light, then the confirm button at the bottom (the app restarts)
-if page "설정"; then
-    tap resource-id "$PKG:id/RBLight" || tap text "밝게"
-    tap resource-id "$PKG:id/BTConfirm"
-    sleep 10
-    ensure
-    page "컨테이너" && shot light-containers
-    tap resource-id "$PKG:id/BTMenu" && { shot light-container-menu; back; }
-    tap content-desc "추가" || adb shell input tap 2510 110
-    sleep 5; shot light-container-new; scroll; shot light-container-new-2
-    page "설정" && shot light-settings
+# start it: the loading screen, then the running container's drawer
+ensure run
+if tap resource-id "$PKG:id/BTRun"; then
+    sleep 1; shot loading
+    sleep 20; shot running
+    back; sleep 2; shot running-drawer
+    tap text "나가기" || back
+    sleep 5
 fi
+ensure after-run
+
+# the light theme: Settings > Light, then the confirm button (the app restarts)
+if page "설정"; then
+    if scroll_to resource-id "$PKG:id/RBLight" 10; then
+        tap resource-id "$PKG:id/RBLight"
+        tap resource-id "$PKG:id/BTConfirm"
+        sleep 10
+    else
+        log "no light theme button"
+    fi
+    ensure light
+    page "컨테이너" && shot light-containers
+    drawer; shot light-drawer; back
+    tap resource-id "$PKG:id/BTMenu" && { shot light-container-menu; back; }
+    if tap resource-id "$PKG:id/BTMenu" && tap text "편집"; then shot light-container-edit; back; fi
+    page "설정" && { shot light-settings; scroll; shot light-settings-2; }
+    page "정보" && { shot light-about; back; }
+fi
+adb logcat -d > "$OUT/logcat.txt" 2>/dev/null
+gzip -9 "$OUT/logcat.txt"
 log "done"
