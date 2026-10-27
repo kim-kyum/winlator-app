@@ -1,0 +1,56 @@
+name: S11 ARM64 Wine package
+
+# Hangover's ARM64 Wine laid out for the app's rootfs (tools/s11/wine-arm64/package.sh), tried
+# in that rootfs, and published as a release the app downloads from Settings. The logs go to the
+# s11-wine-arm64-results branch.
+on:
+  push:
+    branches: [ s11-wine-arm64 ]
+  workflow_dispatch:
+
+concurrency:
+  group: s11-wine-arm64
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package and try it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash tools/s11/wine-arm64/package.sh . "$RUNNER_TEMP/out"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd "$RUNNER_TEMP/out"
+          VERSION=$(cat version.txt)
+          TAG="s11-wine-arm64-$VERSION"
+          if ! gh release view "$TAG" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+              --title "ARM64 Wine $VERSION for S11 Workspace" --notes-file notes.md
+          fi
+          gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber wine-*-arm64.tzst wine-*-arm64.tzst.sha256
+
+      - name: Publish the logs
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/logs" && cd "$RUNNER_TEMP/logs" || exit 0
+          cp "$RUNNER_TEMP"/out/*.log "$RUNNER_TEMP"/out/*.sha256 "$RUNNER_TEMP"/out/version.txt . 2>/dev/null || true
+          echo "run ${GITHUB_RUN_NUMBER} commit ${GITHUB_SHA}" > run.txt
+          git init -q
+          git config user.name "s11-wine-arm64"
+          git config user.email "s11-wine-arm64@users.noreply.github.com"
+          git add -A
+          git commit -qm "package run ${GITHUB_RUN_NUMBER}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/s11-wine-arm64-results
