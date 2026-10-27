@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Winlator S11: "Starting…" and other waits; a spinner and one line, as One UI's progress dialogs -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
     android:clickable="false"
     android:focusable="false">
 
@@ -12,47 +12,30 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_margin="24dp"
-        android:minWidth="280dp"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="28dp"
-        android:background="@drawable/s11_card"
-        android:elevation="12dp">
-
-        <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:contentDescription="@string/app_name"
-            android:importantForAccessibility="no"
-            android:scaleType="centerInside"
-            android:src="@mipmap/ic_launcher_foreground" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/app_name"
-            android:textColor="?attr/colorPrimaryText"
-            android:textSize="19sp"
-            android:fontFamily="sans-serif-medium" />
+        android:minWidth="300dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="26dp"
+        android:paddingRight="30dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="24dp"
+        android:background="@drawable/s11_card">
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
             android:indeterminate="true"
             app:indicatorColor="?attr/colorAccent"
-            app:indicatorSize="40dp"
-            app:trackColor="?attr/s11CardBorder"
-            app:trackThickness="4dp" />
+            app:indicatorSize="30dp"
+            app:trackColor="#00000000"
+            app:trackThickness="3dp" />
 
         <TextView
             android:id="@+id/TextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center"
-            android:textColor="?attr/colorSecondaryText"
-            android:textSize="15sp" />
+            android:layout_marginLeft="20dp"
+            android:textColor="?attr/colorPrimaryText"
+            android:textSize="16sp" />
     </LinearLayout>
 </FrameLayout>

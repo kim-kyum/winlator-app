@@ -22,7 +22,7 @@
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:layout_marginLeft="8dp"
-            app:tint="?attr/colorPrimary"
+            app:tint="?attr/colorSecondaryText"
             android:src="@drawable/icon_settings" />
     </LinearLayout>
 

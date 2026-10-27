@@ -20,49 +20,55 @@
         <item name="android:radioButtonStyle">@style/RadioButton</item>
         <item name="radioButtonStyle">@style/RadioButton</item>
     </style>
-    <!-- Winlator S11: the blue of the S11 mark, softer surfaces, clearer controls -->
-    <style name="AppThemeLight" parent="@style/AppThemeBase">
-        <item name="colorAccent">#2f6feb</item>
-        <item name="colorPrimary">#243044</item>
-        <item name="colorPrimaryDark">#1a2333</item>
-        <item name="colorControlNormal">#8a93a3</item>
-        <item name="colorPrimaryText">#1f2329</item>
-        <item name="colorSecondaryText">#6b7280</item>
-        <item name="colorPrimarySurface">#f3f4f7</item>
+    <!-- Winlator S11: neutral greys and Samsung's One UI blue; flat surfaces (the window, the
+         toolbar and the status bar share one colour) and plain white or grey cards -->
+    <style name="AppThemeLightColors" parent="@style/AppThemeBase">
+        <item name="colorAccent">#0381fe</item>
+        <item name="colorPrimary">#f6f6f6</item>
+        <item name="colorPrimaryDark">#f6f6f6</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">#f6f6f6</item>
+        <item name="colorControlNormal">#767676</item>
+        <item name="colorPrimaryText">#111111</item>
+        <item name="colorSecondaryText">#707070</item>
+        <item name="colorPrimarySurface">#f6f6f6</item>
         <item name="colorSecondarySurface">#ffffff</item>
-        <item name="colorPrimaryVariant">#5b6b85</item>
-        <item name="colorSecondaryVariant">#d6dce6</item>
+        <item name="colorPrimaryVariant">#767676</item>
+        <item name="colorSecondaryVariant">#e3e3e3</item>
         <item name="colorError">#e5484d</item>
-        <item name="s11FieldBorder">#c9cfd8</item>
-        <item name="s11FieldPressed">#eef1f6</item>
-        <item name="s11CardBorder">#e4e7ed</item>
-        <item name="s11NavSelected">#e3ebff</item>
-        <item name="s11NeutralButton">#e9ecf1</item>
-        <item name="s11NeutralButtonPressed">#d9dee6</item>
-        <item name="s11AccentPressed">#2559c4</item>
+        <item name="s11FieldBorder">#d6d6d6</item>
+        <item name="s11FieldFill">#f1f1f1</item>
+        <item name="s11FieldPressed">#e6e6e6</item>
+        <item name="s11CardBorder">#ebebeb</item>
+        <item name="s11NavSelected">#e8e8e8</item>
+        <item name="s11NeutralButton">#ececec</item>
+        <item name="s11NeutralButtonPressed">#dddddd</item>
+        <item name="s11AccentPressed">#006ad6</item>
         <item name="popupMenuBackground">@drawable/content_dialog_background_light</item>
         <item name="toolboxBackground">@drawable/toolbox_light</item>
         <item name="panelBackground">@drawable/panel_background_light</item>
     </style>
+    <style name="AppThemeLight" parent="@style/AppThemeLightColors" />
     <style name="AppThemeDark" parent="@style/AppThemeBase">
-        <item name="colorAccent">#5b8def</item>
-        <item name="colorPrimary">#1e2533</item>
-        <item name="colorPrimaryDark">#161b26</item>
-        <item name="colorControlNormal">#6b7383</item>
-        <item name="colorPrimaryText">#eceff4</item>
-        <item name="colorSecondaryText">#9aa3b2</item>
-        <item name="colorPrimarySurface">#15181d</item>
-        <item name="colorSecondarySurface">#22262e</item>
-        <item name="colorPrimaryVariant">#7d8aa3</item>
-        <item name="colorSecondaryVariant">#353c48</item>
-        <item name="colorError">#ef5350</item>
-        <item name="s11FieldBorder">#3d4452</item>
-        <item name="s11FieldPressed">#2a2f38</item>
-        <item name="s11CardBorder">#2e333c</item>
-        <item name="s11NavSelected">#2a3550</item>
-        <item name="s11NeutralButton">#343a45</item>
-        <item name="s11NeutralButtonPressed">#3f4652</item>
-        <item name="s11AccentPressed">#4a78d6</item>
+        <item name="colorAccent">#3e91ff</item>
+        <item name="colorPrimary">#000000</item>
+        <item name="colorPrimaryDark">#000000</item>
+        <item name="colorControlNormal">#8f8f8f</item>
+        <item name="colorPrimaryText">#f2f2f2</item>
+        <item name="colorSecondaryText">#939393</item>
+        <item name="colorPrimarySurface">#000000</item>
+        <item name="colorSecondarySurface">#1b1b1b</item>
+        <item name="colorPrimaryVariant">#8f8f8f</item>
+        <item name="colorSecondaryVariant">#2c2c2c</item>
+        <item name="colorError">#ff5a5f</item>
+        <item name="s11FieldBorder">#3a3a3a</item>
+        <item name="s11FieldFill">#262626</item>
+        <item name="s11FieldPressed">#303030</item>
+        <item name="s11CardBorder">#2a2a2a</item>
+        <item name="s11NavSelected">#262626</item>
+        <item name="s11NeutralButton">#2b2b2b</item>
+        <item name="s11NeutralButtonPressed">#363636</item>
+        <item name="s11AccentPressed">#2f7ae0</item>
         <item name="popupMenuBackground">@drawable/content_dialog_background_dark</item>
         <item name="toolboxBackground">@drawable/toolbox_dark</item>
         <item name="panelBackground">@drawable/panel_background_dark</item>
@@ -158,13 +164,14 @@
         <item name="android:paddingRight">8dp</item>
     </style>
     <style name="TitleTextAppearance" parent="android:TextAppearance">
-        <item name="android:textSize">18sp</item>
+        <item name="android:textSize">20sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">?attr/colorPrimaryText</item>
     </style>
     <style name="Toolbar" parent="@android:style/Widget.Toolbar">
         <item name="android:background">?attr/colorPrimary</item>
-        <item name="titleTextColor">#ffffff</item>
+        <item name="titleTextColor">?attr/colorPrimaryText</item>
+        <item name="android:elevation">0dp</item>
         <item name="titleTextAppearance">@style/TitleTextAppearance</item>
     </style>
     <style name="BaseButton">
@@ -191,6 +198,38 @@
         <item name="android:layout_marginLeft">4dp</item>
         <item name="android:layout_marginRight">4dp</item>
     </style>
+    <!-- Winlator S11: a button that is only its text, as in One UI's dialogs -->
+    <style name="ButtonText" parent="BaseButton">
+        <item name="android:background">@drawable/s11_text_button</item>
+        <item name="android:textColor">?attr/colorAccent</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingLeft">20dp</item>
+        <item name="android:paddingRight">20dp</item>
+        <item name="android:minWidth">88dp</item>
+    </style>
+    <!-- Winlator S11: the drawer (the app's pages, the menu of a running container) -->
+    <style name="S11NavigationView">
+        <item name="android:background">?attr/colorPrimarySurface</item>
+        <item name="itemIconTint">@color/s11_nav_item_icon</item>
+        <item name="itemTextColor">@color/s11_nav_item_text</item>
+        <item name="itemTextAppearance">@style/S11NavText</item>
+        <item name="itemShapeFillColor">@color/s11_nav_item_fill</item>
+        <item name="itemShapeAppearance">@style/S11NavShape</item>
+        <item name="itemShapeInsetStart">12dp</item>
+        <item name="itemShapeInsetEnd">12dp</item>
+        <item name="itemShapeInsetTop">2dp</item>
+        <item name="itemShapeInsetBottom">2dp</item>
+        <item name="itemHorizontalPadding">28dp</item>
+        <item name="itemIconPadding">20dp</item>
+        <item name="itemIconSize">22dp</item>
+    </style>
+    <style name="S11NavText" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">16sp</item>
+    </style>
+    <style name="S11NavShape">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
     <style name="BaseImageButton">
         <item name="android:layout_width">42dp</item>
         <item name="android:layout_height">42dp</item>
@@ -214,9 +253,9 @@
         <item name="android:layout_marginRight">2dp</item>
     </style>
     <style name="VerticalLine">
-        <item name="android:layout_width">2dp</item>
+        <item name="android:layout_width">1dp</item>
         <item name="android:layout_height">match_parent</item>
-        <item name="android:background">?attr/colorPrimaryVariant</item>
+        <item name="android:background">?attr/colorSecondaryVariant</item>
         <item name="android:layout_marginTop">2dp</item>
         <item name="android:layout_marginBottom">2dp</item>
         <item name="android:layout_marginLeft">8dp</item>
@@ -224,15 +263,15 @@
     </style>
     <style name="HorizontalLine">
         <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">2dp</item>
-        <item name="android:background">?attr/colorPrimaryVariant</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">?attr/colorSecondaryVariant</item>
         <item name="android:layout_marginTop">8dp</item>
         <item name="android:layout_marginBottom">8dp</item>
     </style>
     <style name="FieldSeparator">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">1dp</item>
-        <item name="android:background">?attr/colorPrimaryVariant</item>
+        <item name="android:background">?attr/colorSecondaryVariant</item>
         <item name="android:layout_marginTop">8dp</item>
         <item name="android:layout_marginBottom">8dp</item>
     </style>
@@ -241,21 +280,21 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:background">@drawable/bordered_panel</item>
         <item name="android:orientation">vertical</item>
-        <item name="android:paddingLeft">8dp</item>
-        <item name="android:paddingRight">8dp</item>
-        <item name="android:paddingBottom">8dp</item>
-        <item name="android:paddingTop">16dp</item>
-        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:paddingLeft">20dp</item>
+        <item name="android:paddingRight">20dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:paddingTop">50dp</item>
+        <item name="android:layout_marginTop">12dp</item>
     </style>
     <style name="FieldSetLabel">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:background">?attr/colorPrimarySurface</item>
         <item name="android:orientation">vertical</item>
-        <item name="android:paddingLeft">4dp</item>
-        <item name="android:paddingRight">4dp</item>
-        <item name="android:layout_marginLeft">8dp</item>
-        <item name="android:textColor">?attr/colorPrimaryVariant</item>
+        <item name="android:layout_marginLeft">20dp</item>
+        <item name="android:layout_marginTop">30dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/colorAccent</item>
     </style>
     <style name="TableHead">
         <item name="android:layout_width">wrap_content</item>
@@ -289,7 +328,7 @@
     </style>
     <style name="Toolbox">
         <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_height">42dp</item>
         <item name="android:orientation">horizontal</item>
         <item name="android:gravity">center_vertical</item>
         <item name="android:background">?attr/toolboxBackground</item>

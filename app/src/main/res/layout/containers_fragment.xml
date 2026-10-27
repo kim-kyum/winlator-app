@@ -11,6 +11,8 @@
         android:layout_height="match_parent"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
+        android:paddingLeft="@dimen/s11_page_side_padding"
+        android:paddingRight="@dimen/s11_page_side_padding"
         android:clipToPadding="false"
         android:scrollbars="vertical"
         app:layoutManager="LinearLayoutManager" />

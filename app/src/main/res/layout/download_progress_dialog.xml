@@ -34,10 +34,10 @@
                     android:id="@+id/CircularProgressIndicator"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:trackThickness="10dp"
-                    app:trackColor="#bdbdbd"
+                    app:trackThickness="5dp"
+                    app:trackColor="?attr/s11FieldFill"
                     app:indicatorColor="?attr/colorAccent"
-                    app:indicatorSize="64dp"
+                    app:indicatorSize="60dp"
                     android:layout_gravity="center" />
 
                 <TextView
@@ -52,7 +52,7 @@
                 android:id="@+id/TextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="20dp"
+                android:textSize="17sp"
                 android:textColor="?attr/colorPrimaryText"
                 android:text="@string/downloading_file" />
         </LinearLayout>

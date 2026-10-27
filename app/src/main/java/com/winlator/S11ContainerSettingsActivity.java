@@ -18,12 +18,16 @@ public class S11ContainerSettingsActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        com.winlator.core.AppUtils.setActivityTheme(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.s11_container_settings_activity);
 
         Toolbar toolbar = findViewById(R.id.S11ContainerSettingsToolbar);
         setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setHomeAsUpIndicator(R.drawable.icon_action_bar_back);
+        }
         toolbar.setNavigationOnClickListener((View view) -> finish());
 
         int containerId = getIntent().getIntExtra(EXTRA_CONTAINER_ID, 0);

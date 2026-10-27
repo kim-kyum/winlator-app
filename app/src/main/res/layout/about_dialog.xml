@@ -26,7 +26,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="20sp"
                     android:textStyle="bold"
-                    android:textColor="?attr/colorPrimaryVariant"
+                    android:textColor="?attr/colorPrimaryText"
                     android:text="@string/app_name" />
 
                 <TextView
@@ -45,8 +45,9 @@
             </LinearLayout>
 
             <ImageView
-                android:layout_width="70dp"
-                android:layout_height="70dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:importantForAccessibility="no"
                 android:src="@mipmap/ic_launcher" />
         </LinearLayout>
 

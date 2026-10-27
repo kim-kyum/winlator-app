@@ -12,7 +12,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingLeft="@dimen/s11_page_side_padding"
+            android:paddingRight="@dimen/s11_page_side_padding"
+            android:paddingTop="8dp"
+            android:paddingBottom="96dp">
 
             <FrameLayout
                 android:layout_width="match_parent"

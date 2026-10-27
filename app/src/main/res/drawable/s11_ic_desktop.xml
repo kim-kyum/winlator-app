@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Material Symbols Rounded "desktop_windows" (Apache License 2.0); made by android_icons.py -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="20dp"
-    android:height="20dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-    <path android:pathData="M14.5,4.5 L19.5,9.5 L11,18 L6,13 Z" android:strokeColor="?attr/colorPrimaryText" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" />
-    <path android:pathData="M6,13 C3.5,14 3.5,17 3,20 C6,19.5 9,19.5 11,18" android:strokeColor="?attr/colorPrimaryText" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" />
-    <path android:pathData="M16.5,2.5 L21.5,7.5" android:strokeColor="?attr/colorPrimaryText" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" />
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960"
+    android:tint="?attr/colorControlNormal">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M400,760L400,680L160,680Q127,680 103.5,656.5Q80,633 80,600L80,200Q80,167 103.5,143.5Q127,120 160,120L800,120Q833,120 856.5,143.5Q880,167 880,200L880,600Q880,633 856.5,656.5Q833,680 800,680L560,680L560,760L600,760Q617,760 628.5,771.5Q640,783 640,800Q640,817 628.5,828.5Q617,840 600,840L360,840Q343,840 331.5,828.5Q320,817 320,800Q320,783 331.5,771.5Q343,760 360,760L400,760ZM160,600L800,600Q800,600 800,600Q800,600 800,600L800,200Q800,200 800,200Q800,200 800,200L160,200Q160,200 160,200Q160,200 160,200L160,600Q160,600 160,600Q160,600 160,600ZM160,600Q160,600 160,600Q160,600 160,600L160,200Q160,200 160,200Q160,200 160,200L160,200Q160,200 160,200Q160,200 160,200L160,600Q160,600 160,600Q160,600 160,600L160,600Z" />
 </vector>

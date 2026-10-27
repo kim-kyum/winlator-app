@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Winlator S11: drawer icons; the current page in the accent colour -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:color="?attr/colorAccent" />
+    <item android:color="?attr/colorSecondaryText" />
+</selector>

@@ -1,15 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<!-- Winlator S11: the drawer's header: the app icon and its name -->
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="124dp"
-    android:background="?attr/colorPrimaryDark"
-    android:paddingLeft="16dp"
-    android:paddingBottom="24dp">
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingLeft="28dp"
+    android:paddingRight="20dp"
+    android:paddingTop="28dp"
+    android:paddingBottom="20dp">
 
     <ImageView
-        android:layout_width="153dp"
-        android:layout_height="52dp"
-        android:layout_gravity="left|bottom"
-        android:src="@drawable/logo" />
-</FrameLayout>
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:importantForAccessibility="no"
+        android:src="@mipmap/ic_launcher" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="14dp"
+        android:text="@string/app_name"
+        android:textColor="?attr/colorPrimaryText"
+        android:textSize="19sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end" />
+</LinearLayout>

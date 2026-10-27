@@ -73,10 +73,10 @@ public class ContentDialog extends Dialog {
         setTitle(getContext().getString(titleResId));
     }
 
+    /** Winlator S11: dialogs have no title icons (One UI); the icon is kept for accessibility */
     public void setIcon(int iconResId) {
         ImageView imageView = findViewById(R.id.IVIcon);
         imageView.setImageResource(iconResId);
-        imageView.setVisibility(View.VISIBLE);
     }
 
     public void setTitle(String title) {
@@ -127,10 +127,7 @@ public class ContentDialog extends Dialog {
             tvMessage.setText(message);
             tvMessage.setVisibility(View.VISIBLE);
 
-            if (iconResId > 0) {
-                imageView.setImageResource(iconResId);
-                imageView.setVisibility(View.VISIBLE);
-            }
+            // Winlator S11: no alert/question pictures beside the message (One UI)
         }
         else {
             tvMessage.setText("");
