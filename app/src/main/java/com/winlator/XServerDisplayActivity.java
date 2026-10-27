@@ -1034,6 +1034,13 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             // Winlator S11: Box64 keeps the code it translated (DynaCache), so programs start faster
             // the second time; the container's own variables below may still turn it off
             S11ContainerSettings.addBox64CacheEnvVars(container, rootFS.getRootDir(), envVars);
+            // Winlator S11: Firefox for ARM64 cannot start its tab processes in its sandbox under
+            // Wine; without it, it runs (the container's own variables below may still set them)
+            if (wineInfo != null && wineInfo.isArm64()) {
+                for (String name : new String[]{"CONTENT", "GPU", "RDD", "SOCKET_PROCESS", "UTILITY", "GMP"}) {
+                    envVars.put("MOZ_DISABLE_"+name+"_SANDBOX", "1");
+                }
+            }
 
             envVars.putAll(container.getEnvVars());
             if (shortcut != null) envVars.putAll(shortcut.getExtra("envVars"));
