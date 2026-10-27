@@ -108,8 +108,11 @@ Win+I, or the taskbar's menu:
 - **Sound**: audio driver, performance mode, volume, latency.
 - **Wine**: the Windows version programs see, mouse acceleration, guest pointer speed (1–20)
   and DirectInput mouse warp. The speed control does not alter a physical mouse sensor's DPI.
-- **Compatibility**: Box64 preset, the services that start, and the processor cores for
-  64-bit and 32-bit programs.
+- **Compatibility**: Box64 preset, Box64's translation cache (on; it can be turned off or
+  cleared), the services that start, and the processor cores for 64-bit and 32-bit programs.
+  The cache is Box64's DynaCache, which upstream Winlator turns off: translated code kept in the
+  container's `~/.cache/box64` (1 GB at most) makes programs start much faster the second time
+  (S11 lab, Box64 0.4.4: `cmd /c exit` 1.34 s to 0.24 s, Notepad's window 0.82 s to 0.61 s).
 - **Windows components**: built-in (Wine) or native (Windows) for each component.
 - **Drives**: the drive letters and the Android folders behind them; add (pick a folder) or remove.
 - **Environment variables**: add, edit and remove the container's variables.
