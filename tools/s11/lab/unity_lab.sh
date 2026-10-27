@@ -161,7 +161,7 @@ run_config() {   # name, env...
     log "=== $name: $*"
     find "$WINEPREFIX/drive_c/users" -name "Player*.log" -delete 2>/dev/null
     started=$(date +%s)
-    ( cd "$GAMEDIR" && env $(base_env) "$@" timeout "$RUN_SECONDS" "$BOX64" "$WINE" "$EXE" > "$OUT/$name-wine.log" 2>&1 ) &
+    ( cd "$GAMEDIR" && env $(base_env) "$@" timeout "$RUN_SECONDS" "$BOX64" "$WINE" "$EXE" ${GAME_ARGS:-} > "$OUT/$name-wine.log" 2>&1 ) &
     pid=$!
     for t in 20 45 75 110 150 190; do
         while [ $(( $(date +%s) - started )) -lt "$t" ]; do
@@ -184,6 +184,15 @@ run_config() {   # name, env...
 }
 
 # each one twice: memory ordering bugs do not show every time
+# DXVK as S11 Workspace ships it, on Mesa's software Vulkan (lavapipe) instead of Vortek
+install_dxvk() {
+    [ -f "$WINEPREFIX/.lab-dxvk" ] && return
+    zstd -dc "$REPO/app/src/main/assets/dxwrapper/dxvk-2.4.1.tzst" | tar -x -C "$WINEPREFIX/drive_c/windows"
+    touch "$WINEPREFIX/.lab-dxvk"
+    log "DXVK 2.4.1 installed"
+}
+DXVK_ENV="WINEDLLOVERRIDES=mscoree,mshtml=;winemenubuilder.exe=d;d3d11,dxgi,d3d10core,d3d9,d3d8=n,b VK_ICD_FILENAMES=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -1) DXVK_LOG_LEVEL=info"
+
 IFS=',' read -r -a CONFIGS <<< "${CONFIGS:-perf_unity0,perf_unity1,perf_unity0,perf_unity1,stability}"
 for c in "${CONFIGS[@]}"; do
     case "$c" in
@@ -192,6 +201,10 @@ for c in "${CONFIGS[@]}"; do
         perf_unity1_mono) run_config "$c" $(preset_env PERFORMANCE) BOX64_UNITYPLAYER=1 BOX64_DYNAREC_STRONGMEM=1 BOX64_DYNAREC_BIGBLOCK=0 ;;
         stability) run_config "$c" $(preset_env STABILITY) BOX64_UNITYPLAYER=0 ;;
         perf_unity0_seh) WINEDEBUG=+seh,+loaddll run_config "$c" $(preset_env PERFORMANCE) BOX64_UNITYPLAYER=0 BOX64_SHOWSEGV=1 ;;
+        perf_unity0_direct) GAME_ARGS=-force-gfx-direct run_config "$c" $(preset_env PERFORMANCE) BOX64_UNITYPLAYER=0 ;;
+        perf_unity0_dxvk) install_dxvk; run_config "$c" $(preset_env PERFORMANCE) BOX64_UNITYPLAYER=0 $DXVK_ENV ;;
+        perf_unity1_dxvk) install_dxvk; run_config "$c" $(preset_env PERFORMANCE) BOX64_UNITYPLAYER=1 $DXVK_ENV ;;
+        stability_dxvk) install_dxvk; run_config "$c" $(preset_env STABILITY) BOX64_UNITYPLAYER=0 $DXVK_ENV ;;
     esac
 done
 log "done $(date -u)"
