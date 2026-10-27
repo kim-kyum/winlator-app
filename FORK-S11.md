@@ -103,16 +103,26 @@ Windows 11 style Settings window, opened from the start menu (gear, or "설정" 
 Win+I, or the taskbar's menu:
 
 - **System**: display scale (LogPixels) and resolution.
-- **Wine**: the Windows version programs see, mouse acceleration, and guest pointer speed
-  (1–20). The speed control does not alter a physical mouse sensor's DPI. Advanced `winecfg.exe`
-  is no longer presented as a separate app; the supported everyday controls are exposed here.
+- **Graphics**: the Vulkan and OpenGL drivers with each driver's options (Vortek: Vulkan
+  version, device memory, image cache, resource memory, exposed extensions), Direct3D through
+  DXVK or WineD3D with their options, DirectX 12 (VKD3D), and the HUD.
+- **Sound**: audio driver, performance mode, volume, latency.
+- **Wine**: the Windows version programs see, mouse acceleration, guest pointer speed (1–20)
+  and DirectInput mouse warp. The speed control does not alter a physical mouse sensor's DPI.
+- **Compatibility**: Box64 preset, the services that start, and the processor cores for
+  64-bit and 32-bit programs.
+- **Windows components**: built-in (Wine) or native (Windows) for each component.
+- **Drives**: the drive letters and the Android folders behind them; add (pick a folder) or remove.
+- **Environment variables**: add, edit and remove the container's variables.
 - **Connectivity**: buttons that open Android Wi-Fi and Bluetooth system settings.
 - **Personalization**: background (the two S11 pictures, your own picture, or a new one
-  from a file; applied at once), light, dark or Android system-following mode, taskbar alignment.
+  from a file; applied at once), light, dark or Android system-following mode, taskbar
+  alignment, and the system font of title bars and menus.
 - **Apps**: installed programs from the Uninstall keys, with their icons; uninstall, or
   start an installer.
 - **Fonts**: installed scalable fonts with a preview; install .ttf/.otf/.ttc files.
-- **About**: S11 Workspace version, container, Wine, Windows, processor, memory, display.
+- **About**: S11 Workspace version, container, Wine, Windows, processor, memory, display, and
+  the container's name.
 
 The File Explorer keeps its shell navigation but now applies the S11 palette and Segoe-style
 typography to the embedded file list, uses Explorer-themed headers, double buffering, and
@@ -125,13 +135,19 @@ to the container in Winlator, so it sends them to winhandler's UDP port (codes 1
 banner offers to restart right away. The S11 pictures are packed into the overlay from the
 app's assets by `build_overlay.py`.
 
-The full container settings open from the Settings app as well (code 108,
-`S11ContainerSettingsActivity`), while the container runs. Most of them are container data
-that apply at the next start anyway. The system font, dpi, mouse warp and Windows version
-are registry values, and wineserver writes its copy of the registry over `user.reg` and
-`system.reg` while it runs, so `PendingRegistry` keeps the ones changed there in the
-container data and writes them before Wine starts the next time. The page shows them in
-the meantime.
+Every other container setting has a row of its own as well (graphics, sound, compatibility,
+components, drives, variables, name). The Settings app cannot read the container data, so
+Winlator writes the settings with their current values, choices and labels to
+`~/.config/s11-container.txt` before Wine starts and after every change
+(`S11ContainerSettings`); a change goes back as `key TAB value` (code 109) and the app reads
+the file again, so rows that depend on a choice (the options of the chosen driver or wrapper)
+follow it. They apply when the container starts again, as in the container list.
+
+The Android editor of the whole container (code 108, `S11ContainerSettingsActivity`) is still
+there but no longer opened from the Settings app. What it changes in the registry while the
+container runs (system font, dpi, mouse warp, Windows version) waits in the container data
+(`PendingRegistry`) and is written before Wine starts the next time, because wineserver
+writes its copy of the registry over `user.reg` and `system.reg` while it runs.
 
 The display size is fixed when the X server starts (`XServer.screenInfo` is immutable), so a
 resolution change still requires restarting the container; changing it live needs coordinated

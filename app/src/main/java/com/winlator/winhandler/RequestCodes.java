@@ -35,4 +35,6 @@ abstract class RequestCodes {
     public static final byte S11_OPEN_BLUETOOTH = 106;
     public static final byte S11_SCREENSHOT = 107;
     public static final byte S11_OPEN_CONTAINER_SETTINGS = 108;
+    // Winlator S11 Settings: one container setting, UTF-8 "key TAB value" after the code (S11ContainerSettings)
+    public static final byte S11_SET_CONTAINER = 109;
 }

@@ -417,4 +417,8 @@
     <string name="s11_cs_cpu_desc">Cores the programs may run on.</string>
     <string name="s11_containers_empty">No containers yet. Tap + at the top to make one.</string>
     <string name="s11_container_settings_restart_hint">Edit the active container here without returning to the container list. Save your changes, then restart the container from the Windows Start menu to apply them.</string>
+    <!-- Winlator S11: container settings shown in the Settings app (S11ContainerSettings) -->
+    <string name="s11_on">On</string>
+    <string name="s11_off">Off</string>
+    <string name="s11_cpu_core">Core %1$d</string>
 </resources>

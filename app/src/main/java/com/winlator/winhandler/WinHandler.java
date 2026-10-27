@@ -29,7 +29,8 @@ public class WinHandler {
     private static final short CLIENT_PORT = 7946;
     private DatagramSocket socket;
     protected final ByteBuffer sendData = ByteBuffer.allocate(256).order(ByteOrder.LITTLE_ENDIAN);
-    protected final ByteBuffer receiveData = ByteBuffer.allocate(64).order(ByteOrder.LITTLE_ENDIAN);
+    // Winlator S11: room for a container setting from the Settings app (a list of Vulkan extensions)
+    protected final ByteBuffer receiveData = ByteBuffer.allocate(16384).order(ByteOrder.LITTLE_ENDIAN);
     private final DatagramPacket sendPacket = new DatagramPacket(sendData.array(), sendData.capacity());
     private final DatagramPacket receivePacket = new DatagramPacket(receiveData.array(), receiveData.capacity());
     private final ArrayDeque<Runnable> actions = new ArrayDeque<>();
@@ -430,6 +431,16 @@ public class WinHandler {
                 int end = value.indexOf('\0');
                 if (end >= 0) value = value.substring(0, end);
                 activity.onS11Setting(requestCode, value.trim());
+                break;
+            }
+            case RequestCodes.S11_SET_CONTAINER: {
+                // [code][UTF-8 "key TAB value"] in one datagram
+                int length = Math.max(0, receivePacket.getLength() - 1);
+                String text = new String(receiveData.array(), 1, length, StandardCharsets.UTF_8);
+                int end = text.indexOf('\0');
+                if (end >= 0) text = text.substring(0, end);
+                int tab = text.indexOf('\t');
+                if (tab > 0) activity.onS11ContainerSetting(text.substring(0, tab), text.substring(tab + 1));
                 break;
             }
             case RequestCodes.PRE_EXEC: {

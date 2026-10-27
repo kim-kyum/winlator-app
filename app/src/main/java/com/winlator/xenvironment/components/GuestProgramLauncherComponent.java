@@ -142,7 +142,11 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
 
         envVars.put("BOX64_NOBANNER", box64Logs >= 1 ? "0" : "1");
         envVars.put("BOX64_DYNAREC", "1");
-        envVars.put("BOX64_UNITYPLAYER", "0");
+        // Winlator S11: let Box64 spot Unity games (UnityPlayer.dll) and order the memory
+        // accesses Unity relies on (BOX64_UNITY). Upstream turned this off when it meant
+        // STRONGMEM for the whole game; in 0.4.x it only adds barriers on those accesses, and
+        // without them Unity/Mono games can quit at start with the faster presets.
+        envVars.put("BOX64_UNITYPLAYER", "1");
         envVars.put("BOX64_DYNACACHE", "0");
 
         if (box64Logs >= 1) {

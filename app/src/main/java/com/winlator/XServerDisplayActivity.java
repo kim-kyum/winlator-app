@@ -122,6 +122,7 @@ import com.winlator.s11.ModernLook;
 import com.winlator.s11.PendingRegistry;
 import com.winlator.s11.PowerMenu;
 import com.winlator.s11.RootfsOverlay;
+import com.winlator.s11.S11ContainerSettings;
 import com.winlator.s11.S11Settings;
 import com.winlator.s11.S11Shell;
 import com.winlator.s11.TimeZones;
@@ -342,6 +343,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         if (requestCode == S11_CONTAINER_SETTINGS_REQUEST_CODE && resultCode == Activity.RESULT_OK && container != null) {
             Container updated = new ContainerManager(this).getContainerById(container.id);
             if (updated != null) container = updated;
+            S11ContainerSettings.write(this, container);
         }
     }
 
@@ -598,6 +600,19 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         runOnUiThread(() -> {
             if (container == null || isFinishing()) return;
             if (S11Settings.apply(this, container, code, value)) container.saveData();
+        });
+    }
+
+    /**
+     * The S11 Settings app changed one container setting (S11ContainerSettings). It is stored in
+     * the container and takes effect at the next start; the settings file is written again either
+     * way, so the app shows what was stored.
+     */
+    public void onS11ContainerSetting(String key, String value) {
+        runOnUiThread(() -> {
+            if (container == null || isFinishing()) return;
+            if (S11ContainerSettings.apply(this, container, key, value)) container.saveData();
+            S11ContainerSettings.write(this, container);
         });
     }
 
@@ -948,6 +963,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         });
 
         if (containerDataChanged) container.saveData();
+        // Winlator S11: every container setting for the Settings app
+        S11ContainerSettings.write(this, container);
     }
 
     private void setupXEnvironment() {

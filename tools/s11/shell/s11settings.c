@@ -13,6 +13,11 @@
  * container in Winlator (resolution, mode, background) go to the app over winhandler's
  * UDP port and take effect the next time the container starts, or right away where Wine
  * can apply them itself (the background).
+ *
+ * The rest of the container settings (graphics, sound, Box64, processor cores, Windows
+ * components, drives, environment variables, name) have one row each. Winlator writes them
+ * with their choices to Z:\home\xuser\.config\s11-container.txt (S11ContainerSettings.java);
+ * a change goes back as "key TAB value" (code 109) and the file is read again.
  */
 #include "s11ui.h"
 #include <commdlg.h>
@@ -21,27 +26,46 @@
 #define WINLATOR_SET_SCREEN 102
 #define WINLATOR_SET_THEME 103
 #define WINLATOR_SET_WALLPAPER 104
-#define WINLATOR_OPEN_CONTAINER_SETTINGS 108
+#define WINLATOR_SET_CONTAINER 109
 
 #define S11_KEY L"Software\\Winlator\\S11"
 #define WALLPAPER_DIR L"Z:\\usr\\share\\s11\\wallpapers"
 #define WALLPAPER_BMP L"Z:\\home\\xuser\\.cache\\wallpaper.bmp"
 #define USER_WALLPAPER L"Z:\\home\\xuser\\.config\\user-wallpaper.png"
+#define CONTAINER_FILE L"Z:\\home\\xuser\\.config\\s11-container.txt"
 
 #define WM_APP_REFRESH_APPS (WM_APP + 20)
 #define WM_APP_SELECT_PAGE (WM_APP + 21)   /* another start asked for a page */
 
-enum page { PAGE_SYSTEM, PAGE_WINE, PAGE_CONNECTIVITY, PAGE_PERSONALIZE, PAGE_APPS, PAGE_FONTS, PAGE_ABOUT, PAGE_COUNT };
+enum page {
+    PAGE_SYSTEM, PAGE_GRAPHICS, PAGE_AUDIO, PAGE_WINE, PAGE_COMPAT, PAGE_COMPONENTS, PAGE_DRIVES, PAGE_ENV,
+    PAGE_CONNECTIVITY, PAGE_PERSONALIZE, PAGE_APPS, PAGE_FONTS, PAGE_ABOUT, PAGE_COUNT
+};
+
+/* pages whose settings Winlator applies when the container starts again */
+static BOOL page_needs_restart(enum page page)
+{
+    return page != PAGE_CONNECTIVITY && page != PAGE_APPS && page != PAGE_FONTS;
+}
+
+/* pages filled from the container settings file */
+static BOOL is_container_page(enum page page)
+{
+    return page == PAGE_GRAPHICS || page == PAGE_AUDIO || page == PAGE_COMPAT || page == PAGE_COMPONENTS ||
+           page == PAGE_DRIVES || page == PAGE_ENV;
+}
 
 enum control_id {
     ID_SCALE = 100, ID_RESOLUTION, ID_WINVER, ID_RESTART, ID_MODE, ID_ALIGN, ID_MOUSE, ID_OPEN_WIFI, ID_OPEN_BLUETOOTH,
     ID_APP_LIST, ID_UNINSTALL, ID_INSTALL, ID_FONT_LIST, ID_FONT_INSTALL, ID_BROWSE, ID_MOUSE_SPEED,
-    ID_CONTAINER_SETTINGS
+    ID_MOUSE_WARP, ID_SYSTEM_FONT,
+    ID_FIELD_BASE = 1000,     /* + field * 8 + slot: the controls of the container settings */
+    ID_BOX_BASE = 20000       /* + field * 64 + core: processor checkboxes */
 };
 
 static HINSTANCE instance;
 static HWND main_window;
-static HFONT ui_font, small_font, title_font, nav_font, big_font;
+static HFONT ui_font, small_font, title_font, nav_font, big_font, section_font;
 static ULONG_PTR gdiplus_token;
 static enum page current_page;
 static int hot_nav = -1;
@@ -50,7 +74,8 @@ static int scroll_y, content_bottom;
 
 /* controls of each page */
 static HWND scale_box, resolution_box, winver_box, restart_button, mode_box, align_box, mouse_box, mouse_speed_box, browse_button;
-static HWND wifi_button, bluetooth_button, container_settings_button;
+static HWND mouse_warp_box, system_font_box;
+static HWND wifi_button, bluetooth_button;
 static HWND app_list, uninstall_button, install_button, font_list, font_install_button;
 static HIMAGELIST app_images, font_images;
 
@@ -58,25 +83,36 @@ static HIMAGELIST app_images, font_images;
 /* Pages as cards                                                                            */
 /* ---------------------------------------------------------------------------------------- */
 
+enum row_kind { ROW_CARD, ROW_SECTION, ROW_ABOUT_PRODUCT, ROW_ABOUT_SPECS, ROW_NOTE };
+
+struct field;
+
 struct row {
     enum page page;
+    enum row_kind kind;
     const WCHAR *title;
     WCHAR detail[200];
+    BOOL detail_is_path;  /* long paths lose their middle, not their end */
     HWND *control;      /* on the right of the card */
-    HWND *control2;     /* a second button next to it */
+    HWND *control2;     /* a second control left of it */
+    HWND *control3;     /* and a third (adding an environment variable) */
+    int widths[3];      /* at 96 dpi; 0: the usual width of that kind of control */
     int height;         /* at 96 dpi */
-    int list_height;    /* a list under the title instead (apps, fonts) */
+    int list_height;    /* a list under the title instead (apps, fonts, extensions) */
+    HWND *list;
     BOOL wallpapers;    /* the background pictures */
+    struct field *field; /* a container setting */
     RECT rc;
+    int text_right;      /* where the title and detail end (left of the controls) */
 };
 
-#define MAX_ROWS 24
+#define MAX_ROWS 320
 static struct row rows[MAX_ROWS];
 static int row_count;
 
 static struct row *add_row(enum page page, const WCHAR *title, HWND *control)
 {
-    struct row *r = &rows[row_count++];
+    struct row *r = &rows[row_count < MAX_ROWS - 1 ? row_count++ : row_count];
     ZeroMemory(r, sizeof(*r));
     r->page = page;
     r->title = title;
@@ -89,7 +125,13 @@ static const WCHAR *page_title(enum page page)
 {
     switch (page) {
     case PAGE_SYSTEM: return TR(L"시스템", L"System");
+    case PAGE_GRAPHICS: return TR(L"그래픽", L"Graphics");
+    case PAGE_AUDIO: return TR(L"소리", L"Sound");
     case PAGE_WINE: return L"Wine";
+    case PAGE_COMPAT: return TR(L"호환성", L"Compatibility");
+    case PAGE_COMPONENTS: return TR(L"Windows 구성 요소", L"Windows components");
+    case PAGE_DRIVES: return TR(L"드라이브", L"Drives");
+    case PAGE_ENV: return TR(L"환경 변수", L"Environment variables");
     case PAGE_CONNECTIVITY: return TR(L"연결", L"Connectivity");
     case PAGE_PERSONALIZE: return TR(L"개인 설정", L"Personalization");
     case PAGE_APPS: return TR(L"앱", L"Apps");
@@ -321,6 +363,58 @@ static void set_win_version(int index)
         reg_set_string(HKEY_LOCAL_MACHINE, keys[i], L"CurrentBuildNumber", build);
         reg_set_string(HKEY_LOCAL_MACHINE, keys[i], L"ProductName", product);
     }
+}
+
+/* DirectInput's mouse warp, for games that turn the camera with the mouse */
+static const WCHAR *const warp_values[] = {L"disable", L"enable", L"force"};
+
+static void fill_mouse_warp(void)
+{
+    WCHAR value[16] = L"";
+    int i, selected = 1;   /* Wine's default when it is not set */
+    reg_get_string(HKEY_CURRENT_USER, L"Software\\Wine\\DirectInput", L"MouseWarpOverride", value, ARRAY_SIZE(value));
+    for (i = 0; i < ARRAY_SIZE(warp_values); i++) if (!lstrcmpiW(value, warp_values[i])) selected = i;
+    SendMessageW(mouse_warp_box, CB_RESETCONTENT, 0, 0);
+    SendMessageW(mouse_warp_box, CB_ADDSTRING, 0, (LPARAM)TR(L"사용 안 함", L"Disable"));
+    SendMessageW(mouse_warp_box, CB_ADDSTRING, 0, (LPARAM)TR(L"사용", L"Enable"));
+    SendMessageW(mouse_warp_box, CB_ADDSTRING, 0, (LPARAM)TR(L"강제", L"Force"));
+    SendMessageW(mouse_warp_box, CB_SETCURSEL, selected, 0);
+}
+
+/* The title bar and menu font: the choices of Winlator's container settings */
+static const WCHAR *const system_fonts[] = {
+    L"Segoe UI", L"Arial", L"Andale Mono", L"Comic Sans MS", L"Courier New", L"Georgia", L"Impact", L"Tahoma",
+    L"Times New Roman", L"Trebuchet MS", L"Verdana"
+};
+static const WCHAR *const metrics_fonts[] = {L"CaptionFont", L"IconFont", L"MenuFont", L"MessageFont", L"SmCaptionFont", L"StatusFont"};
+
+static void fill_system_font(void)
+{
+    BYTE data[128];
+    DWORD size = sizeof(data);
+    int i, selected = 0;
+    if (!RegGetValueW(HKEY_CURRENT_USER, L"Control Panel\\Desktop\\WindowMetrics", L"CaptionFont", RRF_RT_REG_BINARY,
+                      NULL, data, &size) && size >= sizeof(LOGFONTW)) {
+        LOGFONTW *lf = (LOGFONTW *)data;
+        lf->lfFaceName[LF_FACESIZE - 1] = 0;
+        for (i = 0; i < ARRAY_SIZE(system_fonts); i++) if (!lstrcmpiW(lf->lfFaceName, system_fonts[i])) selected = i;
+    }
+    SendMessageW(system_font_box, CB_RESETCONTENT, 0, 0);
+    for (i = 0; i < ARRAY_SIZE(system_fonts); i++) SendMessageW(system_font_box, CB_ADDSTRING, 0, (LPARAM)system_fonts[i]);
+    SendMessageW(system_font_box, CB_SETCURSEL, selected, 0);
+}
+
+static void set_system_font(int index)
+{
+    LOGFONTW lf = {0};
+    int i;
+    /* what Winlator writes (MSLogFont): 9 pt at 96 dpi, regular weight */
+    lf.lfHeight = -12;
+    lf.lfWeight = FW_NORMAL;
+    lf.lfPitchAndFamily = 34;
+    lstrcpynW(lf.lfFaceName, system_fonts[index], LF_FACESIZE);
+    for (i = 0; i < ARRAY_SIZE(metrics_fonts); i++)
+        RegSetKeyValueW(HKEY_CURRENT_USER, L"Control Panel\\Desktop\\WindowMetrics", metrics_fonts[i], REG_BINARY, &lf, sizeof(lf));
 }
 
 /* ---------------------------------------------------------------------------------------- */
@@ -827,6 +921,604 @@ static void install_fonts(void)
 }
 
 /* ---------------------------------------------------------------------------------------- */
+/* Container settings (S11ContainerSettings.java writes them, one row each)                  */
+/* ---------------------------------------------------------------------------------------- */
+
+static HWND make_combo(int id);
+static HWND make_button(int id, const WCHAR *text);
+static void need_restart(void);
+static void scroll_to_row_of(HWND control);
+
+enum field_type {
+    FIELD_SECTION, FIELD_CHOICE, FIELD_TEXT, FIELD_CPU, FIELD_CHECKLIST, FIELD_DRIVE, FIELD_ADD_DRIVE,
+    FIELD_ENVVAR, FIELD_ADD_ENV, FIELD_UNKNOWN
+};
+
+struct option {
+    const WCHAR *value, *label;
+};
+
+struct field {
+    enum page page;
+    enum field_type type;
+    const WCHAR *key, *title, *detail, *value;
+    struct option *options;
+    int option_count, option_capacity;
+    HWND controls[3];       /* right to left in the card */
+    HWND list;              /* the checklist */
+    HWND boxes[64];         /* processor cores */
+    int box_count;
+};
+
+static struct field *fields;
+static int field_count, field_capacity;
+static WCHAR *container_text;        /* the file; the fields point into it */
+static DWORD container_revision;     /* 0: no file (an older Winlator) */
+static DWORD waiting_since;          /* a change went out; the file is read again once it changes */
+
+#define TIMER_RELOAD 2
+
+static enum page page_from_schema(const WCHAR *name)
+{
+    static const struct { const WCHAR *name; enum page page; } pages[] = {
+        {L"graphics", PAGE_GRAPHICS}, {L"audio", PAGE_AUDIO}, {L"compat", PAGE_COMPAT}, {L"components", PAGE_COMPONENTS},
+        {L"drives", PAGE_DRIVES}, {L"env", PAGE_ENV}, {L"about", PAGE_ABOUT}, {L"system", PAGE_SYSTEM}, {L"wine", PAGE_WINE}
+    };
+    int i;
+    for (i = 0; i < ARRAY_SIZE(pages); i++) if (!lstrcmpW(name, pages[i].name)) return pages[i].page;
+    return PAGE_COUNT;
+}
+
+static enum field_type type_from_schema(const WCHAR *name)
+{
+    static const WCHAR *const types[] = {L"section", L"choice", L"text", L"cpu", L"checklist", L"drive", L"adddrive",
+                                         L"envvar", L"addenv"};
+    int i;
+    for (i = 0; i < ARRAY_SIZE(types); i++) if (!lstrcmpW(name, types[i])) return (enum field_type)i;
+    return FIELD_UNKNOWN;
+}
+
+static WCHAR *read_utf8_file(const WCHAR *path)
+{
+    HANDLE file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                              OPEN_EXISTING, 0, NULL);
+    DWORD size, got = 0;
+    char *bytes;
+    WCHAR *text = NULL;
+    int chars;
+
+    if (file == INVALID_HANDLE_VALUE) return NULL;
+    size = GetFileSize(file, NULL);
+    if (size == INVALID_FILE_SIZE || size > (8u << 20)) {
+        CloseHandle(file);
+        return NULL;
+    }
+    bytes = HeapAlloc(GetProcessHeap(), 0, size + 1);
+    if (bytes && ReadFile(file, bytes, size, &got, NULL)) {
+        chars = MultiByteToWideChar(CP_UTF8, 0, bytes, (int)got, NULL, 0);
+        text = HeapAlloc(GetProcessHeap(), 0, (chars + 1) * sizeof(WCHAR));
+        if (text) {
+            MultiByteToWideChar(CP_UTF8, 0, bytes, (int)got, text, chars);
+            text[chars] = 0;
+        }
+    }
+    if (bytes) HeapFree(GetProcessHeap(), 0, bytes);
+    CloseHandle(file);
+    return text;
+}
+
+/* Cuts a line at its tabs (in place) */
+static int split_tabs(WCHAR *line, WCHAR **parts, int max)
+{
+    int n = 0;
+    parts[n++] = line;
+    for (; *line && n < max; line++) {
+        if (*line == '\t') {
+            *line = 0;
+            parts[n++] = line + 1;
+        }
+    }
+    return n;
+}
+
+static DWORD read_container_revision(void)
+{
+    WCHAR *text = read_utf8_file(CONTAINER_FILE), *end, *parts[4];
+    DWORD revision = 0;
+    if (!text) return 0;
+    if ((end = wcschr(text, '\n'))) *end = 0;
+    if (split_tabs(text, parts, 4) >= 3 && !lstrcmpW(parts[0], L"S11CONTAINER")) revision = wcstoul(parts[2], NULL, 10);
+    HeapFree(GetProcessHeap(), 0, text);
+    return revision;
+}
+
+static void free_container_settings(void)
+{
+    int i, k;
+    for (i = 0; i < field_count; i++) {
+        struct field *f = &fields[i];
+        for (k = 0; k < 3; k++) if (f->controls[k]) DestroyWindow(f->controls[k]);
+        if (f->list) DestroyWindow(f->list);
+        for (k = 0; k < f->box_count; k++) DestroyWindow(f->boxes[k]);
+        if (f->options) HeapFree(GetProcessHeap(), 0, f->options);
+    }
+    if (fields) HeapFree(GetProcessHeap(), 0, fields);
+    if (container_text) HeapFree(GetProcessHeap(), 0, container_text);
+    fields = NULL;
+    container_text = NULL;
+    field_count = field_capacity = 0;
+}
+
+static struct field *new_field(void)
+{
+    if (field_count == field_capacity) {
+        int capacity = field_capacity ? field_capacity * 2 : 64;
+        struct field *grown = fields ? HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, fields, capacity * sizeof(*fields))
+                                     : HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, capacity * sizeof(*fields));
+        if (!grown) return NULL;
+        fields = grown;
+        field_capacity = capacity;
+    }
+    ZeroMemory(&fields[field_count], sizeof(fields[0]));
+    return &fields[field_count++];
+}
+
+static void add_option(struct field *f, const WCHAR *value, const WCHAR *label)
+{
+    if (f->option_count == f->option_capacity) {
+        int capacity = f->option_capacity ? f->option_capacity * 2 : 16;
+        struct option *grown = f->options ? HeapReAlloc(GetProcessHeap(), 0, f->options, capacity * sizeof(*f->options))
+                                          : HeapAlloc(GetProcessHeap(), 0, capacity * sizeof(*f->options));
+        if (!grown) return;
+        f->options = grown;
+        f->option_capacity = capacity;
+    }
+    f->options[f->option_count].value = value;
+    f->options[f->option_count].label = label;
+    f->option_count++;
+}
+
+static void load_container_settings(void)
+{
+    WCHAR *line, *next, *parts[8];
+    struct field *last = NULL;
+
+    free_container_settings();
+    container_revision = 0;
+    if (!(container_text = read_utf8_file(CONTAINER_FILE))) return;
+    for (line = container_text; line && *line; line = next) {
+        int n, len;
+        if ((next = wcschr(line, '\n'))) *next++ = 0;
+        len = lstrlenW(line);
+        if (len && line[len - 1] == '\r') line[len - 1] = 0;
+        n = split_tabs(line, parts, 8);
+        if (n >= 3 && !lstrcmpW(parts[0], L"S11CONTAINER")) container_revision = wcstoul(parts[2], NULL, 10);
+        else if (n >= 7 && !lstrcmpW(parts[0], L"ROW")) {
+            enum page page = page_from_schema(parts[1]);
+            enum field_type type = type_from_schema(parts[2]);
+            last = NULL;
+            if (page == PAGE_COUNT || type == FIELD_UNKNOWN || !(last = new_field())) continue;
+            last->page = page;
+            last->type = type;
+            last->key = parts[3];
+            last->title = parts[4];
+            last->detail = parts[5];
+            last->value = parts[6];
+        }
+        else if (n >= 3 && !lstrcmpW(parts[0], L"OPT") && last) add_option(last, parts[1], parts[2]);
+    }
+}
+
+static int field_index(const struct field *f) { return (int)(f - fields); }
+static int field_id(const struct field *f, int slot) { return ID_FIELD_BASE + field_index(f) * 8 + slot; }
+
+/* Grey hint text in an empty box (EM_SETCUEBANNER works for single-line boxes only) */
+static LRESULT CALLBACK edit_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR id, DWORD_PTR data)
+{
+    LRESULT result = DefSubclassProc(hwnd, msg, wp, lp);
+    if (msg == WM_SETFOCUS || msg == WM_KILLFOCUS) InvalidateRect(hwnd, NULL, TRUE);
+    if (msg == WM_PAINT && data && !GetWindowTextLengthW(hwnd) && GetFocus() != hwnd) {
+        HDC dc = GetDC(hwnd);
+        RECT rc;
+        HFONT old = SelectObject(dc, ui_font);
+        SendMessageW(hwnd, EM_GETRECT, 0, (LPARAM)&rc);
+        SetBkMode(dc, TRANSPARENT);
+        SetTextColor(dc, pal.text_dim);
+        DrawTextW(dc, (const WCHAR *)data, -1, &rc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
+        SelectObject(dc, old);
+        ReleaseDC(hwnd, dc);
+    }
+    return result;
+}
+
+static HWND make_edit(int id, const WCHAR *text, const WCHAR *cue)
+{
+    /* multi-line only so that the text can be centred (EM_SETRECTNP in place_control); Enter still
+     * reaches the window (no ES_WANTRETURN) */
+    HWND edit = CreateWindowExW(0, WC_EDITW, text, WS_CHILD | WS_TABSTOP | WS_BORDER | ES_MULTILINE | ES_AUTOHSCROLL,
+                                0, 0, 100, 30, main_window, (HMENU)(INT_PTR)id, instance, NULL);
+    SendMessageW(edit, WM_SETFONT, (WPARAM)ui_font, FALSE);
+    SendMessageW(edit, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELONG(SC(6), SC(6)));
+    SetWindowSubclass(edit, edit_proc, 2, (DWORD_PTR)cue);
+    return edit;
+}
+
+static HWND make_check(int id, const WCHAR *text, BOOL checked)
+{
+    HWND box = CreateWindowExW(0, WC_BUTTONW, text, WS_CHILD | WS_TABSTOP | BS_AUTOCHECKBOX,
+                               0, 0, 100, 30, main_window, (HMENU)(INT_PTR)id, instance, NULL);
+    SendMessageW(box, WM_SETFONT, (WPARAM)ui_font, FALSE);
+    SendMessageW(box, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
+    return box;
+}
+
+/* Is the number in a comma (cores) or colon (extensions) separated list? */
+static BOOL in_list(const WCHAR *list, const WCHAR *item, WCHAR separator)
+{
+    int len = lstrlenW(item);
+    const WCHAR *p = list;
+    while (p && *p) {
+        const WCHAR *end = wcschr(p, separator);
+        int n = end ? (int)(end - p) : lstrlenW(p);
+        if (n == len && !wcsncmp(p, item, len)) return TRUE;
+        p = end ? end + 1 : NULL;
+    }
+    return FALSE;
+}
+
+static HWND make_checklist(int id, const struct field *f)
+{
+    HWND list = CreateWindowExW(0, WC_LISTVIEWW, NULL,
+                                WS_CHILD | WS_TABSTOP | WS_BORDER | LVS_REPORT | LVS_SINGLESEL | LVS_NOCOLUMNHEADER | LVS_SHOWSELALWAYS,
+                                0, 0, 100, 100, main_window, (HMENU)(INT_PTR)id, instance, NULL);
+    LVCOLUMNW col = {0};
+    BOOL all = !lstrcmpW(f->value, L"all");
+    int i;
+
+    SendMessageW(list, WM_SETFONT, (WPARAM)ui_font, FALSE);
+    SendMessageW(list, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_CHECKBOXES,
+                 LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_CHECKBOXES);
+    SetWindowTheme(list, L"Explorer", NULL);
+    col.mask = LVCF_WIDTH;
+    col.cx = SC(560);
+    SendMessageW(list, LVM_INSERTCOLUMNW, 0, (LPARAM)&col);
+    for (i = 0; i < f->option_count; i++) {
+        LVITEMW item = {0};
+        item.mask = LVIF_TEXT;
+        item.iItem = i;
+        item.pszText = (WCHAR *)f->options[i].label;
+        SendMessageW(list, LVM_INSERTITEMW, 0, (LPARAM)&item);
+        item.stateMask = LVIS_STATEIMAGEMASK;
+        item.state = INDEXTOSTATEIMAGEMASK(all || in_list(f->value, f->options[i].value, ':') ? 2 : 1);
+        SendMessageW(list, LVM_SETITEMSTATE, i, (LPARAM)&item);
+    }
+    return list;
+}
+
+static void create_field_controls(struct field *f)
+{
+    int i;
+    switch (f->type) {
+    case FIELD_CHOICE: {
+        HWND combo = make_combo(field_id(f, 0));
+        int selected = -1;
+        for (i = 0; i < f->option_count; i++) {
+            SendMessageW(combo, CB_ADDSTRING, 0, (LPARAM)f->options[i].label);
+            if (!lstrcmpW(f->options[i].value, f->value)) selected = i;
+        }
+        SendMessageW(combo, CB_SETCURSEL, selected, 0);
+        f->controls[0] = combo;
+        break;
+    }
+    case FIELD_TEXT:
+        f->controls[0] = make_button(field_id(f, 0), TR(L"바꾸기", L"Change"));
+        f->controls[1] = make_edit(field_id(f, 1), f->value, NULL);
+        break;
+    case FIELD_CPU:
+        for (i = 0; i < f->option_count && i < ARRAY_SIZE(f->boxes); i++)
+            f->boxes[i] = make_check(ID_BOX_BASE + field_index(f) * 64 + i, f->options[i].label,
+                                     in_list(f->value, f->options[i].value, ','));
+        f->box_count = i;
+        break;
+    case FIELD_CHECKLIST:
+        f->controls[0] = make_button(field_id(f, 0), TR(L"적용", L"Apply"));
+        f->list = make_checklist(field_id(f, 3), f);
+        break;
+    case FIELD_DRIVE:
+        f->controls[0] = make_button(field_id(f, 0), TR(L"제거", L"Remove"));
+        break;
+    case FIELD_ADD_DRIVE:
+        f->controls[0] = make_button(field_id(f, 0), TR(L"폴더 선택…", L"Choose folder…"));
+        f->controls[1] = make_combo(field_id(f, 1));
+        for (i = 0; i < f->option_count; i++) SendMessageW(f->controls[1], CB_ADDSTRING, 0, (LPARAM)f->options[i].label);
+        SendMessageW(f->controls[1], CB_SETCURSEL, 0, 0);
+        if (!f->option_count) EnableWindow(f->controls[0], FALSE);
+        break;
+    case FIELD_ENVVAR:
+        f->controls[0] = make_button(field_id(f, 0), TR(L"제거", L"Remove"));
+        f->controls[1] = make_button(field_id(f, 1), TR(L"편집", L"Edit"));
+        break;
+    case FIELD_ADD_ENV:
+        f->controls[0] = make_button(field_id(f, 0), TR(L"추가", L"Add"));
+        f->controls[1] = make_edit(field_id(f, 1), L"", TR(L"값", L"Value"));
+        f->controls[2] = make_edit(field_id(f, 2), L"", TR(L"이름", L"Name"));
+        break;
+    default:
+        break;
+    }
+}
+
+/* One row per setting, after the rows the app has itself */
+static void add_field_rows(void)
+{
+    BOOL noted[PAGE_COUNT] = {0};
+    int i, p;
+
+    if (!container_revision) {
+        for (p = 0; p < PAGE_COUNT; p++) {
+            struct row *r;
+            if (!is_container_page((enum page)p)) continue;
+            r = add_row((enum page)p, TR(L"컨테이너 설정을 아직 불러오지 못했어요", L"The container settings are not available yet"), NULL);
+            lstrcpyW(r->detail, TR(L"컨테이너를 다시 시작하면 여기에 나타나요.", L"They appear here after the container restarts."));
+        }
+        return;
+    }
+    for (i = 0; i < field_count; i++) {
+        struct field *f = &fields[i];
+        struct row *r;
+        if (is_container_page(f->page) && !noted[f->page]) {
+            noted[f->page] = 1;
+            r = add_row(f->page, TR(L"여기서 바꾼 설정은 컨테이너를 다시 시작하면 적용돼요.",
+                                    L"Changes here apply when the container starts again."), NULL);
+            r->kind = ROW_NOTE;
+            r->height = 30;
+        }
+        r = add_row(f->page, f->title, NULL);
+        r->field = f;
+        lstrcpynW(r->detail, f->detail, ARRAY_SIZE(r->detail));
+        switch (f->type) {
+        case FIELD_SECTION:
+            r->kind = ROW_SECTION;
+            r->height = 46;
+            break;
+        case FIELD_CHOICE:
+            r->control = &f->controls[0];
+            r->widths[0] = 300;
+            break;
+        case FIELD_TEXT:
+            r->control = &f->controls[0];
+            r->control2 = &f->controls[1];
+            r->widths[0] = 100;
+            r->widths[1] = 260;
+            break;
+        case FIELD_CPU:
+            r->height = 68;   /* plus the cores, worked out in layout() */
+            break;
+        case FIELD_CHECKLIST:
+            r->control = &f->controls[0];
+            r->widths[0] = 100;
+            r->list = &f->list;
+            r->list_height = 300;
+            break;
+        case FIELD_DRIVE:
+            r->control = &f->controls[0];
+            r->widths[0] = 100;
+            r->detail_is_path = TRUE;
+            break;
+        case FIELD_ADD_DRIVE:
+            r->control = &f->controls[0];
+            r->control2 = &f->controls[1];
+            r->widths[0] = 150;
+            r->widths[1] = 90;
+            break;
+        case FIELD_ENVVAR:
+            r->control = &f->controls[0];
+            r->control2 = &f->controls[1];
+            r->widths[0] = 80;
+            r->widths[1] = 80;
+            break;
+        case FIELD_ADD_ENV:
+            r->control = &f->controls[0];
+            r->control2 = &f->controls[1];
+            r->control3 = &f->controls[2];
+            r->widths[0] = 80;
+            r->widths[1] = 200;
+            r->widths[2] = 170;
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+static void send_container_setting(const WCHAR *key, const WCHAR *value)
+{
+    static char packet[16384];
+    WSADATA wsa;
+    SOCKET s;
+    struct sockaddr_in addr = {0};
+    int len, n;
+
+    len = WideCharToMultiByte(CP_UTF8, 0, key, -1, packet + 1, sizeof(packet) - 2, NULL, NULL);
+    if (len <= 0) return;
+    packet[len] = '\t';   /* over the key's NUL */
+    n = WideCharToMultiByte(CP_UTF8, 0, value, -1, packet + len + 1, sizeof(packet) - len - 1, NULL, NULL);
+    if (n <= 0) return;
+    packet[0] = (char)WINLATOR_SET_CONTAINER;
+    len += n;   /* code, key, tab, value and its NUL */
+
+    if (WSAStartup(MAKEWORD(2, 2), &wsa)) return;
+    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (s != INVALID_SOCKET) {
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(WINLATOR_PORT);
+        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        sendto(s, packet, len, 0, (struct sockaddr *)&addr, sizeof(addr));
+        closesocket(s);
+    }
+    WSACleanup();
+
+    waiting_since = GetTickCount();
+    SetTimer(main_window, TIMER_RELOAD, 150, NULL);
+}
+
+static BOOL pick_folder(WCHAR *path)
+{
+    BROWSEINFOW bi = {0};
+    LPITEMIDLIST pidl;
+    BOOL ok;
+
+    bi.hwndOwner = main_window;
+    bi.lpszTitle = TR(L"드라이브로 쓸 폴더를 고르세요. 안드로이드 내부 저장소는 E: 드라이브예요.",
+                      L"Choose the folder for the drive. Android's storage is drive E:.");
+    bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+    if (!(pidl = SHBrowseForFolderW(&bi))) return FALSE;
+    ok = SHGetPathFromIDListW(pidl, path);
+    CoTaskMemFree(pidl);
+    return ok;
+}
+
+/* The Linux path of a Windows one (through Wine's dosdevices) */
+static BOOL unix_path(const WCHAR *dos, WCHAR *out, int chars)
+{
+    char *(CDECL *wine_get_unix_file_name)(const WCHAR *) =
+        (void *)GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "wine_get_unix_file_name");
+    char *name;
+    BOOL ok;
+    if (!wine_get_unix_file_name || !(name = wine_get_unix_file_name(dos))) return FALSE;
+    ok = MultiByteToWideChar(CP_UTF8, 0, name, -1, out, chars) > 0;
+    HeapFree(GetProcessHeap(), 0, name);
+    return ok;
+}
+
+static struct field *find_field(enum field_type type)
+{
+    int i;
+    for (i = 0; i < field_count; i++) if (fields[i].type == type) return &fields[i];
+    return NULL;
+}
+
+static void strip_line_breaks(WCHAR *text)
+{
+    WCHAR *out = text;
+    for (; *text; text++) if (*text != '\r' && *text != '\n' && *text != '\t') *out++ = *text;
+    *out = 0;
+}
+
+static void field_command(struct field *f, int slot, int code)
+{
+    WCHAR value[2048];
+    int i, sel;
+
+    switch (f->type) {
+    case FIELD_CHOICE:
+        if (code != CBN_SELCHANGE) return;
+        sel = (int)SendMessageW(f->controls[0], CB_GETCURSEL, 0, 0);
+        if (sel < 0 || sel >= f->option_count || !lstrcmpW(f->options[sel].value, f->value)) return;
+        send_container_setting(f->key, f->options[sel].value);
+        break;
+    case FIELD_TEXT:
+        if (code != BN_CLICKED || slot != 0) return;
+        GetWindowTextW(f->controls[1], value, ARRAY_SIZE(value));
+        strip_line_breaks(value);
+        if (!value[0] || !lstrcmpW(value, f->value)) return;
+        send_container_setting(f->key, value);
+        break;
+    case FIELD_CHECKLIST: {
+        int checked = 0, length = 0;
+        if (code != BN_CLICKED || slot != 0) return;
+        value[0] = 0;
+        for (i = 0; i < f->option_count; i++) {
+            UINT state = (UINT)SendMessageW(f->list, LVM_GETITEMSTATE, i, LVIS_STATEIMAGEMASK);
+            int n = lstrlenW(f->options[i].value);
+            if ((state & LVIS_STATEIMAGEMASK) != INDEXTOSTATEIMAGEMASK(2)) continue;
+            if (length + n + 2 >= ARRAY_SIZE(value)) break;
+            if (checked++) value[length++] = ':';
+            lstrcpyW(value + length, f->options[i].value);
+            length += n;
+        }
+        if (!checked) {
+            MessageBoxW(main_window, TR(L"하나 이상 골라 주세요.", L"Choose at least one."), page_title(f->page), MB_OK | MB_ICONINFORMATION);
+            return;
+        }
+        if (checked == f->option_count) lstrcpyW(value, L"all");
+        send_container_setting(f->key, value);
+        break;
+    }
+    case FIELD_DRIVE:
+        if (code != BN_CLICKED) return;
+        send_container_setting(L"drives.remove", f->key);
+        break;
+    case FIELD_ADD_DRIVE: {
+        WCHAR folder[MAX_PATH], path[1024];
+        if (code != BN_CLICKED || slot != 0) return;
+        sel = (int)SendMessageW(f->controls[1], CB_GETCURSEL, 0, 0);
+        if (sel < 0 || sel >= f->option_count || !pick_folder(folder)) return;
+        if (!unix_path(folder, path, ARRAY_SIZE(path))) return;
+        lstrcpynW(value, f->options[sel].value, 2);
+        lstrcatW(value, L":");
+        lstrcatW(value, path);
+        send_container_setting(L"drives.add", value);
+        break;
+    }
+    case FIELD_ENVVAR: {
+        struct field *add = find_field(FIELD_ADD_ENV);
+        if (code != BN_CLICKED) return;
+        if (slot == 0) send_container_setting(L"env.remove", f->key);
+        else if (add) {
+            SetWindowTextW(add->controls[2], f->key);
+            SetWindowTextW(add->controls[1], f->value);
+            scroll_to_row_of(add->controls[1]);
+            SetFocus(add->controls[1]);
+        }
+        break;
+    }
+    case FIELD_ADD_ENV: {
+        WCHAR name[256], data[1024];
+        if (code != BN_CLICKED || slot != 0) return;
+        GetWindowTextW(f->controls[2], name, ARRAY_SIZE(name));
+        GetWindowTextW(f->controls[1], data, ARRAY_SIZE(data));
+        strip_line_breaks(name);
+        strip_line_breaks(data);
+        if (!name[0] || wcschr(name, ' ') || wcschr(name, '=') || wcschr(data, ' ')) {
+            MessageBoxW(main_window, TR(L"이름을 적어 주세요. 이름과 값에는 공백을 쓸 수 없고, 이름에는 = 도 쓸 수 없어요.",
+                                        L"Enter a name. Names and values cannot contain spaces, and names cannot contain =."),
+                        page_title(f->page), MB_OK | MB_ICONINFORMATION);
+            return;
+        }
+        lstrcpyW(value, name);
+        lstrcatW(value, L"=");
+        lstrcatW(value, data);
+        send_container_setting(L"env.set", value);
+        break;
+    }
+    default:
+        return;
+    }
+    need_restart();
+}
+
+static void core_clicked(struct field *f, int box)
+{
+    WCHAR value[512];
+    int i, length = 0, checked = 0;
+    value[0] = 0;
+    for (i = 0; i < f->box_count; i++) {
+        if (SendMessageW(f->boxes[i], BM_GETCHECK, 0, 0) != BST_CHECKED) continue;
+        if (checked++) value[length++] = ',';
+        lstrcpyW(value + length, f->options[i].value);
+        length += lstrlenW(f->options[i].value);
+    }
+    if (!checked) {
+        /* at least one core */
+        SendMessageW(f->boxes[box], BM_SETCHECK, BST_CHECKED, 0);
+        return;
+    }
+    send_container_setting(f->key, value);
+    need_restart();
+}
+
+/* ---------------------------------------------------------------------------------------- */
 /* About                                                                                     */
 /* ---------------------------------------------------------------------------------------- */
 
@@ -868,10 +1560,15 @@ static void fill_about(void)
 
 static int nav_w(void) { return SC(280); }
 
+/* The navigation fits the window: items get closer together on short windows */
 static void nav_item_rect(int index, RECT *rc)
 {
-    int top = SC(124) + index * SC(44);
-    SetRect(rc, SC(12), top, nav_w() - SC(12), top + SC(40));
+    RECT client;
+    int step, top;
+    GetClientRect(main_window, &client);
+    step = max(SC(30), min(SC(44), (int)(client.bottom - SC(124) - SC(12)) / PAGE_COUNT));
+    top = SC(124) + index * step;
+    SetRect(rc, SC(12), top, nav_w() - SC(12), top + step - SC(4));
 }
 
 static void build_rows(void)
@@ -893,9 +1590,9 @@ static void build_rows(void)
     r = add_row(PAGE_WINE, TR(L"마우스 포인터 속도", L"Mouse pointer speed"), &mouse_speed_box);
     lstrcpyW(r->detail, TR(L"컨테이너 안 포인터 감도(1–20)예요. 실제 마우스 센서 DPI는 바꾸지 않아요.",
                            L"Sets the guest pointer speed (1–20), not the mouse sensor's hardware DPI."));
-    r = add_row(PAGE_WINE, TR(L"컨테이너 전체 설정", L"Full container settings"), &container_settings_button);
-    lstrcpyW(r->detail, TR(L"그래픽, Wine, Box64, 드라이브, 환경 변수 등 나머지 설정을 엽니다. 저장한 뒤 컨테이너를 다시 시작해야 적용됩니다.",
-                           L"Edit graphics, Wine, Box64, drives and environment variables. Restart the container after saving to apply changes."));
+    r = add_row(PAGE_WINE, TR(L"마우스 위치 고정 (DirectInput)", L"Mouse warp (DirectInput)"), &mouse_warp_box);
+    lstrcpyW(r->detail, TR(L"마우스로 시점을 돌리는 게임용이에요. 시점이 멈추거나 계속 돌면 강제로 바꿔 보세요.",
+                           L"For games that turn the camera with the mouse. Use Force if the view spins or stops."));
 
     r = add_row(PAGE_CONNECTIVITY, TR(L"Wi-Fi 및 네트워크", L"Wi-Fi and network"), &wifi_button);
     lstrcpyW(r->detail, TR(L"Wi-Fi 설정은 Android가 관리하며, 버튼을 누르면 Android 설정이 열립니다.",
@@ -913,71 +1610,136 @@ static void build_rows(void)
                            L"Choose light, dark or follow Android system. Applies after a restart."));
     r = add_row(PAGE_PERSONALIZE, TR(L"작업 표시줄 맞춤", L"Taskbar alignment"), &align_box);
     lstrcpyW(r->detail, TR(L"아이콘을 가운데 또는 왼쪽에 둡니다.", L"Icons in the middle or on the left."));
+    r = add_row(PAGE_PERSONALIZE, TR(L"시스템 글꼴", L"System font"), &system_font_box);
+    lstrcpyW(r->detail, TR(L"제목 표시줄과 메뉴의 글꼴. 다시 시작하면 적용돼요.", L"The font of title bars and menus. Applies after a restart."));
 
     r = add_row(PAGE_APPS, TR(L"설치된 앱", L"Installed apps"), &install_button);
     r->control2 = &uninstall_button;
     lstrcpyW(r->detail, TR(L"앱을 고르고 [제거]를 누르세요.", L"Select an app and press Uninstall."));
     r->list_height = 360;
+    r->list = &app_list;
 
     r = add_row(PAGE_FONTS, TR(L"설치된 글꼴", L"Installed fonts"), &font_install_button);
     lstrcpyW(r->detail, TR(L".ttf, .otf, .ttc 파일을 설치할 수 있어요.", L"You can install .ttf, .otf and .ttc files."));
     r->list_height = 300;
+    r->list = &font_list;
 
     r = add_row(PAGE_ABOUT, L"S11 Workspace", NULL);
+    r->kind = ROW_ABOUT_PRODUCT;
     r->height = 96;
     r = add_row(PAGE_ABOUT, TR(L"사양", L"Specifications"), NULL);
+    r->kind = ROW_ABOUT_SPECS;
     r->height = 184;
+
+    add_field_rows();
+}
+
+static int default_width(HWND c)
+{
+    WCHAR cls[32];
+    GetClassNameW(c, cls, ARRAY_SIZE(cls));
+    return !lstrcmpiW(cls, WC_BUTTONW) ? SC(176) : SC(240);
+}
+
+/* Puts a control at the right of a card, centred in the card's first 68 px; returns its left edge */
+static int place_control(HWND c, int right, int width, int top)
+{
+    WCHAR cls[32];
+    GetClassNameW(c, cls, ARRAY_SIZE(cls));
+    if (!lstrcmpiW(cls, WC_COMBOBOXW)) {
+        /* a combo box's height includes its drop-down list; centre the field itself */
+        RECT field;
+        SetWindowPos(c, NULL, right - width, top, width, SC(320), SWP_NOZORDER | SWP_SHOWWINDOW);
+        GetWindowRect(c, &field);
+        SetWindowPos(c, NULL, right - width, top + (SC(68) - (field.bottom - field.top)) / 2, 0, 0,
+                     SWP_NOZORDER | SWP_NOSIZE);
+    }
+    else SetWindowPos(c, NULL, right - width, top + (SC(68) - SC(34)) / 2, width, SC(34), SWP_NOZORDER | SWP_SHOWWINDOW);
+    if (!lstrcmpiW(cls, WC_EDITW)) {
+        /* the text in the middle of the box */
+        static int line_height;
+        RECT rc;
+        if (!line_height) {
+            HDC dc = GetDC(c);
+            HFONT old = SelectObject(dc, ui_font);
+            TEXTMETRICW tm;
+            GetTextMetricsW(dc, &tm);
+            line_height = tm.tmHeight;
+            SelectObject(dc, old);
+            ReleaseDC(c, dc);
+        }
+        GetClientRect(c, &rc);
+        rc.top = max(0, (rc.bottom - line_height) / 2);
+        rc.bottom = rc.top + line_height;
+        rc.left += SC(6);
+        rc.right -= SC(6);
+        SendMessageW(c, EM_SETRECTNP, 0, (LPARAM)&rc);
+    }
+    return right - width;
 }
 
 static void layout(void)
 {
     RECT client;
-    int x, y, w, i;
-    HWND controls[] = {scale_box, resolution_box, winver_box, mode_box, align_box, mouse_box, mouse_speed_box, wifi_button, bluetooth_button, browse_button, app_list,
-                       uninstall_button, install_button, font_list, font_install_button, restart_button};
+    int x, y, w, i, k;
 
     GetClientRect(main_window, &client);
-    for (i = 0; i < ARRAY_SIZE(controls); i++) ShowWindow(controls[i], SW_HIDE);
-
     x = nav_w() + SC(24);
     w = client.right - x - SC(32);
     y = SC(84) - scroll_y;
-    if (restart_needed && (current_page == PAGE_SYSTEM || current_page == PAGE_PERSONALIZE)) {
+    if (restart_needed && page_needs_restart(current_page)) {
         SetWindowPos(restart_button, NULL, x + w - SC(150), y + SC(12), SC(136), SC(32), SWP_NOZORDER | SWP_SHOWWINDOW);
         y += SC(64);
     }
+    else ShowWindow(restart_button, SW_HIDE);
+
     for (i = 0; i < row_count; i++) {
         struct row *r = &rows[i];
-        int h = SC(r->height) + (r->list_height ? SC(r->list_height) : 0);
-        if (r->page != current_page) continue;
-        SetRect(&r->rc, x, y, x + w, y + h);
-        if (r->control && *r->control) {
-            HWND c = *r->control;
-            BOOL is_button = c == browse_button || c == install_button || c == font_install_button || c == wifi_button || c == bluetooth_button;
-            int cw = is_button ? SC(176) : SC(240), ch = SC(34), top = y + (SC(68) - ch) / 2;
-            if (is_button) SetWindowPos(c, NULL, x + w - cw - SC(16), top, cw, ch, SWP_NOZORDER | SWP_SHOWWINDOW);
-            else {
-                /* a combo box's height includes its drop-down list; centre the field itself */
-                RECT field;
-                SetWindowPos(c, NULL, x + w - cw - SC(16), top, cw, SC(320), SWP_NOZORDER | SWP_SHOWWINDOW);
-                GetWindowRect(c, &field);
-                SetWindowPos(c, NULL, x + w - cw - SC(16), y + (SC(68) - (field.bottom - field.top)) / 2, 0, 0,
-                             SWP_NOZORDER | SWP_NOSIZE);
-            }
-            if (r->control2 && *r->control2)
-                SetWindowPos(*r->control2, NULL, x + w - cw * 2 - SC(24), top, cw, ch, SWP_NOZORDER | SWP_SHOWWINDOW);
+        HWND *slots[3] = {r->control, r->control2, r->control3};
+        struct field *f = r->field;
+        int h, right, per_line = 1, lines = 0;
+
+        if (r->page == current_page && r->kind == ROW_NOTE && restart_needed) {
+            SetRectEmpty(&r->rc);   /* the restart banner says it already */
+            continue;
         }
-        if (r->list_height) {
-            HWND list = current_page == PAGE_APPS ? app_list : font_list;
-            int list_h = SC(r->list_height) - SC(16) - (current_page == PAGE_FONTS ? SC(70) : 0);
+        if (r->page != current_page) {
+            for (k = 0; k < 3; k++) if (slots[k] && *slots[k]) ShowWindow(*slots[k], SW_HIDE);
+            if (r->list && *r->list) ShowWindow(*r->list, SW_HIDE);
+            if (f) for (k = 0; k < f->box_count; k++) ShowWindow(f->boxes[k], SW_HIDE);
+            continue;
+        }
+        if (f && f->type == FIELD_CPU && f->box_count) {
+            per_line = max(1, (w - SC(40)) / SC(180));
+            lines = (f->box_count + per_line - 1) / per_line;
+        }
+        h = SC(r->height) + (r->list_height ? SC(r->list_height) : 0) + (lines ? lines * SC(34) + SC(10) : 0);
+        SetRect(&r->rc, x, y, x + w, y + h);
+
+        right = x + w - SC(16);
+        for (k = 0; k < 3; k++) {
+            HWND c = slots[k] ? *slots[k] : NULL;
+            if (!c) continue;
+            right = place_control(c, right, r->widths[k] ? SC(r->widths[k]) : default_width(c), y) - SC(8);
+        }
+        r->text_right = right < x + w - SC(16) ? right - SC(8) : x + w - SC(20);
+
+        if (r->list && *r->list) {
+            HWND list = *r->list;
+            int list_h = SC(r->list_height) - SC(16) - (list == font_list ? SC(70) : 0);
             int scrollbar = GetSystemMetrics(SM_CXVSCROLL) + SC(4);
             SetWindowPos(list, NULL, x + SC(16), y + SC(r->height), w - SC(32), list_h, SWP_NOZORDER | SWP_SHOWWINDOW);
             if (list == app_list)
                 SendMessageW(list, LVM_SETCOLUMNWIDTH, 0, max(SC(160), w - SC(32) - SC(170 + 110 + 80) - scrollbar));
             else SendMessageW(list, LVM_SETCOLUMNWIDTH, 0, w - SC(32) - scrollbar);
         }
+        for (k = 0; lines && k < f->box_count; k++) {
+            int column = k % per_line, line = k / per_line;
+            SetWindowPos(f->boxes[k], NULL, x + SC(20) + column * SC(180), y + SC(62) + line * SC(34), SC(172), SC(28),
+                         SWP_NOZORDER | SWP_SHOWWINDOW);
+        }
         if (r->wallpapers) {
-            int tw = SC(THUMB_W), th = SC(THUMB_H), k, n = 0;
+            int tw = SC(THUMB_W), th = SC(THUMB_H), n = 0;
             for (k = 0; k < ARRAY_SIZE(wallpapers); k++) {
                 int left = x + SC(16) + n * (tw + SC(12));
                 if (!wallpapers[k].thumb) {
@@ -988,9 +1750,29 @@ static void layout(void)
                 n++;
             }
         }
-        y += h + SC(8);
+        y += h + (r->kind == ROW_SECTION || r->kind == ROW_NOTE ? 0 : SC(8));
     }
     content_bottom = y + scroll_y + SC(16);
+}
+
+/* Scrolls so that the row holding a control is in view */
+static void scroll_to_row_of(HWND control)
+{
+    RECT client;
+    int i;
+    GetClientRect(main_window, &client);
+    for (i = 0; i < row_count; i++) {
+        struct row *r = &rows[i];
+        if (r->page != current_page) continue;
+        if ((r->control && *r->control == control) || (r->control2 && *r->control2 == control) ||
+            (r->control3 && *r->control3 == control)) {
+            int top = r->rc.top + scroll_y - SC(96);
+            scroll_y = max(0, min(top, max(0, content_bottom - client.bottom)));
+            layout();
+            InvalidateRect(main_window, NULL, FALSE);
+            return;
+        }
+    }
 }
 
 /* Scrolls the page (the navigation stays) */
@@ -1058,6 +1840,48 @@ static void draw_nav_glyph(struct canvas *c, enum page page, float cx, float cy,
         GdipDrawLine(c->g, pen, cx, cy - s * 0.38f, cx + s * 0.32f, cy + s * 0.36f);
         GdipDrawLine(c->g, pen, cx - s * 0.18f, cy + s * 0.08f, cx + s * 0.18f, cy + s * 0.08f);
         break;
+    case PAGE_GRAPHICS: {  /* a picture: a frame, a hill and the sun */
+        GpPointF hill[3] = {{cx - s * 0.30f, cy + s * 0.26f}, {cx - s * 0.04f, cy - s * 0.06f}, {cx + s * 0.30f, cy + s * 0.26f}};
+        GdipDrawRectangle(c->g, pen, cx - s * 0.42f, cy - s * 0.34f, s * 0.84f, s * 0.68f);
+        GdipDrawLines(c->g, pen, hill, 3);
+        GdipDrawEllipse(c->g, pen, cx + s * 0.10f, cy - s * 0.22f, s * 0.16f, s * 0.16f);
+        break;
+    }
+    case PAGE_AUDIO: {     /* a speaker and a sound wave */
+        GpPointF cone[6] = {{cx - s * 0.40f, cy - s * 0.12f}, {cx - s * 0.20f, cy - s * 0.12f}, {cx + s * 0.04f, cy - s * 0.34f},
+                            {cx + s * 0.04f, cy + s * 0.34f}, {cx - s * 0.20f, cy + s * 0.12f}, {cx - s * 0.40f, cy + s * 0.12f}};
+        GdipDrawPolygon(c->g, pen, cone, 6);
+        GdipDrawArc(c->g, pen, cx - s * 0.04f, cy - s * 0.20f, s * 0.36f, s * 0.40f, -55, 110);
+        break;
+    }
+    case PAGE_COMPAT: {    /* a processor with its pins */
+        int i;
+        GdipDrawRectangle(c->g, pen, cx - s * 0.26f, cy - s * 0.26f, s * 0.52f, s * 0.52f);
+        for (i = -1; i <= 1; i++) {
+            float o = i * s * 0.14f;
+            GdipDrawLine(c->g, pen, cx + o, cy - s * 0.26f, cx + o, cy - s * 0.40f);
+            GdipDrawLine(c->g, pen, cx + o, cy + s * 0.26f, cx + o, cy + s * 0.40f);
+            GdipDrawLine(c->g, pen, cx - s * 0.26f, cy + o, cx - s * 0.40f, cy + o);
+            GdipDrawLine(c->g, pen, cx + s * 0.26f, cy + o, cx + s * 0.40f, cy + o);
+        }
+        break;
+    }
+    case PAGE_COMPONENTS: { /* four blocks */
+        int i;
+        for (i = 0; i < 4; i++)
+            GdipDrawRectangle(c->g, pen, cx - s * 0.38f + (i % 2) * s * 0.42f, cy - s * 0.38f + (i / 2) * s * 0.42f, s * 0.34f, s * 0.34f);
+        break;
+    }
+    case PAGE_DRIVES:      /* a drive with its light */
+        GdipDrawRectangle(c->g, pen, cx - s * 0.42f, cy - s * 0.20f, s * 0.84f, s * 0.40f);
+        GdipDrawLine(c->g, pen, cx + s * 0.20f, cy, cx + s * 0.28f, cy);
+        GdipDrawLine(c->g, pen, cx - s * 0.30f, cy, cx - s * 0.04f, cy);
+        break;
+    case PAGE_ENV:         /* a prompt: > and _ */
+        GdipDrawLine(c->g, pen, cx - s * 0.36f, cy - s * 0.24f, cx - s * 0.08f, cy);
+        GdipDrawLine(c->g, pen, cx - s * 0.08f, cy, cx - s * 0.36f, cy + s * 0.24f);
+        GdipDrawLine(c->g, pen, cx + s * 0.04f, cy + s * 0.28f, cx + s * 0.38f, cy + s * 0.28f);
+        break;
     case PAGE_ABOUT:       /* an i in a circle */
         GdipDrawEllipse(c->g, pen, cx - s * 0.40f, cy - s * 0.40f, s * 0.80f, s * 0.80f);
         GdipDrawLine(c->g, pen, cx, cy - s * 0.04f, cx, cy + s * 0.22f);
@@ -1107,7 +1931,7 @@ static void paint(HDC hdc)
     SetRect(&rc, x, SC(20) - scroll_y, x + w, SC(72) - scroll_y);
     draw_text(&c, page_title(current_page), &rc, big_font, pal.text, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 
-    if (restart_needed && (current_page == PAGE_SYSTEM || current_page == PAGE_PERSONALIZE)) {
+    if (restart_needed && page_needs_restart(current_page)) {
         RECT bar = {x, SC(84) - scroll_y, x + w, SC(84) - scroll_y + SC(56)};
         fill_round_rect(&c, &bar, (float)SC(6), argb(pal.accent, 40));
         bar.left += SC(16);
@@ -1120,15 +1944,30 @@ static void paint(HDC hdc)
         RECT text;
         int text_right;
         if (r->page != current_page) continue;
+        if (r->kind == ROW_SECTION) {
+            SetRect(&text, r->rc.left + SC(4), r->rc.top + SC(12), r->rc.right, r->rc.bottom - SC(6));
+            draw_text(&c, r->title, &text, section_font, pal.text, DT_LEFT | DT_BOTTOM | DT_SINGLELINE | DT_END_ELLIPSIS);
+            continue;
+        }
+        if (r->kind == ROW_NOTE) {
+            if (IsRectEmpty(&r->rc)) continue;
+            SetRect(&text, r->rc.left + SC(4), r->rc.top, r->rc.right, r->rc.bottom - SC(8));
+            draw_text(&c, r->title, &text, small_font, pal.text_dim, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+            continue;
+        }
         fill_round_rect(&c, &r->rc, (float)SC(6), argb(card, 255));
         stroke_round_rect(&c, &r->rc, (float)SC(6), argb(pal.menu_border, 160), 1);
 
-        text_right = r->rc.right - (r->control2 ? SC(350) : r->control ? SC(280) : SC(20));
-        SetRect(&text, r->rc.left + SC(20), r->rc.top + SC(14), text_right, r->rc.top + SC(38));
+        text_right = r->text_right ? r->text_right : r->rc.right - SC(20);
+        /* a title alone sits in the middle of a plain card */
+        if (r->detail[0] || r->kind != ROW_CARD || r->list_height || r->wallpapers || (r->field && r->field->type == FIELD_CPU))
+            SetRect(&text, r->rc.left + SC(20), r->rc.top + SC(14), text_right, r->rc.top + SC(38));
+        else SetRect(&text, r->rc.left + SC(20), r->rc.top, text_right, r->rc.top + SC(68));
         draw_text(&c, r->title, &text, ui_font, pal.text, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
         if (r->detail[0]) {
             SetRect(&text, r->rc.left + SC(20), r->rc.top + SC(38), text_right, r->rc.top + SC(60));
-            draw_text(&c, r->detail, &text, small_font, pal.text_dim, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+            draw_text(&c, r->detail, &text, small_font, pal.text_dim,
+                      DT_LEFT | DT_VCENTER | DT_SINGLELINE | (r->detail_is_path ? DT_PATH_ELLIPSIS : DT_END_ELLIPSIS));
         }
 
         if (r->wallpapers) {
@@ -1190,8 +2029,8 @@ static void paint(HDC hdc)
             DeleteObject(font);
         }
 
-        if (current_page == PAGE_ABOUT) {
-            if (i == row_count - 2) {   /* Winlator S11 */
+        if (r->kind == ROW_ABOUT_PRODUCT || r->kind == ROW_ABOUT_SPECS) {
+            if (r->kind == ROW_ABOUT_PRODUCT) {
                 RECT line = {r->rc.left + SC(20), r->rc.top + SC(44), r->rc.right - SC(20), r->rc.top + SC(66)};
                 WCHAR text2[200];
                 wsprintfW(text2, TR(L"버전 %s  ·  컨테이너: %s", L"Version %s  ·  Container: %s"), about_text[0], about_text[1]);
@@ -1219,7 +2058,8 @@ static void select_page(enum page page)
     scroll_y = 0;
     switch (page) {
     case PAGE_SYSTEM: fill_system(); break;
-    case PAGE_PERSONALIZE: fill_personalize(); break;
+    case PAGE_WINE: fill_system(); fill_mouse_warp(); break;   /* the Windows version list is filled with the system page */
+    case PAGE_PERSONALIZE: fill_personalize(); fill_system_font(); break;
     case PAGE_APPS: fill_apps(); break;
     case PAGE_FONTS: fill_fonts(); break;
     case PAGE_ABOUT: fill_about(); break;
@@ -1227,6 +2067,39 @@ static void select_page(enum page page)
     }
     layout();
     InvalidateRect(main_window, NULL, FALSE);
+}
+
+/* Reads the container settings again and rebuilds the rows, keeping the page where it was */
+static void reload_container_settings(void)
+{
+    RECT client;
+    int i, old_scroll = scroll_y;
+
+    load_container_settings();
+    for (i = 0; i < field_count; i++) create_field_controls(&fields[i]);
+    build_rows();
+    layout();
+    if (old_scroll) {
+        GetClientRect(main_window, &client);
+        scroll_y = max(0, min(old_scroll, content_bottom - client.bottom));
+        layout();
+    }
+    InvalidateRect(main_window, NULL, FALSE);
+}
+
+/* Enter in a text box presses the button of its row */
+static void enter_pressed(void)
+{
+    HWND focus = GetFocus();
+    int i;
+    for (i = 0; i < field_count; i++) {
+        struct field *f = &fields[i];
+        if ((f->type == FIELD_TEXT && focus == f->controls[1]) ||
+            (f->type == FIELD_ADD_ENV && (focus == f->controls[1] || focus == f->controls[2]))) {
+            field_command(f, 0, BN_CLICKED);
+            return;
+        }
+    }
 }
 
 static void need_restart(void)
@@ -1351,7 +2224,8 @@ static void create_controls(void)
     fill_mouse_acceleration();
     mouse_speed_box = make_combo(ID_MOUSE_SPEED);
     fill_mouse_speed();
-    container_settings_button = make_button(ID_CONTAINER_SETTINGS, TR(L"전체 설정 열기", L"Open full settings"));
+    mouse_warp_box = make_combo(ID_MOUSE_WARP);
+    system_font_box = make_combo(ID_SYSTEM_FONT);
     wifi_button = make_button(ID_OPEN_WIFI, TR(L"Wi-Fi 설정 열기", L"Open Wi-Fi settings"));
     bluetooth_button = make_button(ID_OPEN_BLUETOOTH, TR(L"Bluetooth 설정 열기", L"Open Bluetooth settings"));
     restart_button = make_button(ID_RESTART, TR(L"지금 다시 시작", L"Restart now"));
@@ -1372,10 +2246,14 @@ static void create_controls(void)
 
 static enum page initial_page;
 
-/* "system", "wine", "connectivity", "personalization", "apps", "fonts" or "about" */
+/* "system", "graphics", "sound", "wine", "compatibility", "components", "drives", "environment",
+ * "connectivity", "personalization", "apps", "fonts" or "about" */
 static enum page page_from_name(const WCHAR *name)
 {
-    static const WCHAR *const names[PAGE_COUNT] = {L"system", L"wine", L"connectivity", L"personalization", L"apps", L"fonts", L"about"};
+    static const WCHAR *const names[PAGE_COUNT] = {
+        L"system", L"graphics", L"sound", L"wine", L"compatibility", L"components", L"drives", L"environment",
+        L"connectivity", L"personalization", L"apps", L"fonts", L"about"
+    };
     int i;
     for (i = 0; i < PAGE_COUNT; i++) if (name && !lstrcmpiW(name, names[i])) return (enum page)i;
     return PAGE_COUNT;
@@ -1387,7 +2265,7 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_CREATE:
         main_window = hwnd;
         create_controls();
-        build_rows();
+        reload_container_settings();
         select_page(initial_page);
         return 0;
     case WM_SIZE:
@@ -1426,7 +2304,8 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         break;
     }
     case WM_CTLCOLORSTATIC:
-    case WM_CTLCOLORBTN: {
+    case WM_CTLCOLORBTN:
+    case WM_CTLCOLOREDIT: {
         static HBRUSH brush;
         static COLORREF color;
         if (!brush || color != pal.field) {
@@ -1435,6 +2314,7 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             color = pal.field;
         }
         SetBkColor((HDC)wp, pal.field);
+        SetTextColor((HDC)wp, pal.text);
         return (LRESULT)brush;
     }
     case WM_MOUSEMOVE: {
@@ -1483,7 +2363,8 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         return 0;
     case WM_NOTIFY: {
         NMHDR *hdr = (NMHDR *)lp;
-        if ((hdr->idFrom == ID_APP_LIST || hdr->idFrom == ID_FONT_LIST) && hdr->code == NM_CUSTOMDRAW)
+        if ((hdr->idFrom == ID_APP_LIST || hdr->idFrom == ID_FONT_LIST ||
+             (hdr->idFrom >= ID_FIELD_BASE && hdr->idFrom < ID_BOX_BASE)) && hdr->code == NM_CUSTOMDRAW)
             return list_custom_draw((NMLVCUSTOMDRAW *)lp);
         if (hdr->idFrom == ID_APP_LIST && hdr->code == LVN_ITEMCHANGED)
             EnableWindow(uninstall_button, SendMessageW(app_list, LVM_GETNEXTITEM, -1, LVNI_SELECTED) >= 0);
@@ -1498,6 +2379,14 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         if (current_page == PAGE_APPS) fill_apps();
         return 0;
     case WM_TIMER:
+        if (wp == TIMER_RELOAD) {
+            /* Winlator writes the file again after each change; wait for it (a few seconds at most) */
+            if (read_container_revision() != container_revision || GetTickCount() - waiting_since > 5000) {
+                KillTimer(hwnd, TIMER_RELOAD);
+                reload_container_settings();
+            }
+            return 0;
+        }
         if (wp == TIMER_REPAINT) {
             static int passes;
             EnumWindows(redraw_window, 0);
@@ -1513,6 +2402,20 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         return 0;
     case WM_COMMAND: {
         int id = LOWORD(wp), code = HIWORD(wp);
+        if (id >= ID_FIELD_BASE && id < ID_BOX_BASE) {
+            int index = (id - ID_FIELD_BASE) / 8;
+            if (index < field_count) field_command(&fields[index], (id - ID_FIELD_BASE) % 8, code);
+            return 0;
+        }
+        if (id >= ID_BOX_BASE) {
+            int index = (id - ID_BOX_BASE) / 64, box = (id - ID_BOX_BASE) % 64;
+            if (code == BN_CLICKED && index < field_count && box < fields[index].box_count) core_clicked(&fields[index], box);
+            return 0;
+        }
+        if (id == IDOK) {
+            enter_pressed();
+            return 0;
+        }
         if (code == CBN_SELCHANGE) {
             int sel = (int)SendMessageW((HWND)lp, CB_GETCURSEL, 0, 0);
             if (sel < 0) return 0;
@@ -1578,6 +2481,13 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
                 reg_set_string(HKEY_CURRENT_USER, L"Control Panel\\Mouse", L"MouseSensitivity", value);
                 break;
             }
+            case ID_MOUSE_WARP:
+                reg_set_string(HKEY_CURRENT_USER, L"Software\\Wine\\DirectInput", L"MouseWarpOverride", warp_values[sel]);
+                break;
+            case ID_SYSTEM_FONT:
+                set_system_font(sel);
+                need_restart();
+                break;
             case ID_ALIGN:
                 reg_set_dword(HKEY_CURRENT_USER, S11_KEY, L"TaskbarAlignment", sel);
                 PostMessageW(HWND_BROADCAST, RegisterWindowMessageW(L"WinlatorS11SettingsChanged"), 0, 0);
@@ -1594,9 +2504,6 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             break;
         case ID_OPEN_BLUETOOTH:
             send_winlator_request(WINLATOR_OPEN_BLUETOOTH);
-            break;
-        case ID_CONTAINER_SETTINGS:
-            send_winlator_request(WINLATOR_OPEN_CONTAINER_SETTINGS);
             break;
         case ID_BROWSE:
             browse_wallpaper();
@@ -1658,6 +2565,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
     nav_font = make_font(100, FW_NORMAL);
     title_font = make_font(120, FW_SEMIBOLD);
     big_font = make_font(200, FW_SEMIBOLD);
+    section_font = make_font(110, FW_SEMIBOLD);
 
     wc.lpfnWndProc = main_proc;
     wc.hInstance = inst;
