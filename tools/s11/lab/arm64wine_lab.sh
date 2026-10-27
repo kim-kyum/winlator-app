@@ -58,41 +58,60 @@ ELFS=""
 for b in "$W64"/bin/*; do
     file "$b" | grep -q "ELF.*aarch64" && { ELFS="$ELFS $b"; cp -a "$b" "$b.orig"; }
 done
-# run 11: every program dumped core (SIGBUS) right away after patchelf; find out why
+# run 11: every program dumped core right after patchelf. Run 12: without HOME and USER, Wine
+# reads the rootfs's /etc/passwd (there is none) and crashes at NULL; with them (as below) it
+# still dumped core in wineboot (SIGBUS). Find where.
 sudo apt-get install -y -qq strace gdb binutils > /dev/null 2>&1
 LIBS="$ROOTFS/usr/lib"
-works() { env -i LD_LIBRARY_PATH="$LIBS" timeout 60 "$1" --version > /dev/null 2>&1; }
+HOMEDIR="$ROOTFS/home/xuser"
+PFX="$HOMEDIR/.wine-arm64"
+WENV="HOME=$HOMEDIR USER=xuser TMPDIR=$ROOTFS/tmp WINEPREFIX=$PFX LD_LIBRARY_PATH=$LIBS PATH=$W64/bin:$ROOTFS/usr/bin:/usr/bin:/bin \
+WINEDEBUG=-all,err+module WINEDLLOVERRIDES=mscoree,mshtml=;winemenubuilder.exe=d"
 patch_all() {   # patchelf options...
     for b in $ELFS; do cp -a "$b.orig" "$b"; patchelf "$@" --set-interpreter "$INTERP" "$b" 2>> "$SUMMARY"; done
 }
+crash_context() {   # strace output: the last 45 lines of a process before each fatal signal
+    python3 - "$1" <<'PYEOF'
+import collections, re, sys
+by_pid = collections.defaultdict(list)
+for line in open(sys.argv[1], errors="replace").read().splitlines():
+    pid = line.split(" ", 1)[0]
+    by_pid[pid].append(line)
+    if re.search(r"--- SIG(SEGV|BUS|ILL|ABRT|FPE) \{", line) and "SI_TKILL" not in line:
+        print("\n".join(by_pid[pid][-45:]))
+        print("-----")
+PYEOF
+}
+Xvfb :1 -screen 0 1920x1080x24 -nolisten tcp > "$OUT/xvfb.log" 2>&1 &
+export DISPLAY=:1
+sleep 3
+patch_all
 {
     echo "== page size: $(getconf PAGESIZE); patchelf $(patchelf --version)"
-    echo "== readelf original wine"; readelf -lW "$W64/bin/wine.orig"
-    echo "== T1 /usr/bin/true with the rootfs interpreter"
-    cp /usr/bin/true "$LAB/true-rootfs" && patchelf --set-interpreter "$INTERP" "$LAB/true-rootfs"
-    env -i LD_LIBRARY_PATH="$LIBS" "$LAB/true-rootfs"; echo "exit $?"
+    echo "== the rootfs's /etc"; ls -la "$ROOTFS/etc" | head -60
     echo "== T2 wine.orig --version (Ubuntu's glibc)"; timeout 60 "$W64/bin/wine.orig" --version; echo "exit $?"
-    echo "== T4 the rootfs loader, explicitly"; env -i timeout 60 "$INTERP" --library-path "$LIBS" "$W64/bin/wine.orig" --version; echo "exit $?"
-    for opts in "" "--page-size 4096" "--page-size 65536"; do
-        patch_all $opts
-        echo "== T3 patchelf $opts"; readelf -lW "$W64/bin/wine" | sed -n '/Program Headers/,/Section to Segment/p'
-        env -i LD_LIBRARY_PATH="$LIBS" timeout 60 "$W64/bin/wine" --version; echo "exit $?"
-        if works "$W64/bin/wine"; then PATCH_OPTS="$opts"; break; fi
-        strace -f -o "$OUT/strace-wine${opts// /}.txt" env -i LD_LIBRARY_PATH="$LIBS" timeout 60 "$W64/bin/wine" --version
-        tail -25 "$OUT/strace-wine${opts// /}.txt"
-        LD_LIBRARY_PATH="$LIBS" timeout 120 gdb -q -batch -ex run -ex bt -ex "info proc mappings" -ex "x/4i \$pc" --args "$W64/bin/wine" --version 2>&1 | tail -60
-    done
+    echo "== T3 patched wine --version, with HOME and USER"; env -i $WENV timeout 60 "$W64/bin/wine" --version; echo "exit $?"
+    echo "== T5 a new prefix: wine cmd /c exit, under strace"
+    strace -f -s 200 -o "$OUT/strace-cmd.txt" env -i DISPLAY=$DISPLAY $WENV timeout 600 "$W64/bin/wine" cmd /c exit
+    echo "exit $?"
+    crash_context "$OUT/strace-cmd.txt"
+    echo "== processes"; grep -E "execve\(" "$OUT/strace-cmd.txt" | cut -c1-220 | head -40
 } >> "$OUT/diag.txt" 2>&1
-log "patchelf options that work: ${PATCH_OPTS-none}"
-if [ -z "${PATCH_OPTS+x}" ]; then
-    log "no patched Wine starts; see diag.txt"
-    tail -150 "$OUT/diag.txt" >> "$SUMMARY"
+gzip -9 "$OUT/strace-cmd.txt"
+if ! env -i DISPLAY=$DISPLAY $WENV timeout 120 "$W64/bin/wine" cmd /c exit > /dev/null 2>&1; then
+    {
+        echo "== gdb: wine cmd /c exit"
+        env -i DISPLAY=$DISPLAY $WENV timeout 300 gdb -q -batch -iex "set debuginfod enabled off" \
+            -ex "set startup-with-shell off" -ex "handle SIGUSR1 SIGUSR2 SIGPIPE nostop noprint" -ex run -ex bt \
+            -ex "info sharedlibrary" -ex "x/6i \$pc-12" -ex "info registers" --args "$W64/bin/wine" cmd /c exit 2>&1 | tail -120
+    } >> "$OUT/diag.txt" 2>&1
+    log "the patched Wine does not start; see diag.txt"
+    tail -250 "$OUT/diag.txt" >> "$SUMMARY"
     exit 0
 fi
-patch_all $PATCH_OPTS
+log "the patched Wine starts"
 
 # --- what Wine's Unix side would load from the rootfs ----------------------------------------
-LIBS="$ROOTFS/usr/lib"
 {
     echo "== missing libraries (rootfs only) =="
     for so in "$W64"/lib/wine/aarch64-unix/*.so "$W64"/bin/wine "$W64"/bin/wineserver; do
@@ -110,15 +129,7 @@ LIBS="$ROOTFS/usr/lib"
 } >> "$OUT/libraries.txt" 2>&1
 cat "$OUT/libraries.txt" >> "$SUMMARY"
 
-Xvfb :1 -screen 0 1920x1080x24 -nolisten tcp > "$OUT/xvfb.log" 2>&1 &
-export DISPLAY=:1
-sleep 3
-
 # --- a prefix, as the app would make it ----------------------------------------------------------
-HOMEDIR="$ROOTFS/home/xuser"
-PFX="$HOMEDIR/.wine-arm64"
-WENV="HOME=$HOMEDIR USER=xuser TMPDIR=$ROOTFS/tmp WINEPREFIX=$PFX LD_LIBRARY_PATH=$LIBS PATH=$W64/bin:$ROOTFS/usr/bin:/usr/bin:/bin \
-WINEDEBUG=-all,err+module WINEDLLOVERRIDES=mscoree,mshtml=;winemenubuilder.exe=d"
 t0=$(date +%s)
 env -i DISPLAY=$DISPLAY $WENV timeout 900 "$W64/bin/wine" wineboot -i > "$OUT/wineboot.log" 2>&1
 log "wineboot exit $? after $(( $(date +%s) - t0 )) s; system32: $(ls "$PFX/drive_c/windows/system32" 2>/dev/null | wc -l) files"
