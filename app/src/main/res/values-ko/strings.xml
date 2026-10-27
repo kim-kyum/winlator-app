@@ -466,4 +466,10 @@
     <string name="s11_cs_box64_cache_clear">번역 캐시 비우기</string>
     <string name="s11_cs_box64_cache_size">지금 %1$d MB예요. 비우면 다음 실행 때 다시 번역해요.</string>
     <string name="s11_cs_box64_cache_clear_button">비우기</string>
+    <!-- Winlator S11: ARM64 Wine (Hangover) -->
+    <string name="s11_arm64_wine">ARM64 Wine (빠름, 베타)</string>
+    <string name="s11_arm64_wine_desc">ARM64용 Windows 프로그램은 번역 없이 그대로 돌고, x64와 32비트 프로그램은 안에 든 FEX와 Box64로 돌아요. 새 컨테이너를 만들 때 Wine 버전에서 고르세요. 약 120 MB를 받아요.</string>
+    <string name="s11_arm64_wine_get">받기</string>
+    <string name="s11_arm64_wine_installed">설치됨</string>
+    <string name="s11_arm64_wine_failed">ARM64 Wine을 받지 못했어요. 인터넷 연결을 확인해 주세요.</string>
 </resources>

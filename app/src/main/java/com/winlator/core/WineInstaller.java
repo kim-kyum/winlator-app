@@ -36,6 +36,7 @@ public abstract class WineInstaller {
 
         GuestProgramLauncherComponent guestProgramLauncherComponent = environment.getComponent(GuestProgramLauncherComponent.class);
         guestProgramLauncherComponent.setBox64Preset(Box64Preset.STABILITY);
+        guestProgramLauncherComponent.setNativeWine(wineInfo.isArm64());
         guestProgramLauncherComponent.setGuestExecutable("wine explorer /desktop=shell,"+ Container.DEFAULT_SCREEN_SIZE+" C:\\windows\\system32\\winecfg.exe");
 
         final PreloaderDialog preloaderDialog = new PreloaderDialog(activity);
@@ -62,7 +63,7 @@ public abstract class WineInstaller {
                 }
             }
 
-            File containerPatternFile = new File(installedWineDir, "/preinstall/container-pattern-"+wineInfo.fullVersion()+".tzst");
+            File containerPatternFile = new File(installedWineDir, "/preinstall/"+wineInfo.containerPatternName());
             TarCompressorUtils.compress(TarCompressorUtils.Type.ZSTD, new File(rootDir, RootFS.WINEPREFIX), containerPatternFile, MainActivity.CONTAINER_PATTERN_COMPRESSION_LEVEL);
 
             if (!containerPatternFile.renameTo(new File(installedWineDir, containerPatternFile.getName())) ||
@@ -140,6 +141,9 @@ public abstract class WineInstaller {
             callback.call(null);
             return;
         }
+        // Winlator S11: an ARM64 Wine (Hangover's) runs as it is, not through Box64
+        final boolean arm64 = ElfHelper.isAarch64(wineBin);
+        final String arch = arm64 ? WineInfo.ARCH_ARM64 : WineInfo.ARCH_X86_64;
 
         RootFS rootFS = RootFS.find(context);
         File rootDir = rootFS.getRootDir();
@@ -153,7 +157,7 @@ public abstract class WineInstaller {
             if (matcher.find()) {
                 String version = matcher.group(1);
                 String subversion = matcher.groupCount() >= 2 ? matcher.group(2) : null;
-                wineInfoRef.set(new WineInfo(version, subversion, winePath));
+                wineInfoRef.set(new WineInfo(version, subversion, winePath, arch));
             }
         };
 
@@ -165,6 +169,7 @@ public abstract class WineInstaller {
 
         XEnvironment environment = new XEnvironment(context, rootFS);
         GuestProgramLauncherComponent guestProgramLauncherComponent = new GuestProgramLauncherComponent();
+        guestProgramLauncherComponent.setNativeWine(arm64);
         guestProgramLauncherComponent.setGuestExecutable(wineBinPath+" --version");
         guestProgramLauncherComponent.setTerminationCallback((status) -> {
             callback.call(wineInfoRef.get());

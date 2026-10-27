@@ -30,6 +30,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
     private String box64Preset = Box64Preset.CONSERVATIVE;
     private Callback<Integer> terminationCallback;
     private Callback<String> outputCallback;
+    private boolean nativeWine = false;
     private static final Object lock = new Object();
 
     @Override
@@ -81,6 +82,15 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         this.outputCallback = outputCallback;
     }
 
+    /** Winlator S11: an ARM64 Wine runs as it is (its FEX and Box64 run x64 and x86 programs) */
+    public void setNativeWine(boolean nativeWine) {
+        this.nativeWine = nativeWine;
+    }
+
+    public boolean isNativeWine() {
+        return nativeWine;
+    }
+
     public String getBox64Preset() {
         return box64Preset;
     }
@@ -111,7 +121,12 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         File shmDir = new File(rootDir, "/tmp/shm");
         if (!shmDir.isDirectory()) shmDir.mkdirs();
 
-        String command = rootDir+"/usr/local/bin/box64 "+guestExecutable;
+        String command;
+        if (nativeWine) {
+            // the program is "wine ...": the one in the container's Wine folder (not on Android's PATH)
+            command = guestExecutable.startsWith("wine ") ? rootDir+rootFS.getWinePath()+"/bin/"+guestExecutable : guestExecutable;
+        }
+        else command = rootDir+"/usr/local/bin/box64 "+guestExecutable;
 
         return ProcessHelper.exec(command, envVars, rootDir, (status) -> {
             synchronized (lock) {

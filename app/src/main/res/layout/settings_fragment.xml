@@ -519,6 +519,41 @@
                         </LinearLayout>
                     </LinearLayout>
 
+                    <!-- Winlator S11: Hangover's ARM64 Wine, downloaded from S11 Workspace's releases -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginRight="16dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/s11_arm64_wine" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textSize="13sp"
+                                android:textColor="?attr/colorSecondaryText"
+                                android:text="@string/s11_arm64_wine_desc" />
+                        </LinearLayout>
+
+                        <Button
+                            style="@style/ButtonNeutral"
+                            android:id="@+id/BTArm64Wine"
+                            android:text="@string/s11_arm64_wine_get" />
+                    </LinearLayout>
+
                     <View style="@style/FieldSeparator" />
 
                     <LinearLayout

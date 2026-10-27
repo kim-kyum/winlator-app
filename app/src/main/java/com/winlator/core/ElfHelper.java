@@ -28,4 +28,18 @@ public abstract class ElfHelper {
     public static boolean is64Bit(File binFile) {
         return getEIClass(binFile) == ELF_CLASS_64;
     }
+
+    /** Winlator S11: an ARM64 program (e_machine EM_AARCH64), such as an ARM64 Wine's */
+    public static boolean isAarch64(File binFile) {
+        try (InputStream inStream = new FileInputStream(binFile)) {
+            byte[] header = new byte[20];
+            if (inStream.read(header) < 20) return false;
+            if (header[0] != 0x7F || header[1] != 'E' || header[2] != 'L' || header[3] != 'F') return false;
+            int machine = (header[18] & 0xff) | ((header[19] & 0xff) << 8);
+            return machine == 183;
+        }
+        catch (IOException e) {
+            return false;
+        }
+    }
 }

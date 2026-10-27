@@ -935,7 +935,9 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         if (verifyUserRegistry()) containerDataChanged = true;
         if (extractDXWrapperFiles()) containerDataChanged = true;
 
-        if (!wincomponents.equals(container.getExtra("wincomponents"))) {
+        // Winlator S11: the Windows components in the assets are x64 and x86 builds; an ARM64
+        // prefix keeps Wine's own
+        if (!wincomponents.equals(container.getExtra("wincomponents")) && (wineInfo == null || !wineInfo.isArm64())) {
             extractWinComponentFiles();
             container.putExtra("wincomponents", wincomponents);
             containerDataChanged = true;
@@ -1038,6 +1040,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             if (!envVars.has("WINEESYNC")) envVars.put("WINEESYNC", "1");
 
             guestProgramLauncherComponent.setBox64Preset(shortcut != null ? shortcut.getExtra("box64Preset", container.getBox64Preset()) : container.getBox64Preset());
+            // Winlator S11: an ARM64 Wine runs as it is
+            guestProgramLauncherComponent.setNativeWine(wineInfo != null && wineInfo.isArm64());
         }
 
         environment = new XEnvironment(this, rootFS);
@@ -1370,6 +1374,15 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     }
 
     private boolean extractDXWrapperFiles() {
+        if (wineInfo != null && wineInfo.isArm64()) {
+            // Winlator S11: an ARM64 prefix keeps Wine's own Direct3D (WineD3D) for now: the DXVK
+            // builds in the assets are x64 and x86 ones, which ARM64 programs cannot load
+            final String arm64CacheId = "arm64-builtin";
+            if (arm64CacheId.equals(container.getExtra("dxwrapper"))) return false;
+            restoreBuiltinDllFiles("d3d8.dll", "d3d9.dll", "d3d10.dll", "d3d10_1.dll", "d3d10core.dll", "d3d11.dll", "d3d12.dll", "d3d12core.dll", "dxgi.dll", "ddraw.dll", "wined3d.dll");
+            container.putExtra("dxwrapper", arm64CacheId);
+            return true;
+        }
         String cacheId = "";
         if (dxwrapper.equals(DXWrappers.DXVK)) {
             DXVKConfigDialog.setEnvVars(this, dxwrapperConfig[0], envVars);
@@ -1497,7 +1510,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private void restoreBuiltinDllFiles(final String... dlls) {
         File rootDir = rootFS.getRootDir();
         File wineDir = new File(rootDir, rootFS.getWinePath());
-        File wineSystem32Dir = new File(wineDir, "/lib/wine/x86_64-windows");
+        File wineSystem32Dir = new File(wineDir, wineInfo != null && wineInfo.isArm64() ? "/lib/wine/aarch64-windows" : "/lib/wine/x86_64-windows");
         File wineSysWoW64Dir = new File(wineDir, "/lib/wine/i386-windows");
         File containerSystem32Dir = new File(rootDir, RootFS.WINEPREFIX+"/drive_c/windows/system32");
         File containerSysWoW64Dir = new File(rootDir, RootFS.WINEPREFIX+"/drive_c/windows/syswow64");;

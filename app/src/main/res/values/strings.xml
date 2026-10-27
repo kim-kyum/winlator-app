@@ -523,4 +523,10 @@
     <string name="s11_cs_box64_cache_clear">Clear the translation cache</string>
     <string name="s11_cs_box64_cache_size">%1$d MB now; programs translate their code again the next time they start.</string>
     <string name="s11_cs_box64_cache_clear_button">Clear</string>
+    <!-- Winlator S11: the ARM64 Wine (Hangover's) -->
+    <string name="s11_arm64_wine">ARM64 Wine (fast, beta)</string>
+    <string name="s11_arm64_wine_desc">Windows programs made for ARM64 run as they are, without translation; x64 and 32-bit programs run with FEX and Box64 inside it. Choose it as the Wine version of a new container. About 120 MB to download.</string>
+    <string name="s11_arm64_wine_get">Download</string>
+    <string name="s11_arm64_wine_installed">Installed</string>
+    <string name="s11_arm64_wine_failed">Could not download the ARM64 Wine. Check the internet connection.</string>
 </resources>

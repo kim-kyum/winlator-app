@@ -264,7 +264,7 @@ public class ContainerManager {
         else {
             File installedWineDir = RootFS.find(context).getInstalledWineDir();
             WineInfo wineInfo = WineInfo.fromIdentifier(context, wineVersion);
-            File file = new File(installedWineDir, "container-pattern-"+wineInfo.fullVersion()+".tzst");
+            File file = new File(installedWineDir, wineInfo.containerPatternName());
             return TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, file, containerDir);
         }
     }

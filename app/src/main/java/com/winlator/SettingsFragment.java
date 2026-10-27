@@ -49,6 +49,8 @@ import com.winlator.core.Callback;
 import com.winlator.core.DefaultVersion;
 import com.winlator.core.FileUtils;
 import com.winlator.core.GeneralComponents;
+import com.winlator.core.HttpUtils;
+import com.winlator.core.TarCompressorUtils;
 import com.winlator.core.LocaleHelper;
 import com.winlator.core.PreloaderDialog;
 import com.winlator.core.StringUtils;
@@ -216,6 +218,7 @@ public class SettingsFragment extends Fragment {
 
         final Spinner sWineVersion = view.findViewById(R.id.SWineVersion);
         loadWineVersionSpinner(view, sWineVersion);
+        setupArm64WineButton(view);
 
         final Spinner sLanguage = view.findViewById(R.id.SLanguage);
         sLanguage.setSelection(LocaleHelper.getLocaleIndex(context));
@@ -366,7 +369,7 @@ public class SettingsFragment extends Fragment {
 
         File installedWineDir = RootFS.find(activity).getInstalledWineDir();
         File wineDir = new File(wineInfo.path);
-        File containerPatternFile = new File(installedWineDir, "container-pattern-"+wineInfo.fullVersion()+".tzst");
+        File containerPatternFile = new File(installedWineDir, wineInfo.containerPatternName());
 
         if (!wineDir.isDirectory() || !containerPatternFile.isFile()) {
             AppUtils.showToast(activity, R.string.unable_to_remove_this_wine_version);
@@ -395,6 +398,55 @@ public class SettingsFragment extends Fragment {
                     removeInstalledWine(wineInfo, () -> loadWineVersionSpinner(view, sWineVersion));
                 });
             }
+        });
+    }
+
+    /** Winlator S11: Hangover's ARM64 Wine, a release of S11 Workspace (tools/s11/wine-arm64) */
+    public static final String ARM64_WINE_IDENTIFIER = "wine-11.16-arm64";
+    public static final String ARM64_WINE_URL = "https://github.com/kim-kyum/winlator-app/releases/download/s11-wine-arm64-11.16/wine-11.16-arm64.tzst";
+
+    private void setupArm64WineButton(View view) {
+        android.widget.Button button = view.findViewById(R.id.BTArm64Wine);
+        File installedWineDir = RootFS.find(getContext()).getInstalledWineDir();
+        boolean installed = (new File(installedWineDir, ARM64_WINE_IDENTIFIER)).isDirectory();
+        button.setEnabled(!installed);
+        button.setText(installed ? R.string.s11_arm64_wine_installed : R.string.s11_arm64_wine_get);
+        button.setOnClickListener((v) -> downloadArm64Wine());
+    }
+
+    /** downloads the package, unpacks it, then installs it as the file picker's Wine is installed */
+    private void downloadArm64Wine() {
+        final Activity activity = getActivity();
+        if (activity == null) return;
+        final File file = new File(activity.getCacheDir(), "wine-arm64.tzst");
+        HttpUtils.download(activity, ARM64_WINE_URL, file, (success) -> {
+            if (!success) {
+                file.delete();
+                AppUtils.showToast(activity, R.string.s11_arm64_wine_failed);
+                return;
+            }
+            preloaderDialog.show(R.string.preparing_installation);
+            Executors.newSingleThreadExecutor().execute(() -> {
+                File destination = new File(RootFS.find(activity).getInstalledWineDir(), "/preinstall/wine");
+                FileUtils.delete(destination);
+                destination.mkdirs();
+                boolean extracted = TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, file, destination);
+                file.delete();
+                if (!extracted) {
+                    FileUtils.delete(destination);
+                    preloaderDialog.closeOnUiThread();
+                    AppUtils.showToast(activity, R.string.unable_to_install_wine);
+                    return;
+                }
+                WineInstaller.findWineVersionAsync(activity, destination, (wineInfo) -> {
+                    preloaderDialog.closeOnUiThread();
+                    if (wineInfo == null) {
+                        AppUtils.showToast(activity, R.string.unable_to_install_wine);
+                        return;
+                    }
+                    activity.runOnUiThread(() -> showWineInstallDialog(wineInfo));
+                });
+            });
         });
     }
 
@@ -452,7 +504,7 @@ public class SettingsFragment extends Fragment {
         dialog.setIcon(R.drawable.icon_wine);
 
         EditText etVersion = dialog.findViewById(R.id.ETVersion);
-        etVersion.setText("Wine "+wineInfo.version+(wineInfo.subversion != null ? " ("+wineInfo.subversion+")" : ""));
+        etVersion.setText("Wine "+wineInfo.version+(wineInfo.subversion != null ? " ("+wineInfo.subversion+")" : "")+(wineInfo.isArm64() ? " ARM64" : ""));
 
         final EditText etSize = dialog.findViewById(R.id.ETSize);
         final AtomicLong totalSizeRef = new AtomicLong();
