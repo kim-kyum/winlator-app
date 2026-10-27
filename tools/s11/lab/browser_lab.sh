@@ -58,7 +58,7 @@ BOXENV="BOX64_NOBANNER=1 BOX64_DYNAREC=1 BOX64_RCFILE=$LAB/config.box64rc \
 BOX64_DYNAREC_SAFEFLAGS=1 BOX64_DYNAREC_FASTNAN=1 BOX64_DYNAREC_FASTROUND=1 BOX64_DYNAREC_X87DOUBLE=0 \
 BOX64_DYNAREC_BIGBLOCK=3 BOX64_DYNAREC_STRONGMEM=0 BOX64_DYNAREC_FORWARD=512 BOX64_DYNAREC_CALLRET=1 \
 BOX64_DYNAREC_WAIT=1 BOX64_DYNAREC_NATIVEFLAGS=1 BOX64_DYNAREC_WEAKBARRIER=2 \
-HOME=$XHOME USER=xuser TMPDIR=$ROOTFS/tmp WINEPREFIX=$XPREFIX WINEDEBUG=-all LD_LIBRARY_PATH=$LIBS \
+HOME=$XHOME USER=xuser TMPDIR=$ROOTFS/tmp WINEPREFIX=$XPREFIX WINEDEBUG=-all \
 BOX64_LD_LIBRARY_PATH=$LAB/rootfs/usr/lib/x86_64-linux-gnu:$LAB/box64-src/x64lib \
 WINEDLLOVERRIDES=mscoree,mshtml=;winemenubuilder.exe=d"
 
@@ -153,6 +153,7 @@ if [ -n "$BOX64" ] && [ -d "$XPREFIX" ]; then
     browse box64-x64 chromium x64 env -i DISPLAY=$DISPLAY $BOXENV "$BOX64" "$ROOTFS/opt/wine/bin/wine"
     env $BOXENV "$BOX64" "$ROOTFS/opt/wine/bin/wineserver" -k > /dev/null 2>&1; sleep 3
 fi
+if [ "${BROWSER_SKIP_ARM64:-0}" = 1 ]; then log "ARM64 Wine runs skipped"; else
 env -i $AENV "$W/bin/wineserver" -p > /dev/null 2>&1 &
 sleep 3
 browse arm64wine-arm64 firefox aarch64 env -i DISPLAY=$DISPLAY $AENV $MOZ "$W/bin/wine"
@@ -160,6 +161,7 @@ browse arm64wine-x64 firefox x64 env -i DISPLAY=$DISPLAY $AENV $MOZ "$W/bin/wine
 browse arm64wine-arm64 chromium arm64 env -i DISPLAY=$DISPLAY $AENV "$W/bin/wine"
 browse arm64wine-x64 chromium x64 env -i DISPLAY=$DISPLAY $AENV "$W/bin/wine"
 env -i $AENV "$W/bin/wineserver" -k > /dev/null 2>&1
+fi
 
 python3 - "$RESULTS" > "$OUT/table.txt" <<'EOF'
 import csv, sys
