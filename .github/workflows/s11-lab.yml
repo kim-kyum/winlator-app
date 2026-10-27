@@ -18,7 +18,7 @@ permissions:
 jobs:
   unity:
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 80
+    timeout-minutes: 170
     steps:
       - uses: actions/checkout@v4
 
@@ -30,14 +30,14 @@ jobs:
           path: /home/runner/lab-cache
           key: s11-lab-prefix-v1-${{ hashFiles('app/src/main/assets/rootfs.tzst', 'app/src/main/assets/container_pattern.tzst') }}
 
-      - name: Run the Unity lab
+      - name: Run the lab
         env:
           GH_TOKEN: ${{ github.token }}
           PREFIX_CACHE: /home/runner/lab-cache/prefix.tar
         run: |
           set +e
           if [ -f tools/s11/lab/lab.env ]; then set -a; . tools/s11/lab/lab.env; set +a; fi
-          bash tools/s11/lab/unity_lab.sh . "$RUNNER_TEMP/results"
+          bash "tools/s11/lab/${LAB_SCRIPT:-unity_lab.sh}" . "$RUNNER_TEMP/results"
           echo "lab exit: $?" >> "$RUNNER_TEMP/results/summary.txt"
 
       - name: Save the Wine prefix
