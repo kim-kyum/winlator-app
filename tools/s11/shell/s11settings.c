@@ -34,6 +34,7 @@
 #define WALLPAPER_BMP L"Z:\\home\\xuser\\.cache\\wallpaper.bmp"
 #define USER_WALLPAPER L"Z:\\home\\xuser\\.config\\user-wallpaper.png"
 #define CONTAINER_FILE L"Z:\\home\\xuser\\.config\\s11-container.txt"
+#define CONNECTIVITY_FILE L"Z:\\home\\xuser\\.config\\s11-connectivity.txt"   /* S11Connectivity.java */
 
 #define WM_APP_REFRESH_APPS (WM_APP + 20)
 #define WM_APP_SELECT_PAGE (WM_APP + 21)   /* another start asked for a page */
@@ -927,12 +928,17 @@ static void install_fonts(void)
 
 static HWND make_combo(int id);
 static HWND make_button(int id, const WCHAR *text);
+static HWND make_toggle(int id);
+static HWND make_password(int id);
 static void need_restart(void);
 static void scroll_to_row_of(HWND control);
 
 enum field_type {
     FIELD_SECTION, FIELD_CHOICE, FIELD_TEXT, FIELD_CPU, FIELD_CHECKLIST, FIELD_DRIVE, FIELD_ADD_DRIVE,
-    FIELD_ENVVAR, FIELD_ADD_ENV, FIELD_UNKNOWN
+    FIELD_ENVVAR, FIELD_ADD_ENV,
+    /* the Connectivity page (S11Connectivity.java) */
+    FIELD_TOGGLE, FIELD_ACTION, FIELD_NETWORK, FIELD_INFO,
+    FIELD_UNKNOWN
 };
 
 struct option {
@@ -946,6 +952,7 @@ struct field {
     struct option *options;
     int option_count, option_capacity;
     HWND controls[3];       /* right to left in the card */
+    RECT box;               /* the frame painted around a borderless text box (a Wi-Fi password) */
     HWND list;              /* the checklist */
     HWND boxes[64];         /* processor cores */
     int box_count;
@@ -955,15 +962,19 @@ static struct field *fields;
 static int field_count, field_capacity;
 static WCHAR *container_text;        /* the file; the fields point into it */
 static DWORD container_revision;     /* 0: no file (an older Winlator) */
+static WCHAR *connectivity_text;     /* Wi-Fi and Bluetooth, the same way */
+static DWORD connectivity_revision;
 static DWORD waiting_since;          /* a change went out; the file is read again once it changes */
 
 #define TIMER_RELOAD 2
+#define TIMER_NET 3         /* the Connectivity page follows Wi-Fi and Bluetooth while it is open */
 
 static enum page page_from_schema(const WCHAR *name)
 {
     static const struct { const WCHAR *name; enum page page; } pages[] = {
         {L"graphics", PAGE_GRAPHICS}, {L"audio", PAGE_AUDIO}, {L"compat", PAGE_COMPAT}, {L"components", PAGE_COMPONENTS},
-        {L"drives", PAGE_DRIVES}, {L"env", PAGE_ENV}, {L"about", PAGE_ABOUT}, {L"system", PAGE_SYSTEM}, {L"wine", PAGE_WINE}
+        {L"drives", PAGE_DRIVES}, {L"env", PAGE_ENV}, {L"about", PAGE_ABOUT}, {L"system", PAGE_SYSTEM}, {L"wine", PAGE_WINE},
+        {L"connectivity", PAGE_CONNECTIVITY}
     };
     int i;
     for (i = 0; i < ARRAY_SIZE(pages); i++) if (!lstrcmpW(name, pages[i].name)) return pages[i].page;
@@ -973,7 +984,7 @@ static enum page page_from_schema(const WCHAR *name)
 static enum field_type type_from_schema(const WCHAR *name)
 {
     static const WCHAR *const types[] = {L"section", L"choice", L"text", L"cpu", L"checklist", L"drive", L"adddrive",
-                                         L"envvar", L"addenv"};
+                                         L"envvar", L"addenv", L"toggle", L"action", L"network", L"info"};
     int i;
     for (i = 0; i < ARRAY_SIZE(types); i++) if (!lstrcmpW(name, types[i])) return (enum field_type)i;
     return FIELD_UNKNOWN;
@@ -1022,16 +1033,20 @@ static int split_tabs(WCHAR *line, WCHAR **parts, int max)
     return n;
 }
 
-static DWORD read_container_revision(void)
+/* The revision on the first line of a settings file ("S11CONTAINER 1 revision"), 0 without one */
+static DWORD read_revision(const WCHAR *path, const WCHAR *magic)
 {
-    WCHAR *text = read_utf8_file(CONTAINER_FILE), *end, *parts[4];
+    WCHAR *text = read_utf8_file(path), *end, *parts[4];
     DWORD revision = 0;
     if (!text) return 0;
     if ((end = wcschr(text, '\n'))) *end = 0;
-    if (split_tabs(text, parts, 4) >= 3 && !lstrcmpW(parts[0], L"S11CONTAINER")) revision = wcstoul(parts[2], NULL, 10);
+    if (split_tabs(text, parts, 4) >= 3 && !lstrcmpW(parts[0], magic)) revision = wcstoul(parts[2], NULL, 10);
     HeapFree(GetProcessHeap(), 0, text);
     return revision;
 }
+
+static DWORD read_container_revision(void) { return read_revision(CONTAINER_FILE, L"S11CONTAINER"); }
+static DWORD read_connectivity_revision(void) { return read_revision(CONNECTIVITY_FILE, L"S11CONNECTIVITY"); }
 
 static void free_container_settings(void)
 {
@@ -1045,8 +1060,9 @@ static void free_container_settings(void)
     }
     if (fields) HeapFree(GetProcessHeap(), 0, fields);
     if (container_text) HeapFree(GetProcessHeap(), 0, container_text);
+    if (connectivity_text) HeapFree(GetProcessHeap(), 0, connectivity_text);
     fields = NULL;
-    container_text = NULL;
+    container_text = connectivity_text = NULL;
     field_count = field_capacity = 0;
 }
 
@@ -1079,21 +1095,19 @@ static void add_option(struct field *f, const WCHAR *value, const WCHAR *label)
     f->option_count++;
 }
 
-static void load_container_settings(void)
+/* Rows of one settings file; the fields point into its text */
+static void parse_settings(WCHAR *text, const WCHAR *magic, DWORD *revision)
 {
     WCHAR *line, *next, *parts[8];
     struct field *last = NULL;
 
-    free_container_settings();
-    container_revision = 0;
-    if (!(container_text = read_utf8_file(CONTAINER_FILE))) return;
-    for (line = container_text; line && *line; line = next) {
+    for (line = text; line && *line; line = next) {
         int n, len;
         if ((next = wcschr(line, '\n'))) *next++ = 0;
         len = lstrlenW(line);
         if (len && line[len - 1] == '\r') line[len - 1] = 0;
         n = split_tabs(line, parts, 8);
-        if (n >= 3 && !lstrcmpW(parts[0], L"S11CONTAINER")) container_revision = wcstoul(parts[2], NULL, 10);
+        if (n >= 3 && !lstrcmpW(parts[0], magic)) *revision = wcstoul(parts[2], NULL, 10);
         else if (n >= 7 && !lstrcmpW(parts[0], L"ROW")) {
             enum page page = page_from_schema(parts[1]);
             enum field_type type = type_from_schema(parts[2]);
@@ -1108,6 +1122,15 @@ static void load_container_settings(void)
         }
         else if (n >= 3 && !lstrcmpW(parts[0], L"OPT") && last) add_option(last, parts[1], parts[2]);
     }
+}
+
+static void load_container_settings(void)
+{
+    free_container_settings();
+    container_revision = connectivity_revision = 0;
+    if ((container_text = read_utf8_file(CONTAINER_FILE))) parse_settings(container_text, L"S11CONTAINER", &container_revision);
+    if ((connectivity_text = read_utf8_file(CONNECTIVITY_FILE)))
+        parse_settings(connectivity_text, L"S11CONNECTIVITY", &connectivity_revision);
 }
 
 static int field_index(const struct field *f) { return (int)(f - fields); }
@@ -1244,6 +1267,17 @@ static void create_field_controls(struct field *f)
         f->controls[1] = make_edit(field_id(f, 1), L"", TR(L"값", L"Value"));
         f->controls[2] = make_edit(field_id(f, 2), L"", TR(L"이름", L"Name"));
         break;
+    case FIELD_TOGGLE:
+        f->controls[0] = make_toggle(field_id(f, 0));
+        break;
+    case FIELD_ACTION:
+        f->controls[0] = make_button(field_id(f, 0), f->value);
+        break;
+    case FIELD_NETWORK:
+        if (!lstrcmpW(f->value, L"current")) f->controls[0] = make_button(field_id(f, 0), TR(L"연결 끊기", L"Disconnect"));
+        else f->controls[0] = make_button(field_id(f, 0), TR(L"연결", L"Connect"));
+        if (!lstrcmpW(f->value, L"secured")) f->controls[1] = make_password(field_id(f, 1));
+        break;
     default:
         break;
     }
@@ -1326,6 +1360,22 @@ static void add_field_rows(void)
             r->widths[1] = 200;
             r->widths[2] = 170;
             break;
+        case FIELD_TOGGLE:
+            r->control = &f->controls[0];
+            r->widths[0] = 110;
+            break;
+        case FIELD_ACTION:
+            r->control = &f->controls[0];
+            r->widths[0] = 150;
+            break;
+        case FIELD_NETWORK:
+            r->control = &f->controls[0];
+            r->widths[0] = 100;
+            if (f->controls[1]) {
+                r->control2 = &f->controls[1];
+                r->widths[1] = 200;
+            }
+            break;
         default:
             break;
         }
@@ -1348,16 +1398,18 @@ static void send_container_setting(const WCHAR *key, const WCHAR *value)
     packet[0] = (char)WINLATOR_SET_CONTAINER;
     len += n;   /* code, key, tab, value and its NUL */
 
-    if (WSAStartup(MAKEWORD(2, 2), &wsa)) return;
-    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (s != INVALID_SOCKET) {
-        addr.sin_family = AF_INET;
-        addr.sin_port = htons(WINLATOR_PORT);
-        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-        sendto(s, packet, len, 0, (struct sockaddr *)&addr, sizeof(addr));
-        closesocket(s);
+    if (!WSAStartup(MAKEWORD(2, 2), &wsa)) {
+        s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        if (s != INVALID_SOCKET) {
+            addr.sin_family = AF_INET;
+            addr.sin_port = htons(WINLATOR_PORT);
+            addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+            sendto(s, packet, len, 0, (struct sockaddr *)&addr, sizeof(addr));
+            closesocket(s);
+        }
+        WSACleanup();
     }
-    WSACleanup();
+    SecureZeroMemory(packet, len);   /* it may have carried a Wi-Fi password */
 
     waiting_since = GetTickCount();
     SetTimer(main_window, TIMER_RELOAD, 150, NULL);
@@ -1493,6 +1545,38 @@ static void field_command(struct field *f, int slot, int code)
         send_container_setting(L"env.set", value);
         break;
     }
+    /* Wi-Fi and Bluetooth: Android does these right away */
+    case FIELD_TOGGLE:
+        if (code != BN_CLICKED) return;
+        f->value = lstrcmpW(f->value, L"1") ? L"1" : L"0";   /* the switch moves at once; the file follows */
+        InvalidateRect(f->controls[0], NULL, FALSE);
+        send_container_setting(f->key, f->value);
+        return;
+    case FIELD_ACTION:
+        if (code != BN_CLICKED) return;
+        send_container_setting(f->key, L"1");
+        return;
+    case FIELD_NETWORK:
+        if (slot == 1 && (code == EN_SETFOCUS || code == EN_KILLFOCUS)) {
+            RECT frame = f->box;
+            InflateRect(&frame, SC(2), SC(2));
+            InvalidateRect(main_window, &frame, FALSE);
+            return;
+        }
+        if (code != BN_CLICKED || slot != 0) return;
+        value[0] = 0;
+        if (f->controls[1]) {
+            GetWindowTextW(f->controls[1], value, ARRAY_SIZE(value));
+            strip_line_breaks(value);
+            if (!value[0]) {
+                SetFocus(f->controls[1]);
+                return;
+            }
+        }
+        send_container_setting(f->key, value);
+        SecureZeroMemory(value, sizeof(value));
+        if (f->controls[1]) SetWindowTextW(f->controls[1], L"");
+        return;
     default:
         return;
     }
@@ -1595,12 +1679,17 @@ static void build_rows(void)
     lstrcpyW(r->detail, TR(L"마우스로 시점을 돌리는 게임용이에요. 시점이 멈추거나 계속 돌면 강제로 바꿔 보세요.",
                            L"For games that turn the camera with the mouse. Use Force if the view spins or stops."));
 
-    r = add_row(PAGE_CONNECTIVITY, TR(L"Wi-Fi 및 네트워크", L"Wi-Fi and network"), &wifi_button);
-    lstrcpyW(r->detail, TR(L"Wi-Fi 설정은 Android가 관리하며, 버튼을 누르면 Android 설정이 열립니다.",
-                           L"Android manages Wi-Fi. The button opens Android Wi-Fi settings."));
-    r = add_row(PAGE_CONNECTIVITY, TR(L"Bluetooth", L"Bluetooth"), &bluetooth_button);
-    lstrcpyW(r->detail, TR(L"Bluetooth 설정은 Android가 관리하며, 버튼을 누르면 Android 설정이 열립니다.",
-                           L"Android manages Bluetooth. The button opens Android Bluetooth settings."));
+    /* Winlator writes the Wi-Fi and Bluetooth rows (S11Connectivity); without them, Android's settings */
+    if (!connectivity_revision) {
+        r = add_row(PAGE_CONNECTIVITY, TR(L"Wi-Fi 및 네트워크", L"Wi-Fi and network"), &wifi_button);
+        lstrcpyW(r->detail, TR(L"버튼을 누르면 Android Wi-Fi 설정이 열려요.", L"The button opens Android Wi-Fi settings."));
+        r = add_row(PAGE_CONNECTIVITY, TR(L"Bluetooth", L"Bluetooth"), &bluetooth_button);
+        lstrcpyW(r->detail, TR(L"버튼을 누르면 Android Bluetooth 설정이 열려요.", L"The button opens Android Bluetooth settings."));
+    }
+    else {
+        ShowWindow(wifi_button, SW_HIDE);
+        ShowWindow(bluetooth_button, SW_HIDE);
+    }
 
     r = add_row(PAGE_PERSONALIZE, TR(L"배경", L"Background"), &browse_button);
     lstrcpyW(r->detail, TR(L"그림을 고르거나 내 사진을 쓰세요.", L"Pick a picture or use your own."));
@@ -1679,6 +1768,23 @@ static int place_control(HWND c, int right, int width, int top)
     return right - width;
 }
 
+/* A one-line box in the middle of a 34 px frame at the right of a card; returns the frame's left */
+static int place_framed_edit(struct field *f, HWND c, int right, int width, int top)
+{
+    HDC dc = GetDC(c);
+    HFONT old = SelectObject(dc, ui_font);
+    TEXTMETRICW tm;
+    int line;
+    GetTextMetricsW(dc, &tm);
+    SelectObject(dc, old);
+    ReleaseDC(c, dc);
+    line = tm.tmHeight + SC(2);
+    SetRect(&f->box, right - width, top + (SC(68) - SC(34)) / 2, right, top + (SC(68) + SC(34)) / 2);
+    SetWindowPos(c, NULL, f->box.left + SC(4), f->box.top + (SC(34) - line) / 2, width - SC(8), line,
+                 SWP_NOZORDER | SWP_SHOWWINDOW);
+    return right - width;
+}
+
 static void layout(void)
 {
     RECT client;
@@ -1720,8 +1826,11 @@ static void layout(void)
         right = x + w - SC(16);
         for (k = 0; k < 3; k++) {
             HWND c = slots[k] ? *slots[k] : NULL;
+            int width;
             if (!c) continue;
-            right = place_control(c, right, r->widths[k] ? SC(r->widths[k]) : default_width(c), y) - SC(8);
+            width = r->widths[k] ? SC(r->widths[k]) : default_width(c);
+            if (f && f->type == FIELD_NETWORK && c == f->controls[1]) right = place_framed_edit(f, c, right, width, y) - SC(8);
+            else right = place_control(c, right, width, y) - SC(8);
         }
         r->text_right = right < x + w - SC(16) ? right - SC(8) : x + w - SC(20);
 
@@ -1971,6 +2080,16 @@ static void paint(HDC hdc)
                       DT_LEFT | DT_VCENTER | DT_SINGLELINE | (r->detail_is_path ? DT_PATH_ELLIPSIS : DT_END_ELLIPSIS));
         }
 
+        if (r->field && r->field->type == FIELD_NETWORK && r->field->controls[1]) {
+            /* the password box: a field with an accent line while it has the keyboard */
+            RECT box = r->field->box;
+            BOOL focused = GetFocus() == r->field->controls[1];
+            fill_round_rect(&c, &box, (float)SC(4), argb(pal.field, 255));
+            stroke_round_rect(&c, &box, (float)SC(4), argb(pal.field_border, 255), 1);
+            if (focused) fill_rect(&c, box.left + SC(2), box.bottom - SC(2), box.right - box.left - SC(4), SC(2),
+                                   argb(pal.accent, 255));
+        }
+
         if (r->wallpapers) {
             int k;
             for (k = 0; k < ARRAY_SIZE(wallpapers); k++) {
@@ -2053,10 +2172,27 @@ static void paint(HDC hdc)
     canvas_end(&c, hdc, 0, 0);
 }
 
+/* Is a Wi-Fi password being typed? The rows wait for it */
+static BOOL typing_password(void)
+{
+    HWND focus = GetFocus();
+    int i;
+    for (i = 0; i < field_count; i++)
+        if (fields[i].type == FIELD_NETWORK && fields[i].controls[1] && focus == fields[i].controls[1] &&
+            GetWindowTextLengthW(focus))
+            return TRUE;
+    return FALSE;
+}
+
 static void select_page(enum page page)
 {
     current_page = page;
     scroll_y = 0;
+    if (page == PAGE_CONNECTIVITY && connectivity_revision) {
+        send_container_setting(L"net.refresh", L"1");   /* fresh signal levels and a new scan */
+        SetTimer(main_window, TIMER_NET, 1000, NULL);
+    }
+    else KillTimer(main_window, TIMER_NET);
     switch (page) {
     case PAGE_SYSTEM: fill_system(); break;
     case PAGE_WINE: fill_system(); fill_mouse_warp(); break;   /* the Windows version list is filled with the system page */
@@ -2070,14 +2206,38 @@ static void select_page(enum page page)
     InvalidateRect(main_window, NULL, FALSE);
 }
 
-/* Reads the container settings again and rebuilds the rows, keeping the page where it was */
+/* Reads the container settings again and rebuilds the rows, keeping the page where it was
+ * (and whatever was typed into a Wi-Fi password box) */
 static void reload_container_settings(void)
 {
+    static struct { WCHAR key[160], text[128]; BOOL focused; } typed[8];
     RECT client;
-    int i, old_scroll = scroll_y;
+    int i, k, old_scroll = scroll_y, typed_count = 0;
+    HWND focus = GetFocus();
+
+    for (i = 0; i < field_count && typed_count < ARRAY_SIZE(typed); i++) {
+        struct field *f = &fields[i];
+        if (f->type != FIELD_NETWORK || !f->controls[1] || !GetWindowTextLengthW(f->controls[1])) continue;
+        lstrcpynW(typed[typed_count].key, f->key, ARRAY_SIZE(typed[0].key));
+        GetWindowTextW(f->controls[1], typed[typed_count].text, ARRAY_SIZE(typed[0].text));
+        typed[typed_count].focused = focus == f->controls[1];
+        typed_count++;
+    }
 
     load_container_settings();
     for (i = 0; i < field_count; i++) create_field_controls(&fields[i]);
+    for (k = 0; k < typed_count; k++) {
+        for (i = 0; i < field_count; i++) {
+            struct field *f = &fields[i];
+            if (f->type != FIELD_NETWORK || !f->controls[1] || lstrcmpW(f->key, typed[k].key)) continue;
+            SetWindowTextW(f->controls[1], typed[k].text);
+            if (typed[k].focused) {
+                SetFocus(f->controls[1]);
+                SendMessageW(f->controls[1], EM_SETSEL, lstrlenW(typed[k].text), lstrlenW(typed[k].text));
+            }
+        }
+        SecureZeroMemory(typed[k].text, sizeof(typed[k].text));
+    }
     build_rows();
     layout();
     if (old_scroll) {
@@ -2096,6 +2256,7 @@ static void enter_pressed(void)
     for (i = 0; i < field_count; i++) {
         struct field *f = &fields[i];
         if ((f->type == FIELD_TEXT && focus == f->controls[1]) ||
+            (f->type == FIELD_NETWORK && f->controls[1] && focus == f->controls[1]) ||
             (f->type == FIELD_ADD_ENV && (focus == f->controls[1] || focus == f->controls[2]))) {
             field_command(f, 0, BN_CLICKED);
             return;
@@ -2138,6 +2299,65 @@ static HWND make_button(int id, const WCHAR *text)
                                   0, 0, 100, 30, main_window, (HMENU)(INT_PTR)id, instance, NULL);
     SendMessageW(button, WM_SETFONT, (WPARAM)ui_font, FALSE);
     return button;
+}
+
+/* An on/off switch (drawn in WM_DRAWITEM: draw_toggle) */
+static HWND make_toggle(int id)
+{
+    HWND button = CreateWindowExW(0, WC_BUTTONW, L"", WS_CHILD | WS_TABSTOP | BS_OWNERDRAW,
+                                  0, 0, 100, 30, main_window, (HMENU)(INT_PTR)id, instance, NULL);
+    SendMessageW(button, WM_SETFONT, (WPARAM)ui_font, FALSE);
+    return button;
+}
+
+/* A one-line box (a password cannot be in a multi-line one): it draws its text at the top, so
+ * it is as tall as a line and sits in a frame the page paints (place_framed_edit) */
+static HWND make_password(int id)
+{
+    HWND edit = CreateWindowExW(0, WC_EDITW, L"", WS_CHILD | WS_TABSTOP | ES_AUTOHSCROLL | ES_PASSWORD,
+                                0, 0, 100, 30, main_window, (HMENU)(INT_PTR)id, instance, NULL);
+    SendMessageW(edit, WM_SETFONT, (WPARAM)ui_font, FALSE);
+    SendMessageW(edit, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELONG(SC(6), SC(6)));
+    SendMessageW(edit, EM_SETCUEBANNER, TRUE, (LPARAM)TR(L"비밀번호", L"Password"));
+    return edit;
+}
+
+/* Windows 11's toggle switch: "켬" or "끔", then the pill with its knob */
+static void draw_toggle(const DRAWITEMSTRUCT *dis, BOOL on)
+{
+    RECT rc = dis->rcItem, label;
+    int w = rc.right - rc.left, h = rc.bottom - rc.top;
+    int sw = SC(40), sh = SC(20), sx = w - sw - SC(2), sy = (h - sh) / 2;
+    float knob = sh * (dis->itemState & ODS_SELECTED ? 0.62f : 0.5f);
+    struct canvas c;
+    GpPath *pill;
+    GpSolidFill *brush;
+
+    if (!canvas_begin(&c, dis->hDC, w, h)) return;
+    fill_rect(&c, 0, 0, w, h, argb(pal.field, 255));
+    SetRect(&label, 0, 0, sx - SC(10), h);
+    draw_text(&c, on ? TR(L"켬", L"On") : TR(L"끔", L"Off"), &label, ui_font,
+              IsWindowEnabled(dis->hwndItem) ? pal.text : pal.text_dim, DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+    pill = round_rect_path((float)sx, (float)sy, (float)sw, (float)sh, sh / 2.0f);
+    if (on) {
+        GdipCreateSolidFill(argb(pal.accent, 255), &brush);
+        GdipFillPath(c.g, (GpBrush *)brush, pill);
+        GdipDeleteBrush((GpBrush *)brush);
+    }
+    else {
+        GpPen *pen;
+        GdipCreatePen1(argb(pal.text_dim, 255), max(1.0f, SC(1) * 1.0f), UnitPixel, &pen);
+        GdipDrawPath(c.g, pen, pill);
+        GdipDeletePen(pen);
+    }
+    GdipDeletePath(pill);
+    {
+        float cx = on ? sx + sw - sh / 2.0f : sx + sh / 2.0f, cy = sy + sh / 2.0f;
+        GdipCreateSolidFill(on ? 0xffffffff : argb(pal.text_dim, 255), &brush);
+        GdipFillEllipse(c.g, (GpBrush *)brush, cx - knob / 2, cy - knob / 2, knob, knob);
+        GdipDeleteBrush((GpBrush *)brush);
+    }
+    canvas_end(&c, dis->hDC, rc.left, rc.top);
 }
 
 static HWND make_list(int id, BOOL header)
@@ -2302,6 +2522,13 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             draw_combo_item(dis);
             return TRUE;
         }
+        if (dis->CtlType == ODT_BUTTON && dis->CtlID >= ID_FIELD_BASE && dis->CtlID < ID_BOX_BASE) {
+            int index = (dis->CtlID - ID_FIELD_BASE) / 8;
+            if (index < field_count && fields[index].type == FIELD_TOGGLE) {
+                draw_toggle(dis, !lstrcmpW(fields[index].value, L"1"));
+                return TRUE;
+            }
+        }
         break;
     }
     case WM_CTLCOLORSTATIC:
@@ -2382,10 +2609,17 @@ static LRESULT CALLBACK main_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_TIMER:
         if (wp == TIMER_RELOAD) {
             /* Winlator writes the file again after each change; wait for it (a few seconds at most) */
-            if (read_container_revision() != container_revision || GetTickCount() - waiting_since > 5000) {
+            if (read_container_revision() != container_revision || read_connectivity_revision() != connectivity_revision ||
+                GetTickCount() - waiting_since > 5000) {
                 KillTimer(hwnd, TIMER_RELOAD);
                 reload_container_settings();
             }
+            return 0;
+        }
+        if (wp == TIMER_NET) {
+            /* Wi-Fi and Bluetooth change by themselves (a scan ends, a device connects) */
+            if (current_page != PAGE_CONNECTIVITY) KillTimer(hwnd, TIMER_NET);
+            else if (read_connectivity_revision() != connectivity_revision && !typing_password()) reload_container_settings();
             return 0;
         }
         if (wp == TIMER_REPAINT) {

@@ -2106,10 +2106,9 @@ static void click_part(int index)
         break;
     }
     case PART_NETWORK:
-        send_winlator_request(WINLATOR_OPEN_WIFI);
-        break;
     case PART_BLUETOOTH:
-        send_winlator_request(WINLATOR_OPEN_BLUETOOTH);
+        /* Wi-Fi and Bluetooth have their page in Settings now (S11Connectivity) */
+        open_settings(L"connectivity");
         break;
     default:
         break;

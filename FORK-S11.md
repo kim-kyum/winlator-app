@@ -79,9 +79,8 @@ start menu has shut down and restart); Ctrl+Alt+Del still opens the power menu. 
 shell is enabled, the redundant Android power tab is hidden even when a program is launched
 from a shortcut. Session restart/exit transitions are guarded against duplicate callbacks.
 The Command Prompt starts in `C:\`.
-The taskbar Wi-Fi and Bluetooth buttons, and the buttons in the S11 Connectivity page, request
-the corresponding Android system settings directly. Wine cannot change those protected device
-radios. The language indicator opens the Wine locale
+The taskbar Wi-Fi and Bluetooth buttons open the Settings app's Connectivity page (see
+"Wi-Fi and Bluetooth" below). The language indicator opens the Wine locale
 control panel. The overflow menu exposes notification icons marked hidden by their owning
 Windows applications.
 
@@ -114,7 +113,8 @@ Win+I, or the taskbar's menu:
 - **Windows components**: built-in (Wine) or native (Windows) for each component.
 - **Drives**: the drive letters and the Android folders behind them; add (pick a folder) or remove.
 - **Environment variables**: add, edit and remove the container's variables.
-- **Connectivity**: buttons that open Android Wi-Fi and Bluetooth system settings.
+- **Connectivity**: Wi-Fi and Bluetooth on and off, nearby Wi-Fi networks (join with a
+  password, disconnect), and the paired Bluetooth devices with their state (below).
 - **Personalization**: background (the two S11 pictures, your own picture, or a new one
   from a file; applied at once), light, dark or Android system-following mode, taskbar
   alignment, and the system font of title bars and menus.
@@ -127,6 +127,33 @@ Win+I, or the taskbar's menu:
 The File Explorer keeps its shell navigation but now applies the S11 palette and Segoe-style
 typography to the embedded file list, uses Explorer-themed headers, double buffering, and
 full-row selection.
+
+## Wi-Fi and Bluetooth
+
+`S11Connectivity` gives the Settings app's Connectivity page the device's Wi-Fi and Bluetooth.
+The app targets API 28, so Android still lets it use the calls newer targets lost:
+`WifiManager.setWifiEnabled`, `addNetwork`/`enableNetwork` to join a network,
+`getConfiguredNetworks`, and `BluetoothAdapter.enable`/`disable` (permissions: `CHANGE_WIFI_STATE`,
+`BLUETOOTH`, `BLUETOOTH_ADMIN`, and coarse/fine location).
+
+- It writes the page's rows to `~/.config/s11-connectivity.txt` (header `S11CONNECTIVITY 1
+  <revision>`, rows like `s11-container.txt`'s with the types `section`, `toggle`, `action`,
+  `network` and `info`) whenever one of Android's Wi-Fi, location or Bluetooth broadcasts
+  changes it; the Settings app reads it again when the revision changes.
+- Commands come back over winhandler code 109 like the container settings, with keys
+  starting with `net.`: `net.wifi`/`net.bluetooth` (1/0), `net.scan`, `net.refresh` (sent when
+  the page opens; scans at most every 20 s, Android allows 4 scans in 2 minutes),
+  `net.connect <SSID>` with the password as value (empty for open or saved networks),
+  `net.disconnect`, `net.permission`, `net.location`, `net.appsettings`, `net.open.wifi`,
+  `net.open.bluetooth`.
+- Nearby networks need the location permission and location services, as for any app; the
+  page asks for them (`net.permission` shows Android's prompt; once refused for good it opens
+  the app's settings). Work and school (802.1X) networks and pairing new Bluetooth devices
+  stay in Android's settings, which the page opens.
+- A failed join shows on the page: a wrong password from the supplicant's authentication
+  error, otherwise after 25 s.
+- The password field never keeps what was typed: it is cleared after sending and the buffers
+  are zeroed; a reload of the page while typing keeps the text.
 
 ## Korean in Wine's shell
 

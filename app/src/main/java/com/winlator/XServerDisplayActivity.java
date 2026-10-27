@@ -124,6 +124,7 @@ import com.winlator.s11.PendingRegistry;
 import com.winlator.s11.PowerMenu;
 import com.winlator.s11.RootfsOverlay;
 import com.winlator.s11.S11ContainerSettings;
+import com.winlator.s11.S11Connectivity;
 import com.winlator.s11.S11Settings;
 import com.winlator.s11.S11Shell;
 import com.winlator.s11.TimeZones;
@@ -152,6 +153,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private volatile boolean s11RestartRequested;
     private final AtomicBoolean sessionTransitionStarted = new AtomicBoolean(false);
     private boolean s11ShellEnabled;
+    private volatile S11Connectivity s11Connectivity;
     private boolean s11ScreenshotKeyCaptured;
     private Dialog s11RegionDialog;
     private XEnvironment environment;
@@ -349,6 +351,12 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == S11Connectivity.PERMISSION_REQUEST_CODE && s11Connectivity != null) s11Connectivity.onPermissionResult();
+    }
+
+    @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         // Winlator S11: the Windows key goes to the container while it is in front (Samsung)
@@ -404,6 +412,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
     @Override
     protected void onDestroy() {
+        if (s11Connectivity != null) s11Connectivity.stop();
         winHandler.stop();
         if (environment != null) environment.stopEnvironmentComponents();
         ForegroundService.stopSession(this);
@@ -610,6 +619,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
      * way, so the app shows what was stored.
      */
     public void onS11ContainerSetting(String key, String value) {
+        if (S11Connectivity.isCommand(key)) {
+            if (s11Connectivity != null) s11Connectivity.apply(key, value);
+            return;
+        }
         runOnUiThread(() -> {
             if (container == null || isFinishing()) return;
             if (S11ContainerSettings.apply(this, container, key, value)) container.saveData();
@@ -968,6 +981,9 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         if (containerDataChanged) container.saveData();
         // Winlator S11: every container setting for the Settings app
         S11ContainerSettings.write(this, container);
+        // and Wi-Fi and Bluetooth for its Connectivity page
+        if (s11Connectivity == null) s11Connectivity = new S11Connectivity(this);
+        s11Connectivity.start();
     }
 
     private void setupXEnvironment() {
