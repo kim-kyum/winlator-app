@@ -170,6 +170,7 @@ if page "설정" && scroll_to resource-id "$PKG:id/BTArm64Wine" 14; then
         sleep 10
         in_front || { crashes arm64-wine; break; }
         has text "Wine 설치" && break
+        has text "Wine을 설치하지 못했어요" && break
         [ $(( $(date +%s) - start )) -gt 60 ] && [ ! -f "$OUT/.dl" ] && { shot arm64-wine-downloading; touch "$OUT/.dl"; }
     done
     log "ARM64 Wine: $(( $(date +%s) - start )) s"
