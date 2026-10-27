@@ -146,6 +146,8 @@ public class ContainersFragment extends Fragment {
             screenSize = screenSize.equals("native") ? getString(R.string.native_resolution) : screenSize.replace("x", "×");
             String[] drivers = GraphicsDrivers.parseIdentifiers(container.getGraphicsDriver());
             String dxwrapper = DXWrappers.getName(DXWrappers.parseIdentifier(container.getDXWrapper()));
+            // an ARM64 Wine keeps its own Direct3D: say which Wine instead
+            if (com.winlator.core.WineInfo.fromIdentifier(getContext(), container.getWineVersion()).isArm64()) dxwrapper = "ARM64 Wine";
             return screenSize + "  ·  " + GraphicsDrivers.getName(drivers[0]) + "  ·  " + dxwrapper;
         }
 
