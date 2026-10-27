@@ -153,6 +153,24 @@ if page "설정"; then
     page "설정" && { shot light-settings; scroll; shot light-settings-2; }
     page "정보" && { shot light-about; back; }
 fi
+# the ARM64 Wine: Settings > Download (about 124 MB), unpacked, its version asked
+if page "설정" && scroll_to resource-id "$PKG:id/BTArm64Wine" 14; then
+    shot arm64-wine-row
+    tap resource-id "$PKG:id/BTArm64Wine"
+    start=$(date +%s)
+    while [ $(( $(date +%s) - start )) -lt 900 ]; do
+        sleep 10
+        in_front || { crashes arm64-wine; break; }
+        has text "Wine 설치" && break
+        [ $(( $(date +%s) - start )) -gt 60 ] && [ ! -f "$OUT/.dl" ] && { shot arm64-wine-downloading; touch "$OUT/.dl"; }
+    done
+    log "ARM64 Wine: $(( $(date +%s) - start )) s"
+    shot arm64-wine-install
+    if has text "Wine 설치" && tap text "확인"; then
+        sleep 40; shot arm64-wine-prefix
+        sleep 60; shot arm64-wine-prefix-2
+    fi
+fi
 adb logcat -d > "$OUT/logcat.txt" 2>/dev/null
 gzip -9 "$OUT/logcat.txt"
 log "done"
