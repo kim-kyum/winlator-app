@@ -63,7 +63,8 @@ fi
 ls -la "$WINEPREFIX/dosdevices" >> "$SUMMARY"
 export BOX64_LD_LIBRARY_PATH="$LAB/rootfs/usr/lib/x86_64-linux-gnu:$LAB/box64-src/x64lib"
 export WINEDEBUG="${WINEDEBUG:--all}"
-export WINEDLLOVERRIDES="winemenubuilder.exe=d"
+# no wine-mono / wine-gecko install prompts (they blocked the first run), no menu entries
+export WINEDLLOVERRIDES="mscoree,mshtml=;winemenubuilder.exe=d"
 export MESA_GL_VERSION_OVERRIDE=4.5 MESA_GLSL_VERSION_OVERRIDE=450
 
 # --- X ----------------------------------------------------------------------------------
@@ -99,10 +100,22 @@ wineboot_prefix() {
     log "wineboot ($1) done in $(( $(date +%s) - start )) s; kernel32 errors: $(grep -c 'could not load kernel32' "$OUT/wineboot-$1.log")"
     ! grep -q "could not load kernel32" "$OUT/wineboot-$1.log"
 }
-if ! wineboot_prefix pattern; then
+# A new prefix takes about 17 minutes under Box64, so it is kept in the Actions cache
+# ($PREFIX_CACHE). Winlator's container pattern alone does not start (kernel32 is missing).
+PREFIX_CACHE="${PREFIX_CACHE:-$HOME/../lab-cache/prefix.tar}"
+if [ -f "$PREFIX_CACHE" ]; then
+    rm -rf "$WINEPREFIX"
+    tar -xf "$PREFIX_CACHE" -C "$HOME"
+    log "prefix from the cache"
+elif ! wineboot_prefix pattern; then
     log "the container pattern does not start; trying a new prefix"
     mv "$WINEPREFIX" "$WINEPREFIX.pattern"
-    wineboot_prefix fresh || log "a new prefix does not start either"
+    if wineboot_prefix fresh; then
+        mkdir -p "$(dirname "$PREFIX_CACHE")"
+        tar -cf "$PREFIX_CACHE" -C "$HOME" .wine && log "prefix saved for the cache"
+    else
+        log "a new prefix does not start either"
+    fi
 fi
 ls "$WINEPREFIX/drive_c/windows/system32" 2>/dev/null | head -20 >> "$SUMMARY"
 ls "$ROOTFS/opt/wine/lib/wine/" >> "$SUMMARY"
@@ -139,8 +152,11 @@ find "$GAMEDIR" -maxdepth 2 \( -name globalgamemanagers -o -name data.unity3d \)
 done
 
 # --- runs ------------------------------------------------------------------------------------
+declare -A RUNS
 run_config() {   # name, env...
     local name="$1"; shift
+    RUNS[$name]=$(( ${RUNS[$name]:-0} + 1 ))
+    [ "${RUNS[$name]}" -gt 1 ] && name="$name-${RUNS[$name]}"
     local started alive=yes t pid
     log "=== $name: $*"
     find "$WINEPREFIX/drive_c/users" -name "Player*.log" -delete 2>/dev/null
@@ -167,7 +183,8 @@ run_config() {   # name, env...
     tail -40 "$OUT/$name-wine.log" > "$OUT/$name-wine-tail.txt"
 }
 
-IFS=',' read -r -a CONFIGS <<< "${CONFIGS:-perf_unity0,perf_unity1,perf_unity1_mono,stability}"
+# each one twice: memory ordering bugs do not show every time
+IFS=',' read -r -a CONFIGS <<< "${CONFIGS:-perf_unity0,perf_unity1,perf_unity0,perf_unity1,stability}"
 for c in "${CONFIGS[@]}"; do
     case "$c" in
         perf_unity0) run_config "$c" $(preset_env PERFORMANCE) BOX64_UNITYPLAYER=0 ;;

@@ -22,14 +22,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # A new Wine prefix takes about 17 minutes under Box64; keep it between runs
+      - name: Restore the Wine prefix
+        id: prefix
+        uses: actions/cache/restore@v4
+        with:
+          path: /home/runner/lab-cache
+          key: s11-lab-prefix-v1-${{ hashFiles('app/src/main/assets/rootfs.tzst', 'app/src/main/assets/container_pattern.tzst') }}
+
       - name: Run the Unity lab
         env:
           GH_TOKEN: ${{ github.token }}
+          PREFIX_CACHE: /home/runner/lab-cache/prefix.tar
         run: |
           set +e
           if [ -f tools/s11/lab/lab.env ]; then set -a; . tools/s11/lab/lab.env; set +a; fi
           bash tools/s11/lab/unity_lab.sh . "$RUNNER_TEMP/results"
           echo "lab exit: $?" >> "$RUNNER_TEMP/results/summary.txt"
+
+      - name: Save the Wine prefix
+        if: always() && steps.prefix.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: /home/runner/lab-cache
+          key: ${{ steps.prefix.outputs.cache-primary-key }}
 
       - name: Publish results
         if: always()
