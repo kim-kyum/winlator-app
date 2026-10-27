@@ -31,7 +31,10 @@ public class AboutDialog extends ContentDialog {
                 "Mesa (Turnip/Zink/VirGL) (<a href=\"https://www.mesa3d.org\">mesa3d.org</a>)",
                 "DXVK (<a href=\"https://github.com/doitsujin/dxvk\">github.com/doitsujin/dxvk</a>)",
                 "VKD3D (<a href=\"https://gitlab.winehq.org/wine/vkd3d\">gitlab.winehq.org/wine/vkd3d</a>)",
-                "CNC DDraw (<a href=\"https://github.com/FunkyFr3sh/cnc-ddraw\">github.com/FunkyFr3sh/cnc-ddraw</a>)"
+                "CNC DDraw (<a href=\"https://github.com/FunkyFr3sh/cnc-ddraw\">github.com/FunkyFr3sh/cnc-ddraw</a>)",
+                "Hangover, ARM64 Wine (<a href=\"https://github.com/AndreRH/hangover\">github.com/AndreRH/hangover</a>)",
+                "FEX (<a href=\"https://fex-emu.com\">fex-emu.com</a>)",
+                "Material Symbols (<a href=\"https://fonts.google.com/icons\">fonts.google.com/icons</a>)"
             );
 
             TextView tvCreditsAndThirdPartyApps = findViewById(R.id.TVCreditsAndThirdPartyApps);
