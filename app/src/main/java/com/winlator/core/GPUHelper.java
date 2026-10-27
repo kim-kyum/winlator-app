@@ -16,6 +16,7 @@ import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
 import dalvik.annotation.optimization.CriticalNative;
@@ -35,13 +36,15 @@ public abstract class GPUHelper {
     }
 
     private static ArrayMap<String, String> loadGPUInformation(Context context) {
-        final Thread thread = Thread.currentThread();
         final ArrayMap<String, String> gpuInfo = new ArrayMap<>();
         gpuInfo.put("renderer", "");
         gpuInfo.put("vendor", "");
         gpuInfo.put("version", "");
 
-        (new Thread(() -> {
+        // Winlator S11: asked on a thread of its own (a current GL context must not stay on the
+        // caller's), joined rather than wait/notify (the notify could come before the wait), and
+        // only through a context that exists: without one glGetString crashes the app
+        Thread thread = new Thread(() -> {
             int[] attribList = new int[] {
                 EGL10.EGL_SURFACE_TYPE, EGL10.EGL_PBUFFER_BIT,
                 EGL10.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
@@ -56,24 +59,43 @@ public abstract class GPUHelper {
 
             EGL10 egl = (EGL10)EGLContext.getEGL();
             EGLDisplay eglDisplay = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
+            if (eglDisplay == EGL10.EGL_NO_DISPLAY) return;
 
             int[] version = new int[2];
-            egl.eglInitialize(eglDisplay, version);
-            egl.eglChooseConfig(eglDisplay, attribList, configs, 1, configCounts);
+            if (!egl.eglInitialize(eglDisplay, version)) return;
+            if (!egl.eglChooseConfig(eglDisplay, attribList, configs, 1, configCounts) || configCounts[0] < 1) return;
 
             attribList = new int[]{EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
             EGLContext eglContext = egl.eglCreateContext(eglDisplay, configs[0], EGL10.EGL_NO_CONTEXT, attribList);
+            if (eglContext == null || eglContext == EGL10.EGL_NO_CONTEXT) return;
 
-            egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, eglContext);
+            // a context without a surface (EGL_KHR_surfaceless_context); else a 1x1 pbuffer
+            EGLSurface surface = EGL10.EGL_NO_SURFACE;
+            boolean current = egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, eglContext);
+            if (!current) {
+                surface = egl.eglCreatePbufferSurface(eglDisplay, configs[0], new int[]{EGL10.EGL_WIDTH, 1, EGL10.EGL_HEIGHT, 1, EGL10.EGL_NONE});
+                current = surface != null && surface != EGL10.EGL_NO_SURFACE && egl.eglMakeCurrent(eglDisplay, surface, surface, eglContext);
+            }
+            if (!current) {
+                egl.eglDestroyContext(eglDisplay, eglContext);
+                return;
+            }
 
-            GL10 gl = (GL10)eglContext.getGL();
-            String gpuRenderer = Objects.toString(gl.glGetString(GL10.GL_RENDERER), "");
-            String gpuVendor = Objects.toString(gl.glGetString(GL10.GL_VENDOR), "");
-            String gpuVersion = Objects.toString(gl.glGetString(GL10.GL_VERSION), "");
+            // the context is an OpenGL ES 2 one: ask through GLES 2 (GL10's ES 1 entry points
+            // crashed in the emulator)
+            String gpuRenderer = Objects.toString(android.opengl.GLES20.glGetString(android.opengl.GLES20.GL_RENDERER), "");
+            String gpuVendor = Objects.toString(android.opengl.GLES20.glGetString(android.opengl.GLES20.GL_VENDOR), "");
+            String gpuVersion = Objects.toString(android.opengl.GLES20.glGetString(android.opengl.GLES20.GL_VERSION), "");
 
-            gpuInfo.put("renderer", gpuRenderer);
-            gpuInfo.put("vendor", gpuVendor);
-            gpuInfo.put("version", gpuVersion);
+            egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
+            if (surface != EGL10.EGL_NO_SURFACE) egl.eglDestroySurface(eglDisplay, surface);
+            egl.eglDestroyContext(eglDisplay, eglContext);
+
+            synchronized (gpuInfo) {
+                gpuInfo.put("renderer", gpuRenderer);
+                gpuInfo.put("vendor", gpuVendor);
+                gpuInfo.put("version", gpuVersion);
+            }
 
             final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
             preferences.edit()
@@ -81,19 +103,15 @@ public abstract class GPUHelper {
                 .putString("gpu_vendor", gpuVendor)
                 .putString("gpu_version", gpuVersion)
                 .apply();
-
-            synchronized (thread) {
-                thread.notify();
-            }
-        })).start();
-
-        synchronized (thread) {
-            try {
-                thread.wait();
-            }
-            catch (InterruptedException e) {}
+        });
+        thread.start();
+        try {
+            thread.join(5000);
         }
-        return gpuInfo;
+        catch (InterruptedException e) {}
+        synchronized (gpuInfo) {
+            return new ArrayMap<>(gpuInfo);
+        }
     }
 
     public static String glGetRenderer(Context context) {
