@@ -1,0 +1,14 @@
+-- Found Python3: /usr/bin/python3.12 (found suitable version "3.12.3", minimum required is "3.7") found components: Interpreter
+-- The C compiler identification is GNU 13.3.0
+-- The ASM compiler identification is GNU
+-- Found assembler: /usr/bin/cc
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Performing Test HAS_FUSE_LD_GOLD
+-- Performing Test HAS_FUSE_LD_GOLD - Success
+-- Configuring done (1.6s)
+-- Generating done (0.1s)
+-- Build files have been written to: /home/runner/lab/box64-build

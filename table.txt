@@ -1,0 +1,9 @@
+box64-x64          java-start-s     2.61
+box64-x64          imagej-wall-s    13.08
+box64-x64          imagej-ms        10672
+arm64wine-arm64    java-start-s     0.44
+arm64wine-arm64    imagej-wall-s    3.65
+arm64wine-arm64    imagej-ms        3063
+arm64wine-x64      java-start-s     0.69
+arm64wine-x64      imagej-wall-s    6.27
+arm64wine-x64      imagej-ms        4739

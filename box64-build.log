@@ -1,0 +1,1063 @@
+make: Entering directory '/home/runner/lab/box64-build'
+make[1]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[  0%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64run.c.o
+[  1%] Building C object CMakeFiles/interpreter.dir/src/emu/x64run.c.o
+[  1%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/dynablock.c.o
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[  1%] Generating /home/runner/lab/box64-src/src/wrapped/generated/functions_list.txt
+[  2%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/dynarec_native.c.o
+[  2%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/dynarec_native_functions.c.o
+[  2%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/dynacache_reloc.c.o
+[  2%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/dynacache_compress.c.o
+[  2%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64run0f.c.o
+[  2%] Building C object CMakeFiles/dynarec_native.dir/src/emu/x64test.c.o
+Detected same build as last run, skipping
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[  2%] Built target WRAPPERS
+[  3%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64run66.c.o
+[  3%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/dynarec_arm64_functions.c.o
+[  3%] Building C object CMakeFiles/interpreter.dir/src/emu/x64run0f.c.o
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+/home/runner/lab/box64-src/src/dynarec/arm64/dynarec_arm64_functions.c: In function ‘inst_name_pass3’:
+/home/runner/lab/box64-src/src/dynarec/arm64/dynarec_arm64_functions.c:899:46: warning: ‘%s’ directive writing up to 4095 bytes into a region of size between 477 and 496 [-Wformat-overflow=]
+  899 |             sprintf(buf2, "; %d: %d opcodes, %s", ninst, dyn->insts[ninst].size / 4, buf);
+      |                                              ^~                                      ~~~
+In file included from /usr/include/stdio.h:980,
+                 from /home/runner/lab/box64-src/src/dynarec/arm64/dynarec_arm64_functions.c:2:
+In function ‘sprintf’,
+    inlined from ‘inst_name_pass3’ at /home/runner/lab/box64-src/src/dynarec/arm64/dynarec_arm64_functions.c:899:13:
+/usr/include/aarch64-linux-gnu/bits/stdio2.h:30:10: note: ‘__builtin___sprintf_chk’ output between 17 and 4131 bytes into a destination of size 512
+   30 |   return __builtin___sprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   31 |                                   __glibc_objsize (__s), __fmt,
+      |                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   32 |                                   __va_arg_pack ());
+      |                                   ~~~~~~~~~~~~~~~~~
+[  3%] Built target functions_list
+[  3%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64run660f.c.o
+[  4%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/dynarec_arm64_arch.c.o
+[  4%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/arm64_immenc.c.o
+[  4%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/arm64_printer.c.o
+[  4%] Building C object CMakeFiles/interpreter.dir/src/emu/x64run66.c.o
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[  4%] Built target generate_dynacache_hashes
+[  4%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64run66f20f.c.o
+[  4%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/dynarec_arm64_jmpnext.c.o
+[  4%] Building C object CMakeFiles/interpreter.dir/src/emu/x64run660f.c.o
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[  4%] Generating bin/box64-configurator
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[  4%] Built target box64-configurator
+[  4%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64run66f30f.c.o
+[  4%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/dynarec_arm64_consts.c.o
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[  4%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_helper.c.o
+[  4%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64run66d9.c.o
+[  4%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64run66dd.c.o
+[  5%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64run66f0.c.o
+[  5%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64rund8.c.o
+[  5%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64rund9.c.o
+[  5%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runda.c.o
+[  5%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64rundb.c.o
+[  5%] Building C object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/updateflags_arm64.c.o
+[  6%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_emit_tests.c.o
+[  7%] Building ASM object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/arm64_prolog.S.o
+[  7%] Building ASM object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/arm64_epilog.S.o
+[  7%] Building ASM object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/arm64_next.S.o
+[  7%] Building ASM object CMakeFiles/dynarec_native.dir/src/dynarec/arm64/arm64_lock.S.o
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[  7%] Built target dynarec_native
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[  8%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_helper.c.o
+[  8%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64rundc.c.o
+[  8%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_emit_math.c.o
+[  9%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64rundd.c.o
+[  9%] Building C object CMakeFiles/interpreter.dir/src/emu/x64run66f20f.c.o
+[  9%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runde.c.o
+[  9%] Building C object CMakeFiles/interpreter.dir/src/emu/x64run66f30f.c.o
+[ 10%] Building C object CMakeFiles/interpreter.dir/src/emu/x64run66d9.c.o
+[ 10%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64rundf.c.o
+[ 10%] Building C object CMakeFiles/interpreter.dir/src/emu/x64run66dd.c.o
+[ 10%] Building C object CMakeFiles/interpreter.dir/src/emu/x64run66f0.c.o
+[ 10%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runf0.c.o
+[ 10%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_emit_logic.c.o
+[ 10%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_emit_tests.c.o
+[ 10%] Building C object CMakeFiles/interpreter.dir/src/emu/x64rund8.c.o
+[ 10%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_emit_math.c.o
+[ 10%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runf20f.c.o
+[ 10%] Building C object CMakeFiles/interpreter.dir/src/emu/x64rund9.c.o
+[ 10%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_emit_shift.c.o
+[ 10%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_emit_logic.c.o
+[ 11%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runda.c.o
+[ 11%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runf30f.c.o
+[ 11%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_emit_shift.c.o
+[ 11%] Building C object CMakeFiles/interpreter.dir/src/emu/x64rundb.c.o
+[ 11%] Building C object CMakeFiles/interpreter.dir/src/emu/x64rundc.c.o
+[ 12%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavx.c.o
+[ 12%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_00.c.o
+[ 12%] Building C object CMakeFiles/interpreter.dir/src/emu/x64rundd.c.o
+[ 12%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavx0f.c.o
+[ 12%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_00.c.o
+[ 12%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runde.c.o
+[ 12%] Building C object CMakeFiles/interpreter.dir/src/emu/x64rundf.c.o
+[ 12%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavx0f38.c.o
+[ 13%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runf0.c.o
+[ 13%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavx660f.c.o
+[ 13%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runf20f.c.o
+[ 13%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runf30f.c.o
+[ 13%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavx.c.o
+[ 13%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavx0f.c.o
+[ 13%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavx0f38.c.o
+[ 13%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavxf20f.c.o
+[ 14%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavx660f.c.o
+[ 14%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavxf30f.c.o
+[ 15%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavx660f38.c.o
+[ 15%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavxf20f.c.o
+[ 15%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavxf30f.c.o
+[ 15%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavx660f38.c.o
+[ 16%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_0f.c.o
+[ 16%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavx660f3a.c.o
+[ 16%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavxf20f38.c.o
+[ 16%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavxf30f38.c.o
+[ 16%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavxf20f3a.c.o
+[ 17%] Building C object CMakeFiles/test_interpreter.dir/src/emu/x64runavxf30f3a.c.o
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[ 17%] Built target test_interpreter
+[ 17%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavx660f3a.c.o
+[ 17%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_0f.c.o
+[ 17%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavxf20f38.c.o
+[ 18%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavxf30f38.c.o
+[ 18%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavxf20f3a.c.o
+[ 18%] Building C object CMakeFiles/interpreter.dir/src/emu/x64runavxf30f3a.c.o
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[ 18%] Built target interpreter
+[ 18%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_66.c.o
+[ 19%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_66.c.o
+[ 19%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_d8.c.o
+[ 19%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_d9.c.o
+[ 19%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_da.c.o
+[ 19%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_db.c.o
+[ 20%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_dc.c.o
+[ 20%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_dd.c.o
+[ 20%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_de.c.o
+[ 20%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_df.c.o
+[ 20%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_f0.c.o
+[ 21%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_660f.c.o
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[ 21%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_helper.c.o
+[ 21%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_emit_tests.c.o
+[ 21%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_emit_math.c.o
+[ 21%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_66f20f.c.o
+[ 21%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_emit_logic.c.o
+[ 21%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_66f30f.c.o
+[ 21%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_66f0.c.o
+[ 21%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_f20f.c.o
+[ 21%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_emit_shift.c.o
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[ 21%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_helper.c.o
+[ 21%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_f30f.c.o
+[ 22%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_00.c.o
+[ 23%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx.c.o
+[ 23%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx_0f.c.o
+[ 23%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_d8.c.o
+[ 23%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_d9.c.o
+[ 23%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx_0f38.c.o
+[ 23%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_da.c.o
+[ 23%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f.c.o
+[ 23%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_db.c.o
+[ 23%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_dc.c.o
+[ 24%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_dd.c.o
+[ 24%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_de.c.o
+[ 24%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_df.c.o
+[ 24%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_f0.c.o
+[ 24%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_emit_tests.c.o
+[ 24%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_660f.c.o
+[ 24%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_emit_math.c.o
+[ 24%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f.c.o
+[ 24%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx_f3_0f.c.o
+[ 25%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f38.c.o
+[ 25%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_emit_logic.c.o
+[ 25%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f3a.c.o
+[ 26%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_emit_shift.c.o
+[ 26%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f38.c.o
+[ 26%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f3a.c.o
+[ 26%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/dynarec_arm64_avx_f3_0f38.c.o
+[ 26%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/arm64/updateflags_arm64_pass.c.o
+[ 27%] Building C object CMakeFiles/native_pass1.dir/src/dynarec/dynarec_native_pass.c.o
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[ 27%] Built target native_pass1
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[ 27%] Generating /home/runner/lab/box64-src/src/git_head.h
+fatal: not a git repository (or any of the parent directories): .git
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[ 27%] Built target generate_git_head_target
+[ 27%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_66f20f.c.o
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[ 27%] Building C object CMakeFiles/mainobj.dir/src/os/backtrace.c.o
+[ 27%] Building C object CMakeFiles/mainobj.dir/src/os/emit_signals_linux.c.o
+[ 27%] Building C object CMakeFiles/mainobj.dir/src/os/hostext_common.c.o
+[ 28%] Building C object CMakeFiles/mainobj.dir/src/os/hostext_linux.c.o
+[ 28%] Building C object CMakeFiles/mainobj.dir/src/os/freq_linux.c.o
+[ 28%] Building C object CMakeFiles/mainobj.dir/src/os/os_linux.c.o
+/home/runner/lab/box64-src/src/os/os_linux.c: In function ‘PrintfFtrace’:
+/home/runner/lab/box64-src/src/os/os_linux.c:228:9: warning: ignoring return value of ‘write’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  228 |         write(trace_fd, tmp, strlen(tmp));
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/os/os_linux.c:235:5: warning: ignoring return value of ‘write’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  235 |     write(trace_fd, tmp, strlen(tmp));
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[ 28%] Building C object CMakeFiles/mainobj.dir/src/os/perfmap.c.o
+[ 28%] Building C object CMakeFiles/mainobj.dir/src/os/symbolfuncs_linux.c.o
+[ 29%] Building C object CMakeFiles/mainobj.dir/src/os/random_linux.c.o
+[ 29%] Building C object CMakeFiles/mainobj.dir/src/os/my_cpuid.c.o
+[ 29%] Building C object CMakeFiles/mainobj.dir/src/os/sysinfo.c.o
+In file included from /home/runner/lab/box64-src/src/os/sysinfo.c:9:
+/home/runner/lab/box64-src/src/os/sysinfo.c: In function ‘InitializeSystemInfo’:
+/home/runner/lab/box64-src/src/build_info.h:34:19: warning: ‘%04lu’ directive output may be truncated writing 4 bytes into a region of size between 2 and 30 [-Wformat-truncation=]
+   34 | #define BOX64_STR "Box64"
+      |                   ^~~~~~~
+/home/runner/lab/box64-src/src/build_info.h:42:5: note: in expansion of macro ‘BOX64_STR’
+   42 |     BOX64_STR                         \
+      |     ^~~~~~~~~
+/home/runner/lab/box64-src/src/os/sysinfo.c:195:52: note: in expansion of macro ‘BOX64_BUILD_INFO_STRING_SHORT’
+  195 |             snprintf(branding, sizeof(branding)-1, BOX64_BUILD_INFO_STRING_SHORT " on %.*s @%04" PRIu64 " MHz", 28, box64_sysinfo.cpuname, box64_sysinfo.frequency / 1000000);
+      |                                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/build_info.h:34:19: note: directive argument in the range [0, 1]
+   34 | #define BOX64_STR "Box64"
+      |                   ^~~~~~~
+/home/runner/lab/box64-src/src/build_info.h:42:5: note: in expansion of macro ‘BOX64_STR’
+   42 |     BOX64_STR                         \
+      |     ^~~~~~~~~
+/home/runner/lab/box64-src/src/os/sysinfo.c:195:52: note: in expansion of macro ‘BOX64_BUILD_INFO_STRING_SHORT’
+  195 |             snprintf(branding, sizeof(branding)-1, BOX64_BUILD_INFO_STRING_SHORT " on %.*s @%04" PRIu64 " MHz", 28, box64_sysinfo.cpuname, box64_sysinfo.frequency / 1000000);
+      |                                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /usr/include/stdio.h:980,
+                 from /home/runner/lab/box64-src/src/include/sysinfo.h:3,
+                 from /home/runner/lab/box64-src/src/include/debug.h:8,
+                 from /home/runner/lab/box64-src/src/os/sysinfo.c:7:
+In function ‘snprintf’,
+    inlined from ‘InitializeSystemInfo’ at /home/runner/lab/box64-src/src/os/sysinfo.c:195:13:
+/usr/include/aarch64-linux-gnu/bits/stdio2.h:54:10: note: ‘__builtin___snprintf_chk’ output between 27 and 55 bytes into a destination of size 48
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/os/sysinfo.c: In function ‘InitializeSystemInfo’:
+/home/runner/lab/box64-src/src/build_info.h:34:19: warning: ‘%1.2f’ directive output may be truncated writing between 3 and 313 bytes into a region of size between 2 and 30 [-Wformat-truncation=]
+   34 | #define BOX64_STR "Box64"
+      |                   ^~~~~~~
+/home/runner/lab/box64-src/src/build_info.h:42:5: note: in expansion of macro ‘BOX64_STR’
+   42 |     BOX64_STR                         \
+      |     ^~~~~~~~~
+/home/runner/lab/box64-src/src/os/sysinfo.c:193:52: note: in expansion of macro ‘BOX64_BUILD_INFO_STRING_SHORT’
+  193 |             snprintf(branding, sizeof(branding)-1, BOX64_BUILD_INFO_STRING_SHORT " on %.*s @%1.2f GHz", 28, box64_sysinfo.cpuname, box64_sysinfo.frequency / 1000000000.);
+      |                                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/build_info.h:34:19: note: assuming directive output of 4 bytes
+   34 | #define BOX64_STR "Box64"
+      |                   ^~~~~~~
+/home/runner/lab/box64-src/src/build_info.h:42:5: note: in expansion of macro ‘BOX64_STR’
+   42 |     BOX64_STR                         \
+      |     ^~~~~~~~~
+/home/runner/lab/box64-src/src/os/sysinfo.c:193:52: note: in expansion of macro ‘BOX64_BUILD_INFO_STRING_SHORT’
+  193 |             snprintf(branding, sizeof(branding)-1, BOX64_BUILD_INFO_STRING_SHORT " on %.*s @%1.2f GHz", 28, box64_sysinfo.cpuname, box64_sysinfo.frequency / 1000000000.);
+      |                                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In function ‘snprintf’,
+    inlined from ‘InitializeSystemInfo’ at /home/runner/lab/box64-src/src/os/sysinfo.c:193:13:
+/usr/include/aarch64-linux-gnu/bits/stdio2.h:54:10: note: ‘__builtin___snprintf_chk’ output between 26 and 364 bytes into a destination of size 48
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/os/sysinfo.c: In function ‘InitializeSystemInfo’:
+/home/runner/lab/box64-src/src/build_info.h:34:19: warning: ‘__builtin___snprintf_chk’ output may be truncated before the last format character [-Wformat-truncation=]
+   34 | #define BOX64_STR "Box64"
+      |                   ^~~~~~~
+/home/runner/lab/box64-src/src/build_info.h:42:5: note: in expansion of macro ‘BOX64_STR’
+   42 |     BOX64_STR                         \
+      |     ^~~~~~~~~
+/home/runner/lab/box64-src/src/os/sysinfo.c:190:48: note: in expansion of macro ‘BOX64_BUILD_INFO_STRING_SHORT’
+  190 |         snprintf(branding, sizeof(branding)-1, BOX64_BUILD_INFO_STRING_SHORT " on %.*s", 32, box64_sysinfo.cpuname);
+      |                                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In function ‘snprintf’,
+    inlined from ‘InitializeSystemInfo’ at /home/runner/lab/box64-src/src/os/sysinfo.c:190:9:
+/usr/include/aarch64-linux-gnu/bits/stdio2.h:54:10: note: ‘__builtin___snprintf_chk’ output between 17 and 49 bytes into a destination of size 48
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[ 29%] Building C object CMakeFiles/mainobj.dir/src/main.c.o
+[ 29%] Building C object CMakeFiles/mainobj.dir/src/test.c.o
+[ 29%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_00.c.o
+[ 30%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_66f30f.c.o
+[ 30%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_66f0.c.o
+[ 30%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_f20f.c.o
+[ 30%] Building C object CMakeFiles/mainobj.dir/src/core.c.o
+/home/runner/lab/box64-src/src/core.c: In function ‘KillAllInstances’:
+/home/runner/lab/box64-src/src/core.c:382:73: warning: ‘ (deleted)’ directive output may be truncated writing 10 bytes into a region of size between 1 and 4096 [-Wformat-truncation=]
+  382 |     snprintf(self_name_with_deleted, sizeof(self_name_with_deleted), "%s (deleted)", self_name);
+      |                                                                         ^~~~~~~~~~
+In file included from /usr/include/stdio.h:980,
+                 from /home/runner/lab/box64-src/src/core.c:1:
+In function ‘snprintf’,
+    inlined from ‘KillAllInstances’ at /home/runner/lab/box64-src/src/core.c:382:5:
+/usr/include/aarch64-linux-gnu/bits/stdio2.h:54:10: note: ‘__builtin___snprintf_chk’ output between 11 and 4106 bytes into a destination of size 4096
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/core.c: In function ‘KillAllInstances’:
+/home/runner/lab/box64-src/src/core.c:392:49: warning: ‘/exe’ directive output may be truncated writing 4 bytes into a region of size between 1 and 4096 [-Wformat-truncation=]
+  392 |         snprintf(exe_path, sizeof(exe_path), "%s/exe", proc_path);
+      |                                                 ^~~~
+In function ‘snprintf’,
+    inlined from ‘KillAllInstances’ at /home/runner/lab/box64-src/src/core.c:392:9:
+/usr/include/aarch64-linux-gnu/bits/stdio2.h:54:10: note: ‘__builtin___snprintf_chk’ output between 5 and 4100 bytes into a destination of size 4096
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[ 31%] Building C object CMakeFiles/mainobj.dir/src/box64context.c.o
+[ 31%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_f30f.c.o
+[ 31%] Building C object CMakeFiles/mainobj.dir/src/build_info.c.o
+[ 31%] Building C object CMakeFiles/mainobj.dir/src/custommem.c.o
+[ 31%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx.c.o
+[ 32%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx_0f.c.o
+[ 32%] Building C object CMakeFiles/mainobj.dir/src/custommmap.c.o
+[ 32%] Building C object CMakeFiles/mainobj.dir/src/dynarec/dynarec.c.o
+[ 32%] Building C object CMakeFiles/mainobj.dir/src/elfs/elfloader.c.o
+[ 32%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx_0f38.c.o
+[ 32%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f.c.o
+[ 33%] Building C object CMakeFiles/mainobj.dir/src/elfs/elfhacks.c.o
+[ 33%] Building C object CMakeFiles/mainobj.dir/src/elfs/elfparser.c.o
+[ 33%] Building C object CMakeFiles/mainobj.dir/src/elfs/elfhash.c.o
+[ 33%] Building C object CMakeFiles/mainobj.dir/src/elfs/elfload_dump.c.o
+[ 33%] Building C object CMakeFiles/mainobj.dir/src/elfs/elfdwarf_private.c.o
+[ 33%] Building C object CMakeFiles/mainobj.dir/src/emu/entrypoint.c.o
+[ 34%] Building C object CMakeFiles/mainobj.dir/src/emu/x64compstrings.c.o
+[ 34%] Building C object CMakeFiles/mainobj.dir/src/emu/x64emu.c.o
+[ 34%] Building C object CMakeFiles/mainobj.dir/src/emu/x64printer.c.o
+[ 34%] Building C object CMakeFiles/mainobj.dir/src/emu/x64int3.c.o
+[ 34%] Building C object CMakeFiles/mainobj.dir/src/emu/x87emu_private.c.o
+/home/runner/lab/box64-src/src/emu/x87emu_private.c: In function ‘PrintLD’:
+/home/runner/lab/box64-src/src/emu/x87emu_private.c:262:46: warning: format ‘%llx’ expects argument of type ‘long long unsigned int’, but argument 6 has type ‘uint64_t’ {aka ‘long unsigned int’} [-Wformat=]
+  262 |     snprintf(buf, sizeof(buf), "%s%04x %016llx", prefix?prefix:"", val.b, val.f.q);
+      |                                        ~~~~~~^                            ~~~~~~~
+      |                                              |                                 |
+      |                                              long long unsigned int            uint64_t {aka long unsigned int}
+      |                                        %016lx
+[ 34%] Building C object CMakeFiles/mainobj.dir/src/emu/x64primop.c.o
+[ 34%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f.c.o
+[ 35%] Building C object CMakeFiles/mainobj.dir/src/emu/x64run_private.c.o
+[ 35%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx_f3_0f.c.o
+[ 35%] Building C object CMakeFiles/mainobj.dir/src/emu/x64shaext.c.o
+[ 35%] Building C object CMakeFiles/mainobj.dir/src/emu/x64syscall.c.o
+[ 35%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f38.c.o
+[ 35%] Building C object CMakeFiles/mainobj.dir/src/emu/x64tls.c.o
+[ 35%] Building C object CMakeFiles/mainobj.dir/src/emu/x64trace.c.o
+[ 36%] Building C object CMakeFiles/mainobj.dir/src/librarian/librarian.c.o
+[ 36%] Building C object CMakeFiles/mainobj.dir/src/librarian/library.c.o
+[ 36%] Building C object CMakeFiles/mainobj.dir/src/librarian/dictionnary.c.o
+[ 36%] Building C object CMakeFiles/mainobj.dir/src/librarian/symbols.c.o
+[ 36%] Building C object CMakeFiles/mainobj.dir/src/libtools/auxval.c.o
+[ 36%] Building C object CMakeFiles/mainobj.dir/src/libtools/myalign.c.o
+[ 37%] Building C object CMakeFiles/mainobj.dir/src/libtools/signals.c.o
+[ 37%] Building C object CMakeFiles/mainobj.dir/src/libtools/sigtools.c.o
+[ 37%] Building C object CMakeFiles/mainobj.dir/src/libtools/syscall_user_dispatch.c.o
+[ 37%] Building C object CMakeFiles/mainobj.dir/src/libtools/decopcode.c.o
+[ 38%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f3a.c.o
+[ 38%] Building C object CMakeFiles/mainobj.dir/src/libtools/threads.c.o
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_destroy’:
+/home/runner/lab/box64-src/src/libtools/threads.c:366:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  366 |         int ret = pthread_attr_destroy(PTHREAD_ATTR(attr));
+      |                   ^~~~~~~~~~~~~~~~~~~~
+In file included from /home/runner/lab/box64-src/src/libtools/threads.c:6:
+/usr/include/pthread.h:288:12: note: in a call to function ‘pthread_attr_destroy’ declared ‘nonnull’
+  288 | extern int pthread_attr_destroy (pthread_attr_t *__attr)
+      |            ^~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_getstack’:
+/home/runner/lab/box64-src/src/libtools/threads.c:376:23: warning: argument 1 null where non-null expected [-Wnonnull]
+  376 |                 ret = pthread_attr_getstack(PTHREAD_ATTR(attr), stackaddr, stacksize);
+      |                       ^~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:379:12: note: in a call to function ‘pthread_attr_getstack’ declared ‘nonnull’
+  379 | extern int pthread_attr_getstack (const pthread_attr_t *__restrict __attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_setstack’:
+/home/runner/lab/box64-src/src/libtools/threads.c:387:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  387 |         int ret = pthread_attr_setstacksize(PTHREAD_ATTR(attr), stacksize);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:373:12: note: in a call to function ‘pthread_attr_setstacksize’ declared ‘nonnull’
+  373 | extern int pthread_attr_setstacksize (pthread_attr_t *__attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_setstacksize’:
+/home/runner/lab/box64-src/src/libtools/threads.c:399:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  399 |         int ret = pthread_attr_setstacksize(PTHREAD_ATTR(attr), stacksize);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:373:12: note: in a call to function ‘pthread_attr_setstacksize’ declared ‘nonnull’
+  373 | extern int pthread_attr_setstacksize (pthread_attr_t *__attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_getdetachstate’:
+/home/runner/lab/box64-src/src/libtools/threads.c:409:16: warning: argument 1 null where non-null expected [-Wnonnull]
+  409 |         return pthread_attr_getdetachstate(PTHREAD_ATTR(attr), state);
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:292:12: note: in a call to function ‘pthread_attr_getdetachstate’ declared ‘nonnull’
+  292 | extern int pthread_attr_getdetachstate (const pthread_attr_t *__attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_getguardsize’:
+/home/runner/lab/box64-src/src/libtools/threads.c:415:16: warning: argument 1 null where non-null expected [-Wnonnull]
+  415 |         return pthread_attr_getguardsize(PTHREAD_ATTR(attr), size);
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:303:12: note: in a call to function ‘pthread_attr_getguardsize’ declared ‘nonnull’
+  303 | extern int pthread_attr_getguardsize (const pthread_attr_t *__attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_getinheritsched’:
+/home/runner/lab/box64-src/src/libtools/threads.c:422:16: warning: argument 1 null where non-null expected [-Wnonnull]
+  422 |         return pthread_attr_getinheritsched(PTHREAD_ATTR(attr), sched);
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:333:12: note: in a call to function ‘pthread_attr_getinheritsched’ declared ‘nonnull’
+  333 | extern int pthread_attr_getinheritsched (const pthread_attr_t *__restrict
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_getschedparam’:
+/home/runner/lab/box64-src/src/libtools/threads.c:432:16: warning: argument 1 null where non-null expected [-Wnonnull]
+  432 |         return pthread_attr_getschedparam(PTHREAD_ATTR(attr), param);
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:314:12: note: in a call to function ‘pthread_attr_getschedparam’ declared ‘nonnull’
+  314 | extern int pthread_attr_getschedparam (const pthread_attr_t *__restrict __attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_getschedpolicy’:
+/home/runner/lab/box64-src/src/libtools/threads.c:438:16: warning: argument 1 null where non-null expected [-Wnonnull]
+  438 |         return pthread_attr_getschedpolicy(PTHREAD_ATTR(attr), policy);
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:324:12: note: in a call to function ‘pthread_attr_getschedpolicy’ declared ‘nonnull’
+  324 | extern int pthread_attr_getschedpolicy (const pthread_attr_t *__restrict
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_getscope’:
+/home/runner/lab/box64-src/src/libtools/threads.c:444:16: warning: argument 1 null where non-null expected [-Wnonnull]
+  444 |         return pthread_attr_getscope(PTHREAD_ATTR(attr), scope);
+      |                ^~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:344:12: note: in a call to function ‘pthread_attr_getscope’ declared ‘nonnull’
+  344 | extern int pthread_attr_getscope (const pthread_attr_t *__restrict __attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_getstackaddr’:
+/home/runner/lab/box64-src/src/libtools/threads.c:453:23: warning: argument 1 null where non-null expected [-Wnonnull]
+  453 |                 ret = pthread_attr_getstack(PTHREAD_ATTR(attr), addr, &size);
+      |                       ^~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:379:12: note: in a call to function ‘pthread_attr_getstack’ declared ‘nonnull’
+  379 | extern int pthread_attr_getstack (const pthread_attr_t *__restrict __attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_getstacksize’:
+/home/runner/lab/box64-src/src/libtools/threads.c:464:23: warning: argument 1 null where non-null expected [-Wnonnull]
+  464 |                 ret = pthread_attr_getstack(PTHREAD_ATTR(attr), &addr, size);
+      |                       ^~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:379:12: note: in a call to function ‘pthread_attr_getstack’ declared ‘nonnull’
+  379 | extern int pthread_attr_getstack (const pthread_attr_t *__restrict __attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_init’:
+/home/runner/lab/box64-src/src/libtools/threads.c:474:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  474 |         int ret = pthread_attr_init(PTHREAD_ATTR(attr));
+      |                   ^~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:285:12: note: in a call to function ‘pthread_attr_init’ declared ‘nonnull’
+  285 | extern int pthread_attr_init (pthread_attr_t *__attr) __THROW __nonnull ((1));
+      |            ^~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_getaffinity_np’:
+/home/runner/lab/box64-src/src/libtools/threads.c:483:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  483 |         int ret = pthread_attr_getaffinity_np(PTHREAD_ATTR(attr), cpusize, cpuset);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:401:12: note: in a call to function ‘pthread_attr_getaffinity_np’ declared ‘nonnull’
+  401 | extern int pthread_attr_getaffinity_np (const pthread_attr_t *__attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_setaffinity_np’:
+/home/runner/lab/box64-src/src/libtools/threads.c:502:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  502 |         int ret = pthread_attr_setaffinity_np(PTHREAD_ATTR(attr), cpusize, cpuset_);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:394:12: note: in a call to function ‘pthread_attr_setaffinity_np’ declared ‘nonnull’
+  394 | extern int pthread_attr_setaffinity_np (pthread_attr_t *__attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_setdetachstate’:
+/home/runner/lab/box64-src/src/libtools/threads.c:515:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  515 |         int ret = pthread_attr_setdetachstate(PTHREAD_ATTR(attr), state);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:297:12: note: in a call to function ‘pthread_attr_setdetachstate’ declared ‘nonnull’
+  297 | extern int pthread_attr_setdetachstate (pthread_attr_t *__attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_setguardsize’:
+/home/runner/lab/box64-src/src/libtools/threads.c:523:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  523 |         int ret = pthread_attr_setguardsize(PTHREAD_ATTR(attr), size);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:308:12: note: in a call to function ‘pthread_attr_setguardsize’ declared ‘nonnull’
+  308 | extern int pthread_attr_setguardsize (pthread_attr_t *__attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_setinheritsched’:
+/home/runner/lab/box64-src/src/libtools/threads.c:532:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  532 |         int ret = pthread_attr_setinheritsched(PTHREAD_ATTR(attr), sched);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:338:12: note: in a call to function ‘pthread_attr_setinheritsched’ declared ‘nonnull’
+  338 | extern int pthread_attr_setinheritsched (pthread_attr_t *__attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_setschedparam’:
+/home/runner/lab/box64-src/src/libtools/threads.c:544:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  544 |         int ret = pthread_attr_setschedparam(PTHREAD_ATTR(attr), param);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:319:12: note: in a call to function ‘pthread_attr_setschedparam’ declared ‘nonnull’
+  319 | extern int pthread_attr_setschedparam (pthread_attr_t *__restrict __attr,
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_setschedpolicy’:
+/home/runner/lab/box64-src/src/libtools/threads.c:552:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  552 |         int ret = pthread_attr_setschedpolicy(PTHREAD_ATTR(attr), policy);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:329:12: note: in a call to function ‘pthread_attr_setschedpolicy’ declared ‘nonnull’
+  329 | extern int pthread_attr_setschedpolicy (pthread_attr_t *__attr, int __policy)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_attr_setscope’:
+/home/runner/lab/box64-src/src/libtools/threads.c:560:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  560 |         int ret = pthread_attr_setscope(PTHREAD_ATTR(attr), scope);
+      |                   ^~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:349:12: note: in a call to function ‘pthread_attr_setscope’ declared ‘nonnull’
+  349 | extern int pthread_attr_setscope (pthread_attr_t *__attr, int __scope)
+      |            ^~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_getattr_np’:
+/home/runner/lab/box64-src/src/libtools/threads.c:578:19: warning: argument 2 null where non-null expected [-Wnonnull]
+  578 |         int ret = pthread_getattr_np(thread_id, PTHREAD_ATTR(attr));
+      |                   ^~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:432:12: note: in a call to function ‘pthread_getattr_np’ declared ‘nonnull’
+  432 | extern int pthread_getattr_np (pthread_t __th, pthread_attr_t *__attr)
+      |            ^~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_getattr_default_np’:
+/home/runner/lab/box64-src/src/libtools/threads.c:603:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  603 |         int ret = pthread_getattr_default_np(PTHREAD_ATTR(attr));
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:407:12: note: in a call to function ‘pthread_getattr_default_np’ declared ‘nonnull’
+  407 | extern int pthread_getattr_default_np (pthread_attr_t *__attr)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_setattr_default_np’:
+/home/runner/lab/box64-src/src/libtools/threads.c:611:19: warning: argument 1 null where non-null expected [-Wnonnull]
+  611 |         int ret = pthread_setattr_default_np(PTHREAD_ATTR(attr));
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:426:12: note: in a call to function ‘pthread_setattr_default_np’ declared ‘nonnull’
+  426 | extern int pthread_setattr_default_np (const pthread_attr_t *__attr)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/libtools/threads.c: In function ‘my_pthread_create’:
+/home/runner/lab/box64-src/src/libtools/threads.c:629:20: warning: argument 1 null where non-null expected [-Wnonnull]
+  629 |                 if(pthread_attr_getstacksize(PTHREAD_ATTR(attr), &stsize)==0)
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/pthread.h:366:12: note: in a call to function ‘pthread_attr_getstacksize’ declared ‘nonnull’
+  366 | extern int pthread_attr_getstacksize (const pthread_attr_t *__restrict
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~
+[ 38%] Building C object CMakeFiles/mainobj.dir/src/tools/bitutils.c.o
+[ 39%] Building C object CMakeFiles/mainobj.dir/src/tools/box64stack.c.o
+[ 39%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f38.c.o
+[ 39%] Building C object CMakeFiles/mainobj.dir/src/tools/bridge.c.o
+[ 39%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f3a.c.o
+[ 39%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/dynarec_arm64_avx_f3_0f38.c.o
+[ 39%] Building C object CMakeFiles/mainobj.dir/src/tools/alternate.c.o
+[ 39%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/arm64/updateflags_arm64_pass.c.o
+[ 39%] Building C object CMakeFiles/mainobj.dir/src/tools/callback.c.o
+[ 39%] Building C object CMakeFiles/native_pass0.dir/src/dynarec/dynarec_native_pass.c.o
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[ 39%] Built target native_pass0
+[ 39%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_0f.c.o
+[ 39%] Building C object CMakeFiles/mainobj.dir/src/tools/cleanup.c.o
+[ 39%] Building C object CMakeFiles/mainobj.dir/src/tools/cpumask.c.o
+[ 40%] Building C object CMakeFiles/mainobj.dir/src/tools/gdbjit.c.o
+[ 40%] Building C object CMakeFiles/mainobj.dir/src/tools/fileutils.c.o
+[ 40%] Building C object CMakeFiles/mainobj.dir/src/tools/pathcoll.c.o
+[ 40%] Building C object CMakeFiles/mainobj.dir/src/tools/rbtree.c.o
+[ 40%] Building C object CMakeFiles/mainobj.dir/src/tools/env.c.o
+[ 40%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_0f.c.o
+[ 40%] Building C object CMakeFiles/mainobj.dir/src/tools/dynacache.c.o
+/home/runner/lab/box64-src/src/tools/dynacache.c: In function ‘ReadDynaCache’:
+/home/runner/lab/box64-src/src/tools/dynacache.c:876:76: warning: format ‘%zu’ expects argument of type ‘size_t’, but argument 6 has type ‘uint32_t’ {aka ‘unsigned int’} [-Wformat=]
+  876 |             n += snprintf(buf+n, sizeof(buf)-n, "\tMapped at %p-%p, with %zu lock and %zu unaligned addresses",
+      |                                                                          ~~^
+      |                                                                            |
+      |                                                                            long unsigned int
+      |                                                                          %u
+  877 |                 (void*)file_header->map_addr, (void*)file_header->map_addr+file_header->map_len,
+  878 |                 file_header->nLockAddresses, file_header->nUnalignedAddresses);
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~                                 
+      |                            |
+      |                            uint32_t {aka unsigned int}
+/home/runner/lab/box64-src/src/tools/dynacache.c:876:89: warning: format ‘%zu’ expects argument of type ‘size_t’, but argument 7 has type ‘uint32_t’ {aka ‘unsigned int’} [-Wformat=]
+  876 |             n += snprintf(buf+n, sizeof(buf)-n, "\tMapped at %p-%p, with %zu lock and %zu unaligned addresses",
+      |                                                                                       ~~^
+      |                                                                                         |
+      |                                                                                         long unsigned int
+      |                                                                                       %u
+  877 |                 (void*)file_header->map_addr, (void*)file_header->map_addr+file_header->map_len,
+  878 |                 file_header->nLockAddresses, file_header->nUnalignedAddresses);
+      |                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~            
+      |                                                         |
+      |                                                         uint32_t {aka unsigned int}
+/home/runner/lab/box64-src/src/tools/dynacache.c:880:72: warning: format ‘%d’ expects argument of type ‘int’, but argument 4 has type ‘long long unsigned int’ [-Wformat=]
+  880 |                 n += snprintf(buf+n, sizeof(buf)-n, "\n\tCompression: %d%% / %s compressed", 100ULL-total_compressed*100ULL/total_blocks ,NicePrintSize(total_compressed));
+      |                                                                       ~^                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                        |                           |
+      |                                                                        int                         long long unsigned int
+      |                                                                       %lld
+[ 41%] Building C object CMakeFiles/mainobj.dir/src/tools/wine_tools.c.o
+[ 41%] Building C object CMakeFiles/mainobj.dir/src/tools/pe_tools.c.o
+[ 41%] Building C object CMakeFiles/mainobj.dir/src/wrapped/generated/wrapper.c.o
+[ 41%] Building C object CMakeFiles/mainobj.dir/src/mallochook.c.o
+[ 41%] Building C object CMakeFiles/mainobj.dir/src/steam.c.o
+/home/runner/lab/box64-src/src/steam.c: In function ‘create_lib_symlink’:
+/home/runner/lab/box64-src/src/steam.c:35:5: warning: ignoring return value of ‘symlink’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   35 |     symlink(file, tmp);
+      |     ^~~~~~~~~~~~~~~~~~
+[ 41%] Building C object CMakeFiles/mainobj.dir/src/libtools/sdl1rwops.c.o
+[ 42%] Building C object CMakeFiles/mainobj.dir/src/libtools/sdl2rwops.c.o
+[ 42%] Building C object CMakeFiles/mainobj.dir/src/tools/gtkclass.c.o
+[ 42%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_66.c.o
+[ 42%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_d8.c.o
+[ 42%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_d9.c.o
+[ 42%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_da.c.o
+[ 43%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_db.c.o
+[ 43%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_dc.c.o
+[ 43%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_dd.c.o
+[ 43%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_de.c.o
+[ 43%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_df.c.o
+[ 44%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_f0.c.o
+[ 44%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_660f.c.o
+[ 44%] Building C object CMakeFiles/mainobj.dir/src/librarian/globalsymbols.c.o
+[ 44%] Building C object CMakeFiles/mainobj.dir/src/emu/x86syscall.c.o
+[ 44%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_66f20f.c.o
+[ 44%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_66.c.o
+[ 44%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_66f30f.c.o
+[ 44%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_66f0.c.o
+[ 44%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_f20f.c.o
+[ 45%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_f30f.c.o
+[ 45%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx.c.o
+[ 45%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx_0f.c.o
+[ 45%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx_0f38.c.o
+[ 45%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f.c.o
+[ 45%] Building C object CMakeFiles/mainobj.dir/src/libtools/obstack.c.o
+[ 45%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f.c.o
+[ 45%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_d8.c.o
+[ 46%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx_f3_0f.c.o
+[ 47%] Building C object CMakeFiles/mainobj.dir/src/libtools/libdl.c.o
+[ 47%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f38.c.o
+[ 48%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_d9.c.o
+[ 48%] Building C object CMakeFiles/mainobj.dir/src/libtools/vulkanoverlay.c.o
+[ 48%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_da.c.o
+[ 48%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_db.c.o
+[ 48%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_dc.c.o
+[ 48%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_dd.c.o
+[ 48%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f3a.c.o
+[ 48%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_de.c.o
+[ 49%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_df.c.o
+[ 49%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f38.c.o
+[ 49%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_f0.c.o
+[ 49%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f3a.c.o
+[ 49%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/dynarec_arm64_avx_f3_0f38.c.o
+[ 50%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/arm64/updateflags_arm64_pass.c.o
+[ 50%] Building C object CMakeFiles/native_pass2.dir/src/dynarec/dynarec_native_pass.c.o
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[ 50%] Built target native_pass2
+[ 50%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_660f.c.o
+[ 50%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedalure.c.o
+[ 50%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_66f20f.c.o
+[ 50%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedalut.c.o
+[ 50%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedatk.c.o
+[ 50%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_66f30f.c.o
+[ 50%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedatkbridge.c.o
+[ 51%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedatomic.c.o
+[ 51%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_66f0.c.o
+[ 51%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedatspi.c.o
+[ 52%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_f20f.c.o
+[ 52%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedayatanaappindicator3.c.o
+[ 52%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_f30f.c.o
+[ 52%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx.c.o
+[ 52%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedayatanaindicator3.c.o
+[ 52%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedayatanaido3.c.o
+[ 52%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedavahiclient.c.o
+[ 52%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx_0f.c.o
+[ 52%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx_0f38.c.o
+[ 53%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedavahicommon.c.o
+[ 53%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f.c.o
+[ 54%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f.c.o
+[ 54%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedbz2.c.o
+[ 54%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx_f3_0f.c.o
+[ 54%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedcap.c.o
+[ 54%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f38.c.o
+[ 54%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedcuda.c.o
+[ 54%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedcairo.c.o
+[ 54%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx_66_0f3a.c.o
+[ 54%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedcairogobject.c.o
+[ 54%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f38.c.o
+[ 55%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedcrashhandler.c.o
+[ 55%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedcrypto.c.o
+[ 55%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedcrypto3.c.o
+[ 55%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx_f2_0f3a.c.o
+[ 55%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedcurl.c.o
+[ 56%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/dynarec_arm64_avx_f3_0f38.c.o
+[ 56%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/arm64/updateflags_arm64_pass.c.o
+[ 56%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappeddbus.c.o
+/home/runner/lab/box64-src/src/wrapped/wrappeddbus.c: In function ‘my_dbus_message_new_error_printf’:
+/home/runner/lab/box64-src/src/wrapped/wrappeddbus.c:685:5: warning: ignoring return value of ‘vasprintf’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  685 |     vasprintf(&buff, (char*)fmt, VARARGS);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[ 56%] Building C object CMakeFiles/native_pass3.dir/src/dynarec/dynarec_native_pass.c.o
+[ 56%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappeddbusglib1.c.o
+[ 57%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappeddbusmenuglib.c.o
+[ 57%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappeddecor0.c.o
+[ 57%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedevent21.c.o
+[ 57%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedexpat.c.o
+[ 57%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedfaudio.c.o
+[ 58%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedflac.c.o
+[ 58%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedfontconfig.c.o
+[ 58%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedfreebl3.c.o
+[ 58%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedfreetype.c.o
+[ 58%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgbm.c.o
+[ 58%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgconf2.c.o
+[ 59%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgcrypt.c.o
+[ 59%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgdk3.c.o
+[ 59%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgdkpixbuf2.c.o
+[ 59%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgdkx112.c.o
+[ 59%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgio2.c.o
+[ 59%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedglesv2.c.o
+[ 60%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedglib2.c.o
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[ 60%] Built target native_pass3
+[ 60%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgmodule2.c.o
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[ 60%] Linking C static library libdynarec.a
+[ 60%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgmp.c.o
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c: In function ‘my___gmp_asprintf’:
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c:158:38: warning: passing argument 2 of ‘my_gmp.__gmp_vasprintf’ discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  158 |     return my->__gmp_vasprintf(strp, fmt, VARARGS);
+      |                                      ^~~
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c:158:38: note: expected ‘void *’ but argument is of type ‘const char *’
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c: In function ‘my___gmp_fprintf’:
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c:165:39: warning: passing argument 2 of ‘my_gmp.__gmp_vfprintf’ discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  165 |     return my->__gmp_vfprintf(stream, fmt, VARARGS);
+      |                                       ^~~
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c:165:39: note: expected ‘void *’ but argument is of type ‘const char *’
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c: In function ‘my___gmp_vasprintf’:
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c:176:38: warning: passing argument 2 of ‘my_gmp.__gmp_vasprintf’ discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  176 |     return my->__gmp_vasprintf(strp, fmt, VARARGS);
+      |                                      ^~~
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c:176:38: note: expected ‘void *’ but argument is of type ‘const char *’
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c: In function ‘my___gmp_vfprintf’:
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c:187:39: warning: passing argument 2 of ‘my_gmp.__gmp_vfprintf’ discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  187 |     return my->__gmp_vfprintf(stream, fmt, VARARGS);
+      |                                       ^~~
+/home/runner/lab/box64-src/src/wrapped/wrappedgmp.c:187:39: note: expected ‘void *’ but argument is of type ‘const char *’
+[ 60%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgnutls.c.o
+[ 60%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgobject2.c.o
+[ 60%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgomp.c.o
+[ 61%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgssapi.c.o
+[ 61%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgssapikrb5.c.o
+[ 61%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstallocators.c.o
+[ 61%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstapp.c.o
+[ 61%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstaudio.c.o
+[ 61%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstbase.c.o
+[ 62%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstcheck.c.o
+[ 62%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstcontroller.c.o
+[ 62%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstfft.c.o
+[ 62%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstgl.c.o
+[ 62%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstnet.c.o
+[ 63%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstpbutils.c.o
+[ 63%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstreamer.c.o
+[ 63%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstriff.c.o
+[ 63%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstrtp.c.o
+[ 63%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstrtsp.c.o
+[ 63%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstsdp.c.o
+[ 64%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgsttag.c.o
+[ 64%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgstvideo.c.o
+[ 64%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgthread2.c.o
+[ 64%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgtk3.c.o
+[ 64%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedgtkx112.c.o
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[ 64%] Built target dynarec
+[ 64%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedharfbuzzsubset.c.o
+[ 65%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedkrb5.c.o
+[ 65%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlcms2.c.o
+[ 65%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedldlinux.c.o
+[ 65%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibasound.c.o
+[ 65%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibavcodec58.c.o
+[ 65%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibavformat58.c.o
+[ 66%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibavutil56.c.o
+[ 66%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibblas.c.o
+/home/runner/lab/box64-src/src/wrapped/wrappedlibavutil56.c: In function ‘my_av_asprintf’:
+/home/runner/lab/box64-src/src/wrapped/wrappedlibavutil56.c:213:5: warning: ignoring return value of ‘vasprintf’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  213 |     vasprintf(&buff, (char*)fmt, VARARGS);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/wrapped/wrappedlibavutil56.c: In function ‘my_av_log’:
+/home/runner/lab/box64-src/src/wrapped/wrappedlibavutil56.c:260:5: warning: ignoring return value of ‘vasprintf’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  260 |     vasprintf(&buff, (char*)fmt, VARARGS);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/lab/box64-src/src/wrapped/wrappedlibavutil56.c: In function ‘my_av_strlcatf’:
+/home/runner/lab/box64-src/src/wrapped/wrappedlibavutil56.c:285:5: warning: ignoring return value of ‘vasprintf’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  285 |     vasprintf(&buff, (char*)fmt, VARARGS);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[ 66%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibbsd.c.o
+[ 66%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibc.c.o
+/home/runner/lab/box64-src/src/wrapped/wrappedlibc.c: In function ‘my_epoll_wait’:
+/home/runner/lab/box64-src/src/wrapped/wrappedlibc.c:2628:19: warning: argument 2 null where non-null expected [-Wnonnull]
+ 2628 |     int32_t ret = epoll_wait(epfd, events?_events:NULL, maxevents, timeout);
+      |                   ^~~~~~~~~~
+In file included from /home/runner/lab/box64-src/src/wrapped/wrappedlibc.c:43:
+/usr/include/aarch64-linux-gnu/sys/epoll.h:124:12: note: in a call to function ‘epoll_wait’ declared ‘nonnull’
+  124 | extern int epoll_wait (int __epfd, struct epoll_event *__events,
+      |            ^~~~~~~~~~
+/home/runner/lab/box64-src/src/wrapped/wrappedlibc.c: In function ‘my_epoll_pwait’:
+/home/runner/lab/box64-src/src/wrapped/wrappedlibc.c:2637:19: warning: argument 2 null where non-null expected [-Wnonnull]
+ 2637 |     int32_t ret = epoll_pwait(epfd, events?_events:NULL, maxevents, timeout, sigmask);
+      |                   ^~~~~~~~~~~
+/usr/include/aarch64-linux-gnu/sys/epoll.h:134:12: note: in a call to function ‘epoll_pwait’ declared ‘nonnull’
+  134 | extern int epoll_pwait (int __epfd, struct epoll_event *__events,
+      |            ^~~~~~~~~~~
+/home/runner/lab/box64-src/src/wrapped/wrappedlibc.c: In function ‘my_epoll_pwait2’:
+/home/runner/lab/box64-src/src/wrapped/wrappedlibc.c:2655:15: warning: argument 2 null where non-null expected [-Wnonnull]
+ 2655 |         ret = epoll_pwait(epfd, events?_events:NULL, maxevents, tout, sigmask);
+      |               ^~~~~~~~~~~
+/usr/include/aarch64-linux-gnu/sys/epoll.h:134:12: note: in a call to function ‘epoll_pwait’ declared ‘nonnull’
+  134 | extern int epoll_pwait (int __epfd, struct epoll_event *__events,
+      |            ^~~~~~~~~~~
+[ 66%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibcmusl.c.o
+[ 66%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibcrypt.c.o
+[ 67%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibcups.c.o
+[ 67%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibcupsimage.c.o
+[ 67%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibdl.c.o
+[ 67%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibdrm.c.o
+[ 67%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibdrmamdgpu.c.o
+[ 68%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibegl.c.o
+[ 68%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibform.c.o
+[ 68%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibformw.c.o
+[ 68%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibformw6.c.o
+[ 68%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibfuse.c.o
+[ 68%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibgl.c.o
+[ 69%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibglu.c.o
+[ 69%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibglx.c.o
+[ 69%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibglxnvidia.c.o
+[ 69%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibgpgme.c.o
+[ 69%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibharfbuzz.c.o
+[ 69%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibibus.c.o
+[ 70%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibice.c.o
+[ 70%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedliblapack.c.o
+[ 70%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibm.c.o
+[ 70%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibmvec.c.o
+[ 70%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibncurses.c.o
+[ 70%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibncurses6.c.o
+[ 71%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibncursesw.c.o
+[ 71%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibncursesw6.c.o
+[ 71%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibnuma.c.o
+[ 71%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibogg.c.o
+[ 71%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibomp.c.o
+[ 71%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibpanel.c.o
+[ 72%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibpci.c.o
+[ 72%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibpcre.c.o
+[ 72%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibpcre216.c.o
+[ 72%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibpthread.c.o
+[ 72%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibresolv.c.o
+[ 72%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibrt.c.o
+[ 73%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibsm.c.o
+[ 73%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibsndfile.c.o
+[ 73%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibssl.c.o
+[ 73%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibssl3.c.o
+[ 73%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibtinfo.c.o
+[ 74%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibtinfo6.c.o
+[ 74%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibusb1.c.o
+[ 74%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibuuid.c.o
+[ 74%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibva.c.o
+[ 74%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibvadrm.c.o
+[ 74%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibvawayland.c.o
+[ 75%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibvax11.c.o
+[ 75%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibvdpau.c.o
+[ 75%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibvpx.c.o
+[ 75%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibvorbis.c.o
+[ 75%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibx11.c.o
+[ 75%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibx11xcb.c.o
+[ 76%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxau.c.o
+[ 76%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxaw.c.o
+[ 76%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcb.c.o
+[ 76%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbcursor.c.o
+[ 76%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbdri2.c.o
+[ 76%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbdri3.c.o
+[ 77%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbglx.c.o
+[ 77%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbkeysyms.c.o
+[ 77%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbicccm.c.o
+[ 77%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbimage.c.o
+[ 77%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbpresent.c.o
+[ 77%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbrandr.c.o
+[ 78%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbrender.c.o
+[ 78%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbrenderutil.c.o
+[ 78%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbres.c.o
+[ 78%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbshape.c.o
+[ 78%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbshm.c.o
+[ 79%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbsync.c.o
+[ 79%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbutil.c.o
+[ 79%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbxinerama.c.o
+[ 79%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbxinput.c.o
+[ 79%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbxfixes.c.o
+[ 79%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbxkb.c.o
+[ 80%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcbxtest.c.o
+[ 80%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcomposite.c.o
+[ 80%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxcursor.c.o
+[ 80%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxdamage.c.o
+[ 80%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxdmcp.c.o
+[ 80%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxext.c.o
+[ 81%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxfixes.c.o
+[ 81%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxft.c.o
+[ 81%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxi.c.o
+[ 81%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxmu.c.o
+[ 81%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxpm.c.o
+[ 81%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxpresent.c.o
+[ 82%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxrandr.c.o
+[ 82%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxrender.c.o
+[ 82%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxss.c.o
+[ 82%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxt.c.o
+[ 82%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxtst.c.o
+[ 82%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibxxf86vm.c.o
+[ 83%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibz.c.o
+[ 83%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlzma.c.o
+[ 83%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedmpg123.c.o
+[ 83%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappednotify.c.o
+[ 83%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappednsl.c.o
+[ 84%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappednspr4.c.o
+[ 84%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappednss3.c.o
+[ 84%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappednssutil3.c.o
+[ 84%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappednvml.c.o
+[ 84%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedopenal.c.o
+[ 84%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedopencl.c.o
+[ 85%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpango.c.o
+[ 85%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpangocairo.c.o
+[ 85%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpangoft2.c.o
+[ 85%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpam.c.o
+[ 85%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpcap.c.o
+[ 85%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedplc4.c.o
+[ 86%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedplds4.c.o
+[ 86%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpng16.c.o
+[ 86%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpulse.c.o
+[ 86%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpulsemainloopglib.c.o
+[ 86%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpulsesimple.c.o
+[ 86%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl1.c.o
+[ 87%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl1image.c.o
+[ 87%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl1mixer.c.o
+[ 87%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl1net.c.o
+[ 87%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl1sound.c.o
+[ 87%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl1ttf.c.o
+[ 87%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsecret1.c.o
+[ 88%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsoftokn3.c.o
+[ 88%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsmpeg.c.o
+[ 88%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl2.c.o
+[ 88%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl2image.c.o
+[ 88%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl2mixer.c.o
+[ 89%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl2net.c.o
+[ 89%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl2ttf.c.o
+[ 89%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl3.c.o
+[ 89%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsdl3ttf.c.o
+[ 89%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedselinux.c.o
+[ 89%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsmime3.c.o
+[ 90%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsmpeg2.c.o
+[ 90%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedssl3.c.o
+[ 90%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsystemd.c.o
+[ 90%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedtbbbind.c.o
+[ 90%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedtbbmalloc.c.o
+[ 90%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedtbbmallocproxy.c.o
+[ 91%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedtcmallocminimal.c.o
+[ 91%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedudev0.c.o
+[ 91%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedudev1.c.o
+[ 91%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedunwind.c.o
+[ 91%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedutil.c.o
+[ 91%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedvorbisfile.c.o
+[ 92%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedwaylandclient.c.o
+[ 92%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedwaylandcursor.c.o
+[ 92%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedwaylandegl.c.o
+[ 92%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedxinerama.c.o
+[ 92%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedxkbcommon.c.o
+[ 92%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedxkbfile.c.o
+[ 93%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedxkbcommonx11.c.o
+[ 93%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedxkbregistry.c.o
+[ 93%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedxml2.c.o
+[ 93%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedxslt.c.o
+[ 93%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedldapr.c.o
+[ 93%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlber.c.o
+[ 94%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedvulkan.c.o
+[ 94%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedxshmfence.c.o
+[ 94%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedd3dadapter9.c.o
+[ 94%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicuuc64.c.o
+[ 94%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicui18n64.c.o
+[ 95%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicuuc66.c.o
+[ 95%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicui18n66.c.o
+[ 95%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicuuc67.c.o
+[ 95%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicui18n67.c.o
+[ 95%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicuuc68.c.o
+[ 95%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicui18n68.c.o
+[ 96%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicuuc72.c.o
+[ 96%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicui18n72.c.o
+[ 96%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicuuc73.c.o
+[ 96%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicui18n73.c.o
+[ 96%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicuuc74.c.o
+[ 96%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicui18n74.c.o
+[ 97%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicuuc75.c.o
+[ 97%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicui18n75.c.o
+[ 97%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicuuc76.c.o
+[ 97%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedicui18n76.c.o
+[ 97%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedidn2.c.o
+[ 97%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedanl.c.o
+[ 98%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpsl5.c.o
+[ 98%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibssh2.c.o
+[ 98%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedp11kit.c.o
+[ 98%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibtasn1.c.o
+[ 98%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibnettle8.c.o
+[ 98%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibunistring2.c.o
+[ 99%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibhogweed6.c.o
+[ 99%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibsqlite3.c.o
+[ 99%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlibtiff5.c.o
+[ 99%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedbrotlidec.c.o
+[ 99%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedzstd.c.o
+[100%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedlz4.c.o
+[100%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedproxy.c.o
+[100%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedssh4.c.o
+[100%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedsmbclient.c.o
+[100%] Building C object CMakeFiles/mainobj.dir/src/wrapped/wrappedpixman1.c.o
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[100%] Built target mainobj
+make[2]: Entering directory '/home/runner/lab/box64-build'
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+make[2]: Entering directory '/home/runner/lab/box64-build'
+[100%] Linking C executable box64
+make[2]: Leaving directory '/home/runner/lab/box64-build'
+[100%] Built target box64
+make[1]: Leaving directory '/home/runner/lab/box64-build'
+make: Leaving directory '/home/runner/lab/box64-build'

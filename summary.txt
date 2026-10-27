@@ -1,0 +1,52 @@
+[lab] start Tue Oct 27 20:44:16 UTC 2026
+[lab] Winlator prefix from the cache
+/home/runner/lab/rootfs/bench:
+ImageJ
+ij.zip
+jdk-aarch64
+jdk-aarch64.tmp
+jdk-aarch64.zip
+jdk-x64
+jdk-x64.tmp
+jdk-x64.zip
+
+/home/runner/lab/rootfs/bench/ImageJ:
+ImageJ.app
+ImageJ.exe
+ij.jar
+luts
+macros
+plugins
+run
+[lab] box64-x64 java -version: exit 0 after 2.61 s
+[lab] box64-x64 ImageJ: wall 13.08 s, macro 10672 ms
+    blur 6001
+    fft 841
+    median 1998
+    edges 242
+    macro-loop 1089
+[lab] arm64wine-arm64 java -version: exit 0 after 0.44 s
+[lab] arm64wine-arm64 ImageJ: wall 3.65 s, macro 3063 ms
+    blur 533
+    fft 578
+    median 1083
+    edges 110
+    macro-loop 491
+[lab] arm64wine-x64 java -version: exit 0 after 0.69 s
+[lab] arm64wine-x64 ImageJ: wall 6.27 s, macro 4739 ms
+    blur 1422
+    fft 699
+    median 1063
+    edges 196
+    macro-loop 928
+box64-x64          java-start-s     2.61
+box64-x64          imagej-wall-s    13.08
+box64-x64          imagej-ms        10672
+arm64wine-arm64    java-start-s     0.44
+arm64wine-arm64    imagej-wall-s    3.65
+arm64wine-arm64    imagej-ms        3063
+arm64wine-x64      java-start-s     0.69
+arm64wine-x64      imagej-wall-s    6.27
+arm64wine-x64      imagej-ms        4739
+[lab] done Tue Oct 27 20:49:41 UTC 2026
+lab exit: 0

@@ -1,0 +1,6 @@
+wine: created the configuration directory '/data/data/com.winlatab/files/rootfs/home/xuser/.wine-arm64'
+[BOX64] WowBox64 arm64 v0.4.4 (Hangover 11.16) with Dynarec built on Aug 30 2026 19:41:23
+[BOX64] Dynarec for ARM64, with extension: ASIMD AES CRC32 PMULL ATOMICS SHA1 SHA2 USCAT FLAGM2 FRINT
+[BOX64] WowBox64 arm64 v0.4.4 (Hangover 11.16) with Dynarec built on Aug 30 2026 19:41:23
+[BOX64] Dynarec for ARM64, with extension: ASIMD AES CRC32 PMULL ATOMICS SHA1 SHA2 USCAT FLAGM2 FRINT
+wine: failed to start L"C:\\windows\\sysarm32\\rundll32.exe": c0000135
