@@ -1,0 +1,34 @@
+total 299948
+drwxr-xr-x 2 runner runner      4096 Oct 27 16:26 .
+drwxr-xr-x 4 runner runner      4096 Oct 27 16:26 ..
+-rw-r--r-- 1 runner runner  16475867 Aug 30 20:22 dxvk-v2.7.1.tar.gz
+-rw-r--r-- 1 runner runner    742800 Aug 30 20:22 hangover-libarm64ecfex_11.16_arm64.deb
+-rw-r--r-- 1 runner runner    659824 Aug 30 20:22 hangover-libwow64fex_11.16_arm64.deb
+-rw-r--r-- 1 runner runner 288339132 Aug 30 20:22 hangover-wine_11.16~noble_arm64.deb
+-rw-r--r-- 1 runner runner    909264 Aug 30 20:22 hangover-wowbox64_11.16_arm64.deb
+[wine-arm64] unpacked: 2.3G
+[wine-arm64] stripped: 991M
+[wine-arm64] interpreter: bin/wineserver
+[wine-arm64] interpreter: bin/wine
+[wine-arm64] interpreter: lib/wine/aarch64-unix/wine
+[wine-arm64] libs11tmp.so: 67488 bytes
+                 U access@GLIBC_2.17
+                 U chdir@GLIBC_2.17
+                 U fstatat@GLIBC_2.33
+                 U lstat@GLIBC_2.33
+                 U mkdir@GLIBC_2.17
+                 U open@GLIBC_2.17
+                 U openat@GLIBC_2.17
+                 U opendir@GLIBC_2.17
+                 U rmdir@GLIBC_2.17
+                 U stat@GLIBC_2.33
+                 U unlink@GLIBC_2.17
+[wine-arm64] package: 124045001 bytes
+[wine-arm64] test without /tmp and without libs11tmp.so: exit 1 (wine: created the configuration directory '/data/data/com.winlatab/files/rootfs/home/xuser/.wine')
+[wine-arm64] server directory: /home/runner/work/_temp/wine-arm64/test-rootfs/tmp/.wine-1001
+[wine-arm64] test: new prefix, exit 0 after 15 s; system32 816 files
+[wine-arm64] test: cmd: arm64 ok
+[wine-arm64] test: 7-Zip File Manager (arm64) window: yes
+[wine-arm64] test: 7-Zip File Manager (x64) window: yes
+[wine-arm64] test: 7-Zip File Manager (x86) window: yes
+[wine-arm64] done

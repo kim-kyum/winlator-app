@@ -1,0 +1,2 @@
+wine: created the configuration directory '/data/data/com.winlatab/files/rootfs/home/xuser/.wine'
+wineserver: mkdir /tmp/.wine-1001: Read-only file system
