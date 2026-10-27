@@ -67,7 +67,7 @@ env -i DISPLAY=$DISPLAY $AENV timeout 600 "$W/bin/wine" wineboot -i > "$OUT/arm6
 env -i $AENV timeout 60 "$W/bin/wineserver" -w
 
 # --- ImageJ and the JDKs ---------------------------------------------------------------------------
-B="$LAB/bench"; mkdir -p "$B"
+B="$LAB/rootfs/bench"; mkdir -p "$B"
 for a in x64 aarch64; do
     fetch "https://aka.ms/download-jdk/microsoft-jdk-21-windows-$a.zip" "$B/jdk-$a.zip"
     [ -d "$B/jdk-$a" ] || { mkdir -p "$B/jdk-$a.tmp" && unzip -q -o "$B/jdk-$a.zip" -d "$B/jdk-$a.tmp" && mv "$B/jdk-$a.tmp"/* "$B/jdk-$a"; }
@@ -99,7 +99,7 @@ run() {   # config, jdk, launcher...
     log "$config java -version: exit $? after $secs s"
     result "$config" "java-start-s" "$secs"
     t0=$(date +%s.%N)
-    ( cd "$B/ImageJ" && timeout 600 "$@" "$java" -Xmx2g -Djava.awt.headless=true -jar "C:\\bench\\ImageJ\\ij.jar" -batch "C:\\bench\\bench.ijm" > "$OUT/$config-imagej.log" 2>&1 )
+    ( cd "$B/ImageJ" && timeout 600 "$@" "$java" -Xmx2g -jar "C:\\bench\\ImageJ\\ij.jar" -batch "C:\\bench\\bench.ijm" > "$OUT/$config-imagej.log" 2>&1 )
     secs=$(python3 -c "print(round($(date +%s.%N) - $t0, 2))")
     total=$(grep -aE "^total " "$OUT/$config-imagej.log" | tail -1 | awk '{print $2}')
     log "$config ImageJ: wall $secs s, macro ${total:-?} ms"
