@@ -1,0 +1,101 @@
+--------- beginning of crash
+10-27 20:59:18.876  4269  7247 F libc    : Fatal signal 11 (SIGSEGV), code 128 (SI_KERNEL), fault addr 0x0 in tid 7247 (pool-4-thread-1), pid 4269 (com.winlatab)
+10-27 20:59:19.142  7281  7281 F DEBUG   : *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+10-27 20:59:19.143  7281  7281 F DEBUG   : Build fingerprint: 'google/sdk_gphone64_x86_64/emu64xa:14/UE1A.230829.050/12077443:userdebug/dev-keys'
+10-27 20:59:19.143  7281  7281 F DEBUG   : Revision: '0'
+10-27 20:59:19.143  7281  7281 F DEBUG   : ABI: 'x86_64'
+10-27 20:59:19.143  7281  7281 F DEBUG   : Timestamp: 2026-10-27 20:59:18.941880550+0000
+10-27 20:59:19.143  7281  7281 F DEBUG   : Process uptime: 299s
+10-27 20:59:19.143  7281  7281 F DEBUG   : Cmdline: com.winlatab
+10-27 20:59:19.143  7281  7281 F DEBUG   : pid: 4269, tid: 7247, name: pool-4-thread-1  >>> com.winlatab <<<
+10-27 20:59:19.143  7281  7281 F DEBUG   : uid: 10192
+10-27 20:59:19.143  7281  7281 F DEBUG   : signal 11 (SIGSEGV), code 128 (SI_KERNEL), fault addr 0x0000000000000000
+10-27 20:59:19.143  7281  7281 F DEBUG   :     rax 5aeb8228e670048b  rbx 00007ce98927b050  rcx 00007ce667b4d680  rdx 0000000000000002
+10-27 20:59:19.143  7281  7281 F DEBUG   :     r8  00007ce6c948cf01  r9  0000000000000001  r10 0000000000000000  r11 00000000000000e0
+10-27 20:59:19.143  7281  7281 F DEBUG   :     r12 00007ce6c94c7010  r13 00007ce667748c30  r14 00007ce66845cf74  r15 00007ce667f56624
+10-27 20:59:19.143  7281  7281 F DEBUG   :     rdi 0000000041582ad1  rsi 00007ce667748c30
+10-27 20:59:19.144  7281  7281 F DEBUG   :     rbp 00007ce98927b050  rsp 00007ce667a0bc28  rip 00007ce9781e42c3
+10-27 20:59:19.144  7281  7281 F DEBUG   : 2 total frames
+10-27 20:59:19.144  7281  7281 F DEBUG   : backtrace:
+10-27 20:59:19.144  7281  7281 F DEBUG   :       #00 pc 000000000001c2c3  /system/lib64/libvulkan.so (vkGetPhysicalDeviceProperties+3) (BuildId: 6d79d17c5bb9fcb09d831bfb2d555602)
+10-27 20:59:19.144  7281  7281 F DEBUG   :       #01 pc 00000000000316ae  <anonymous:7ce667b1c000>
+10-27 20:59:19.143  7281  7281 F DEBUG   : signal 11 (SIGSEGV), code 128 (SI_KERNEL), fault addr 0x0000000000000000
+10-27 20:59:19.143  7281  7281 F DEBUG   :     rax 5aeb8228e670048b  rbx 00007ce98927b050  rcx 00007ce667b4d680  rdx 0000000000000002
+10-27 20:59:19.143  7281  7281 F DEBUG   :     r8  00007ce6c948cf01  r9  0000000000000001  r10 0000000000000000  r11 00000000000000e0
+10-27 20:59:19.143  7281  7281 F DEBUG   :     r12 00007ce6c94c7010  r13 00007ce667748c30  r14 00007ce66845cf74  r15 00007ce667f56624
+10-27 20:59:19.143  7281  7281 F DEBUG   :     rdi 0000000041582ad1  rsi 00007ce667748c30
+10-27 20:59:19.144  7281  7281 F DEBUG   :     rbp 00007ce98927b050  rsp 00007ce667a0bc28  rip 00007ce9781e42c3
+10-27 20:59:19.144  7281  7281 F DEBUG   : 2 total frames
+10-27 20:59:19.144  7281  7281 F DEBUG   : backtrace:
+10-27 20:59:19.144  7281  7281 F DEBUG   :       #00 pc 000000000001c2c3  /system/lib64/libvulkan.so (vkGetPhysicalDeviceProperties+3) (BuildId: 6d79d17c5bb9fcb09d831bfb2d555602)
+10-27 20:59:19.144  7281  7281 F DEBUG   :       #01 pc 00000000000316ae  <anonymous:7ce667b1c000>
+10-27 20:59:19.157   520  7286 W ActivityTaskManager:   Force finishing activity com.winlatab/com.winlator.XServerDisplayActivity
+10-27 20:59:19.188   520  1318 I ActivityManager: Process com.winlatab (pid 4269) has died: fg  TOP 
+10-27 20:59:19.188   520  1999 I ImeTracker: com.winlatab:a1ce2683: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_REMOVE_CLIENT
+10-27 20:59:19.188   520  1999 I ImeTracker: com.winlatab:a1ce2683: onCancelled at PHASE_SERVER_SHOULD_HIDE
+10-27 20:59:19.189   520  1212 I WindowManager: WIN DEATH: Window{79b9b56 u0 com.winlatab/com.winlator.XServerDisplayActivity}
+10-27 20:59:19.193   520  1212 W InputManager-JNI: Input channel object '79b9b56 com.winlatab/com.winlator.XServerDisplayActivity (client)' was disposed without first being removed with the input manager!
+10-27 20:59:19.195   520   830 I WindowManager: WIN DEATH: Window{78476fb u0 com.winlatab/com.winlator.XServerDisplayActivity}
+10-27 20:59:19.195   520   830 W InputManager-JNI: Input channel object '78476fb com.winlatab/com.winlator.XServerDisplayActivity (client)' was disposed without first being removed with the input manager!
+10-27 20:59:19.208   520  1318 V SplashScreenExceptionList: SplashScreen checking exception for package com.winlatab (target sdk:28) -> false
+10-27 20:59:19.215   520  1968 I WindowManager: WIN DEATH: Window{917aad u0 com.winlatab/com.winlator.MainActivity}
+10-27 20:59:19.216   520  1968 W InputManager-JNI: Input channel object '917aad com.winlatab/com.winlator.MainActivity (client)' was disposed without first being removed with the input manager!
+10-27 20:59:19.219   520   543 W WindowManager: Failed to deliver inset control state change to w=Window{79b9b56 u0 com.winlatab/com.winlator.XServerDisplayActivity EXITING}
+10-27 20:59:19.234   520  2953 D CoreBackPreview: Window{3a516fa u0 Splash Screen com.winlatab}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@71be3dd, mPriority=0, mIsAnimationCallback=false}
+10-27 20:59:19.252   520   548 W UsageStatsService: Unexpected activity event reported! (com.winlatab/com.winlator.MainActivity event : 23 instanceId : 36727099)
+10-27 20:59:19.371   520   550 I ActivityManager: Start proc 7293:com.winlatab/u0a192 for top-activity {com.winlatab/com.winlator.MainActivity}
+10-27 20:59:19.419  7293  7293 I com.winlatab: Late-enabling -Xcheck:jni
+10-27 20:59:19.445  7293  7293 I com.winlatab: Using CollectorTypeCC GC.
+10-27 20:59:19.446  7293  7293 W com.winlatab: Unexpected CPU variant for x86: x86_64.
+10-27 20:59:19.446  7293  7293 W com.winlatab: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+10-27 20:59:19.557  7259  7259 D AndroidRuntime: Shutting down VM
+10-27 20:59:19.667   520   542 W ActivityTaskManager: Activity top resumed state loss timeout for ActivityRecord{7a0602c u0 com.winlatab/com.winlator.XServerDisplayActivity t8 f} isExiting}
+10-27 20:59:19.801  7293  7293 W ziparchive: Unable to open '/data/app/~~aZQDFtQbzqJwFIOoDRCWdQ==/com.winlatab-eUHQuWXAcc0YORsVQ1fqOA==/base.dm': No such file or directory
+10-27 20:59:19.801  7293  7293 W ziparchive: Unable to open '/data/app/~~aZQDFtQbzqJwFIOoDRCWdQ==/com.winlatab-eUHQuWXAcc0YORsVQ1fqOA==/base.dm': No such file or directory
+10-27 20:59:19.840   846   881 V WindowManagerShell: onTransitionReady android.os.BinderProxy@bc96ed6: {id=12 t=CLOSE f=0x10 trk=0 r=[0@Point(0, 0)] c=[{null m=CLOSE f=FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{7a0602c u0 com.winlatab/com.winlator.XServerDisplayActivity)/@0x6c88247 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0},{null m=TO_FRONT f=FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{d5e2335 u0 com.winlatab/com.winlator.MainActivity)/@0x4fb4a74 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0}]}
+10-27 20:59:19.841   846   881 V WindowManagerShell: Transition doesn't have explicit remote, search filters for match for {id=12 t=CLOSE f=0x10 trk=0 r=[0@Point(0, 0)] c=[{null m=CLOSE f=FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{7a0602c u0 com.winlatab/com.winlator.XServerDisplayActivity)/@0x6c88247 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0},{null m=TO_FRONT f=FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{d5e2335 u0 com.winlatab/com.winlator.MainActivity)/@0x4fb4a74 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0}]}
+10-27 20:59:19.841   846   881 V WindowManagerShell: start default transition animation, info = {id=12 t=CLOSE f=0x10 trk=0 r=[0@Point(0, 0)] c=[{null m=CLOSE f=FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{7a0602c u0 com.winlatab/com.winlator.XServerDisplayActivity)/@0x6c88247 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0},{null m=TO_FRONT f=FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{d5e2335 u0 com.winlatab/com.winlator.MainActivity)/@0x4fb4a74 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0}]}
+10-27 20:59:19.844   520   539 V WindowManager:     info={id=12 t=CLOSE f=0x10 trk=0 r=[0@Point(0, 0)] c=[{null m=CLOSE f=FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{7a0602c u0 com.winlatab/com.winlator.XServerDisplayActivity)/@0xfd508e1 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0},{null m=TO_FRONT f=FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{d5e2335 u0 com.winlatab/com.winlator.MainActivity)/@0x343b248 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0}]}
+10-27 20:59:19.961  7293  7293 D nativeloader: Configuring clns-6 for other apk /data/app/~~aZQDFtQbzqJwFIOoDRCWdQ==/com.winlatab-eUHQuWXAcc0YORsVQ1fqOA==/base.apk. target_sdk_version=28, uses_libraries=, library_path=/data/app/~~aZQDFtQbzqJwFIOoDRCWdQ==/com.winlatab-eUHQuWXAcc0YORsVQ1fqOA==/lib/arm64:/data/app/~~aZQDFtQbzqJwFIOoDRCWdQ==/com.winlatab-eUHQuWXAcc0YORsVQ1fqOA==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.winlatab
+10-27 20:59:20.136  7293  7293 V GraphicsEnvironment: ANGLE GameManagerService for com.winlatab: false
+10-27 20:59:20.136  7293  7293 V GraphicsEnvironment: com.winlatab is not listed in per-application setting
+10-27 20:59:20.199   520  2532 W WindowManager: Exception thrown during dispatchAppVisibility Window{79b9b56 u0 com.winlatab/com.winlator.XServerDisplayActivity EXITING}
+10-27 20:59:20.227   520  2532 W WindowManager: Failed to deliver inset control state change to w=Window{79b9b56 u0 com.winlatab/com.winlator.XServerDisplayActivity EXITING}
+10-27 20:59:20.449  7293  7293 W com.winlatab: Accessing hidden method Landroid/view/View;->computeFitSystemWindows(Landroid/graphics/Rect;Landroid/graphics/Rect;)Z (unsupported, reflection, allowed)
+10-27 20:59:20.449  7293  7293 W com.winlatab: Accessing hidden method Landroid/view/ViewGroup;->makeOptionalFitsSystemWindows()V (unsupported, reflection, allowed)
+10-27 20:59:20.612   520  2532 D CoreBackPreview: Window{72c4a40 u0 com.winlatab/com.winlator.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@11ba71f, mPriority=0, mIsAnimationCallback=false}
+10-27 20:59:21.910   520  2532 D CoreBackPreview: Window{3a516fa u0 Splash Screen com.winlatab EXITING}: Setting back callback null
+10-27 20:59:21.910   520  2532 W InputManager-JNI: Input channel object '3a516fa Splash Screen com.winlatab (client)' was disposed without first being removed with the input manager!
+10-27 20:59:22.045   520  1787 I ImeTracker: com.winlatab:eaa448d4: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+10-27 20:59:22.045   520  1787 I ImeTracker: com.winlatab:eaa448d4: onCancelled at PHASE_SERVER_SHOULD_HIDE
+10-27 20:59:22.062  1582  1582 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=com.winlatab fieldId=0 fieldName=null extras=null}, false)
+10-27 20:59:42.930  7353  7353 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-27 20:59:42.933  7353  7353 I AndroidRuntime: Using default boot image
+10-27 20:59:42.933  7353  7353 I AndroidRuntime: Leaving lock profiling enabled
+10-27 20:59:43.008  7353  7353 W libc    : Access denied finding property "ro.product.name_for_attestation"
+10-27 20:59:43.008  7353  7353 W libc    : Access denied finding property "ro.product.brand_for_attestation"
+10-27 20:59:43.008  7353  7353 W libc    : Access denied finding property "ro.product.model_for_attestation"
+10-27 20:59:43.009  7353  7353 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+10-27 20:59:44.066  7353  7353 D AndroidRuntime: Shutting down VM
+10-27 20:59:44.921   846   881 V WindowManagerShell: Transition requested: android.os.BinderProxy@93faa2f TransitionRequestInfo { type = CLOSE, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=false baseIntent=Intent { flg=0x10000000 cmp=com.winlatab/com.winlator.MainActivity } baseActivity=null topActivity=null origActivity=null realActivity=ComponentInfo{com.winlatab/com.winlator.MainActivity} numActivities=0 lastActiveTime=362292 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@54ff83c} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=null launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+10-27 20:59:45.395   520   539 V WindowManager: Sent Transition #13 createdAt=10-27 20:59:44.919 via request=TransitionRequestInfo { type = CLOSE, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=false baseIntent=Intent { flg=0x10000000 cmp=com.winlatab/com.winlator.MainActivity } baseActivity=null topActivity=null origActivity=null realActivity=ComponentInfo{com.winlatab/com.winlator.MainActivity} numActivities=0 lastActiveTime=362292 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{3f983b0 Task{fcd53ca #8 type=standard A=10192:com.winlatab}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=null launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+10-27 20:59:45.395   520   539 V WindowManager:     info={id=13 t=CLOSE f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{b9dad61 Task{be85f16 #1 type=home}}} m=TO_FRONT f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x6135cf4 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0},{WCT{RemoteToken{3f983b0 Task{fcd53ca #8 type=standard A=10192:com.winlatab}}} m=CLOSE f=NONE leash=Surface(name=Task=8)/@0xca66114 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0},{null m=TO_FRONT f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{cebdc12 token=android.os.Binder@d8bff9d})/@0xa27fcd3 sb=Rect(0, 0 - 2560, 1600) eb=Rect(0, 0 - 2560, 1600) d=0}]}
+10-27 20:59:45.988   520  1129 W InputManager-JNI: Input channel object '72c4a40 com.winlatab/com.winlator.MainActivity (client)' was disposed without first being removed with the input manager!
+10-27 20:59:46.178   520  1126 I WindowManager: setOnBackInvokedCallback(): No window state for package:com.winlatab
+10-27 20:59:53.181  7398  7398 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-27 20:59:53.184  7398  7398 I AndroidRuntime: Using default boot image
+10-27 20:59:53.184  7398  7398 I AndroidRuntime: Leaving lock profiling enabled
+10-27 20:59:53.258  7398  7398 W libc    : Access denied finding property "ro.product.name_for_attestation"
+10-27 20:59:53.258  7398  7398 W libc    : Access denied finding property "ro.product.brand_for_attestation"
+10-27 20:59:53.258  7398  7398 W libc    : Access denied finding property "ro.product.model_for_attestation"
+10-27 20:59:53.259  7398  7398 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+10-27 20:59:54.310  7398  7398 D AndroidRuntime: Shutting down VM
+10-27 20:59:55.203  7415  7415 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-27 20:59:55.206  7415  7415 I AndroidRuntime: Using default boot image
+10-27 20:59:55.206  7415  7415 I AndroidRuntime: Leaving lock profiling enabled
+10-27 20:59:55.278  7415  7415 W libc    : Access denied finding property "ro.product.name_for_attestation"
+10-27 20:59:55.278  7415  7415 W libc    : Access denied finding property "ro.product.brand_for_attestation"
+10-27 20:59:55.278  7415  7415 W libc    : Access denied finding property "ro.product.model_for_attestation"
+10-27 20:59:55.279  7415  7415 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+10-27 20:59:55.959   520   610 D ActivityManager: freezing 7293 com.winlatab
+10-27 20:59:56.315  7415  7415 D AndroidRuntime: Shutting down VM

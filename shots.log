@@ -1,0 +1,87 @@
+libndk_translation.so
+Physical size: 2560x1600
+Performing Streamed Install
+Success
+Starting: Intent { cmp=com.winlatab/com.winlator.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: com.winlatab/com.winlator.MainActivity
+TotalTime: 4748
+WaitTime: 4750
+Complete
+[ui] shot first-start
+[ui] not found: text=허용
+[ui] not found: text=Allow
+[ui] not found: text=ALLOW
+[ui] system files installed after 51 s
+[ui] shot containers-empty
+[ui] shot drawer
+[ui] shot settings
+[ui] shot settings-2
+[ui] shot settings-3
+[ui] shot settings-4
+[ui] shot input-controls
+[ui] shot about
+[ui] shot container-new
+[ui] shot container-new-1
+[ui] shot container-new-2
+[ui] shot container-new-3
+[ui] container ready after 2 s
+[ui] shot containers-one
+[ui] shot container-menu
+[ui] shot dialog-remove
+[ui] shot container-edit
+[ui] shot container-edit-2
+[ui] shot loading
+[ui] shot running
+[ui] shot running-drawer
+[ui] not found: text=나가기
+[ui] app not in front (after-run); its crash, if any:
+    --------- beginning of crash
+    10-27 20:59:18.876  4269  7247 F libc    : Fatal signal 11 (SIGSEGV), code 128 (SI_KERNEL), fault addr 0x0 in tid 7247 (pool-4-thread-1), pid 4269 (com.winlatab)
+    10-27 20:59:19.142  7281  7281 F DEBUG   : *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+    10-27 20:59:19.143  7281  7281 F DEBUG   : Build fingerprint: 'google/sdk_gphone64_x86_64/emu64xa:14/UE1A.230829.050/12077443:userdebug/dev-keys'
+    10-27 20:59:19.143  7281  7281 F DEBUG   : Revision: '0'
+    10-27 20:59:19.143  7281  7281 F DEBUG   : ABI: 'x86_64'
+    10-27 20:59:19.143  7281  7281 F DEBUG   : Timestamp: 2026-10-27 20:59:18.941880550+0000
+    10-27 20:59:19.143  7281  7281 F DEBUG   : Process uptime: 299s
+    10-27 20:59:19.143  7281  7281 F DEBUG   : Cmdline: com.winlatab
+    10-27 20:59:19.143  7281  7281 F DEBUG   : pid: 4269, tid: 7247, name: pool-4-thread-1  >>> com.winlatab <<<
+    10-27 20:59:19.143  7281  7281 F DEBUG   : uid: 10192
+    10-27 20:59:19.143  7281  7281 F DEBUG   : signal 11 (SIGSEGV), code 128 (SI_KERNEL), fault addr 0x0000000000000000
+    10-27 20:59:19.143  7281  7281 F DEBUG   :     rax 5aeb8228e670048b  rbx 00007ce98927b050  rcx 00007ce667b4d680  rdx 0000000000000002
+    10-27 20:59:19.143  7281  7281 F DEBUG   :     r8  00007ce6c948cf01  r9  0000000000000001  r10 0000000000000000  r11 00000000000000e0
+    10-27 20:59:19.143  7281  7281 F DEBUG   :     r12 00007ce6c94c7010  r13 00007ce667748c30  r14 00007ce66845cf74  r15 00007ce667f56624
+    10-27 20:59:19.143  7281  7281 F DEBUG   :     rdi 0000000041582ad1  rsi 00007ce667748c30
+    10-27 20:59:19.144  7281  7281 F DEBUG   :     rbp 00007ce98927b050  rsp 00007ce667a0bc28  rip 00007ce9781e42c3
+    10-27 20:59:19.144  7281  7281 F DEBUG   : 2 total frames
+    10-27 20:59:19.144  7281  7281 F DEBUG   : backtrace:
+    10-27 20:59:19.144  7281  7281 F DEBUG   :       #00 pc 000000000001c2c3  /system/lib64/libvulkan.so (vkGetPhysicalDeviceProperties+3) (BuildId: 6d79d17c5bb9fcb09d831bfb2d555602)
+    10-27 20:59:19.144  7281  7281 F DEBUG   :       #01 pc 00000000000316ae  <anonymous:7ce667b1c000>
+    10-27 20:59:19.143  7281  7281 F DEBUG   : signal 11 (SIGSEGV), code 128 (SI_KERNEL), fault addr 0x0000000000000000
+    10-27 20:59:19.143  7281  7281 F DEBUG   :     rax 5aeb8228e670048b  rbx 00007ce98927b050  rcx 00007ce667b4d680  rdx 0000000000000002
+    10-27 20:59:19.143  7281  7281 F DEBUG   :     r8  00007ce6c948cf01  r9  0000000000000001  r10 0000000000000000  r11 00000000000000e0
+    10-27 20:59:19.143  7281  7281 F DEBUG   :     r12 00007ce6c94c7010  r13 00007ce667748c30  r14 00007ce66845cf74  r15 00007ce667f56624
+    10-27 20:59:19.143  7281  7281 F DEBUG   :     rdi 0000000041582ad1  rsi 00007ce667748c30
+    10-27 20:59:19.144  7281  7281 F DEBUG   :     rbp 00007ce98927b050  rsp 00007ce667a0bc28  rip 00007ce9781e42c3
+    10-27 20:59:19.144  7281  7281 F DEBUG   : 2 total frames
+    10-27 20:59:19.144  7281  7281 F DEBUG   : backtrace:
+    10-27 20:59:19.144  7281  7281 F DEBUG   :       #00 pc 000000000001c2c3  /system/lib64/libvulkan.so (vkGetPhysicalDeviceProperties+3) (BuildId: 6d79d17c5bb9fcb09d831bfb2d555602)
+Starting: Intent { cmp=com.winlatab/com.winlator.MainActivity }
+Status: ok
+LaunchState: WARM
+Activity: com.winlatab/com.winlator.MainActivity
+TotalTime: 1261
+WaitTime: 1273
+Complete
+[ui] shot light-containers
+[ui] shot light-drawer
+[ui] shot light-container-menu
+[ui] shot light-container-edit
+[ui] shot light-settings
+[ui] shot light-settings-2
+[ui] shot light-about
+[ui] shot arm64-wine-row
+[ui] ARM64 Wine: 43 s
+[ui] shot arm64-wine-install
+[ui] done
