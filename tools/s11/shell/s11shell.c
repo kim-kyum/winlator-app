@@ -1281,7 +1281,7 @@ static void notice_close_rect(RECT *rc)
     SetRect(rc, notice_w() - SC(40), SC(8), notice_w() - SC(8), SC(40));
 }
 
-/* Where the title and the text go (the text wraps; three lines at most) */
+/* Where the title and the text go (the text wraps; five lines at most) */
 static void notice_layout(RECT *title, RECT *text)
 {
     HDC dc = GetDC(notice);
@@ -1296,7 +1296,7 @@ static void notice_layout(RECT *title, RECT *text)
     GetTextMetricsW(dc, &tm);
     SetRect(&measure, 0, 0, width, 0);
     DrawTextW(dc, notice_text, -1, &measure, DT_CALCRECT | DT_WORDBREAK | DT_EDITCONTROL | DT_NOPREFIX);
-    text_h = min(measure.bottom - measure.top, tm.tmHeight * 3);
+    text_h = min(measure.bottom - measure.top, tm.tmHeight * 5);
     SelectObject(dc, old);
     ReleaseDC(notice, dc);
 
