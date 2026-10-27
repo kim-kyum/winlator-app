@@ -6,11 +6,9 @@ one is solid with a title bar: Windows programs moving forward onto the tablet.
 Usage: python -I make_logo.py ico <out.ico>
        python -I make_logo.py png <size> <out.png> [--no-tile]
        python -I make_logo.py android <res dir> <bold font.ttf>
-       python -I make_logo.py settings-ico <out.ico>   (the Settings app: a gear in the same colours)
-       python -I make_logo.py explorer-ico <out.ico>   (File Explorer: a yellow folder)
-The shell draws the same mark with GDI+ (draw_logo in tools/s11/shell/s11ui.h).
+The shell draws the same mark with GDI+ (draw_logo in tools/s11/shell/s11ui.h). The icons of
+the built-in programs (Settings, File Explorer, ...) come from make_app_icons.py.
 """
-import math
 import os
 import sys
 
@@ -61,65 +59,6 @@ def gradient_image(big):
             t = (x + y) / (2 * (big - 1))
             px[x, y] = tuple(round(TOP_LEFT[i] * (1 - t) + BOTTOM_RIGHT[i] * t) for i in range(3)) + (255,)
     return image
-
-
-def gear(size):
-    """A gear with eight teeth in the S11 gradient, on a transparent background."""
-    ss = 4
-    big = size * ss
-    c = big / 2
-    teeth = 8
-    step = 2 * math.pi / teeth
-    r_out, r_root, r_hole = 0.48 * big, 0.37 * big, 0.155 * big
-
-    def polar(angle, radius):
-        return (c + radius * math.cos(angle), c + radius * math.sin(angle))
-
-    points = []
-    for i in range(teeth):
-        a = i * step - math.pi / 2
-        top, base = step * 0.19, step * 0.29
-        points += [polar(a - base, r_root), polar(a - top, r_out), polar(a + top, r_out), polar(a + base, r_root)]
-        for k in range(1, 10):   # the root between this tooth and the next
-            points.append(polar(a + base + (step - 2 * base) * k / 10, r_root))
-    mask = Image.new("L", (big, big), 0)
-    draw = ImageDraw.Draw(mask)
-    draw.polygon(points, fill=255)
-    draw.ellipse([c - r_hole, c - r_hole, c + r_hole, c + r_hole], fill=0)
-
-    image = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    image.paste(gradient_image(big), (0, 0), mask)
-    # a lighter ring around the hole gives the flat gear some depth
-    ring = Image.new("L", (big, big), 0)
-    rd = ImageDraw.Draw(ring)
-    r1, r2 = 0.27 * big, r_hole
-    rd.ellipse([c - r1, c - r1, c + r1, c + r1], fill=70)
-    rd.ellipse([c - r2, c - r2, c + r2, c + r2], fill=0)
-    white = Image.new("RGBA", (big, big), (255, 255, 255, 0))
-    white.putalpha(ring)
-    image.alpha_composite(white)
-    return image.resize((size, size), Image.LANCZOS)
-
-
-def folder(size):
-    """The File Explorer icon: a yellow folder, the back sheet darker than the front."""
-    ss = 4
-    big = size * ss
-    image = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(image)
-    r = big * 0.06
-    # back sheet with the tab
-    draw.rounded_rectangle([big * 0.06, big * 0.16, big * 0.48, big * 0.40], radius=r, fill=(0xE8, 0xA3, 0x2E, 255))
-    draw.rounded_rectangle([big * 0.06, big * 0.24, big * 0.94, big * 0.84], radius=r, fill=(0xE8, 0xA3, 0x2E, 255))
-    # front sheet
-    front = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    fd = ImageDraw.Draw(front)
-    fd.rounded_rectangle([big * 0.06, big * 0.34, big * 0.94, big * 0.86], radius=r, fill=(0xFF, 0xC8, 0x3D, 255))
-    shade = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    ImageDraw.Draw(shade).rectangle([0, big * 0.34, big, big * 0.38], fill=(255, 236, 170, 140))
-    front = Image.alpha_composite(front, Image.composite(shade, Image.new("RGBA", (big, big)), front.split()[3]))
-    image = Image.alpha_composite(image, front)
-    return image.resize((size, size), Image.LANCZOS)
 
 
 def circle(image):
@@ -187,11 +126,10 @@ def main():
         android(sys.argv[2], sys.argv[3])
         print("android icons written")
         return
-    if kind in ("ico", "settings-ico", "explorer-ico"):
+    if kind == "ico":
         out = sys.argv[2]
         sizes = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]
-        draw = {"ico": render, "settings-ico": gear, "explorer-ico": folder}[kind]
-        images = [draw(s) for s in sizes]
+        images = [render(s) for s in sizes]
         images[-1].save(out, format="ICO", sizes=[(s, s) for s in sizes], append_images=images[:-1])
     else:
         size, out = int(sys.argv[2]), sys.argv[3]

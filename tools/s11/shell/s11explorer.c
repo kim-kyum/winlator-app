@@ -16,6 +16,7 @@
 #include "s11ui.h"
 #include <shobjidl.h>
 #include <uxtheme.h>
+#include "s11shellko.h"
 
 #define WM_APP_NAVIGATED (WM_APP + 30)
 
@@ -214,13 +215,15 @@ static void select_all(void)
 
 /*
  * Wine sizes the detail columns for 96 dpi and a narrow window ("Modified" gets cut off).
- * Fit them to their titles and contents instead, and call the first one "Name" as Windows
- * does.
+ * Fit them to their titles and contents instead, give them Windows' titles ("이름", "유형",
+ * "수정한 날짜" rather than Wine's "파일", "종류", "수정됨"), and align them as Windows does:
+ * sizes on the right, everything else on the left (Wine puts most of them on the right).
  */
 static void fit_columns(BOOL grow_only)
 {
     HWND list = view_list(), header;
     int i, count;
+    BOOL drives = current && this_pc && ILIsEqual(current, this_pc);
 
     if (!list || (GetWindowLongW(list, GWL_STYLE) & LVS_TYPEMASK) != LVS_REPORT) return;
     header = (HWND)SendMessageW(list, LVM_GETHEADER, 0, 0);
@@ -228,19 +231,20 @@ static void fit_columns(BOOL grow_only)
     SendMessageW(list, WM_SETREDRAW, FALSE, 0);
     for (i = 0; i < count; i++) {
         WCHAR text[128] = L"";
-        LVCOLUMNW column = {LVCF_TEXT};
+        LVCOLUMNW column = {LVCF_TEXT | LVCF_FMT};
         int title, content, width, old_width = (int)SendMessageW(list, LVM_GETCOLUMNWIDTH, i, 0);
 
         column.pszText = text;
         column.cchTextMax = ARRAY_SIZE(text);
         SendMessageW(list, LVM_GETCOLUMNW, i, (LPARAM)&column);
         if (korean) {
-            if (i == 0) lstrcpyW(text, L"이름");
-            else if (i == 1 && (!lstrcmpiW(text, L"Size") || !lstrcmpiW(text, L"Total size"))) lstrcpyW(text, L"크기");
-            else if (i == 2 && !lstrcmpiW(text, L"Type")) lstrcpyW(text, L"유형");
-            else if (i == 3 && (!lstrcmpiW(text, L"Date Modified") || !lstrcmpiW(text, L"Modified"))) lstrcpyW(text, L"수정한 날짜");
-            column.mask = LVCF_TEXT;
+            const WCHAR *ko = shellko_column_title(text, i, drives);
+            if (ko) lstrcpynW(text, ko, ARRAY_SIZE(text));
+            column.mask = LVCF_TEXT | LVCF_FMT;
             column.pszText = text;
+            column.fmt = (column.fmt & ~LVCFMT_JUSTIFYMASK) |
+                         (i > 0 && (!lstrcmpW(text, L"크기") || !lstrcmpW(text, L"전체 크기") ||
+                                    !lstrcmpW(text, L"사용 가능한 공간")) ? LVCFMT_RIGHT : LVCFMT_LEFT);
             SendMessageW(list, LVM_SETCOLUMNW, i, (LPARAM)&column);
         }
         title = (int)SendMessageW(list, LVM_GETSTRINGWIDTHW, 0, (LPARAM)text) + SC(28);
@@ -430,6 +434,14 @@ static void drive_label(int index, WCHAR *name, int size)
     if (label[0]) wsprintfW(text, L"%.60s (%c:)", label, 'A' + index);
     else wsprintfW(text, L"%s (%c:)", TR(L"드라이브", L"Drive"), 'A' + index);
     lstrcpynW(name, text, size);
+}
+
+/* The shell view's names for drives, as in the navigation pane (s11shellko.h asks) */
+static BOOL drive_item_name(const WCHAR *parsing, WCHAR *text, int size)
+{
+    if (!parsing[0] || parsing[1] != ':' || parsing[2] != '\\' || parsing[3]) return FALSE;
+    drive_label(towupper(parsing[0]) - 'A', text, size);
+    return TRUE;
 }
 
 static void add_drive(int index)
@@ -1169,6 +1181,11 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
     SetProcessDPIAware();
     dpi = GetDpiForSystem();
     korean = TRUE; /* S11 is a Korean-first workspace even if Wine's UI locale remains en-US. */
+    /* what Wine's shell view and menus leave English (file types, "New", some verbs) */
+    if (korean) {
+        shellko_item_name = drive_item_name;
+        shellko_install();
+    }
     choose_palette();
     GdiplusStartup(&gdiplus_token, &gdiplus_input, NULL);
     OleInitialize(NULL);

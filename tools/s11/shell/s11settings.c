@@ -22,6 +22,7 @@
 #include "s11ui.h"
 #include <commdlg.h>
 #include <uxtheme.h>
+#include "s11shellko.h"
 
 #define WINLATOR_SET_SCREEN 102
 #define WINLATOR_SET_THEME 103
@@ -2555,6 +2556,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
     SetProcessDPIAware();
     dpi = GetDpiForSystem();
     korean = TRUE; /* S11 is a Korean-first product, independent of Wine's UI language. */
+    if (korean) shellko_install();   /* the file dialogs' types and menus (s11shellko.h) */
     choose_palette();
     GdiplusStartup(&gdiplus_token, &gdiplus_input, NULL);
     CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);

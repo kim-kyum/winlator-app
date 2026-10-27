@@ -78,12 +78,46 @@ public class WineRegistryEditor implements Closeable {
         else FileUtils.copy(file, cloneFile);
     }
 
+    /* Winlator S11: characters beyond ASCII as \x escapes, the way Wine writes them, so the
+     * file stays ASCII (offsets are counted in characters here and in bytes when seeking)
+     * and names match what Wine saved ("\xad74\xb9bc", not "굴림") */
     private static String escape(String str) {
-        return str.replace("\\", "\\\\").replace("\"", "\\\"");
+        StringBuilder result = new StringBuilder(str.length() + 8);
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '\\') result.append("\\\\");
+            else if (c == '"') result.append("\\\"");
+            else if (c > 0x7f) {
+                // as Wine's dump_strW: four digits only when a hex digit follows
+                char next = i + 1 < str.length() ? str.charAt(i + 1) : 0;
+                boolean hexFollows = next < 0x80 && Character.digit(next, 16) >= 0;
+                result.append(String.format(Locale.ENGLISH, hexFollows ? "\\x%04x" : "\\x%x", (int)c));
+            }
+            else result.append(c);
+        }
+        return result.toString();
     }
 
     private static String unescape(String str) {
-        return str.replace("\\\"", "\"").replace("\\\\", "\\");
+        if (str.indexOf('\\') < 0) return str;
+        StringBuilder result = new StringBuilder(str.length());
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            char next = i + 1 < str.length() ? str.charAt(i + 1) : 0;
+            if (c == '\\' && (next == '\\' || next == '"')) {
+                result.append(next);
+                i++;
+            }
+            else if (c == '\\' && next == 'x' && i + 2 < str.length() && Character.digit(str.charAt(i + 2), 16) >= 0) {
+                int value = 0, j = i + 2;
+                for (; j < str.length() && j < i + 6 && Character.digit(str.charAt(j), 16) >= 0; j++)
+                    value = value * 16 + Character.digit(str.charAt(j), 16);
+                result.append((char)value);
+                i = j - 1;
+            }
+            else result.append(c);
+        }
+        return result.toString();
     }
 
     @Override

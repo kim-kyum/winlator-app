@@ -82,9 +82,15 @@ static inline bool wcstartswith(wchar_t* prefix, wchar_t* string) {
     return true;
 }
 
+/* The bytes a UTF-8 file has beyond one per character (Winlator S11: Hangul is three bytes,
+ * not two, so registry offsets after Korean text were off by one per syllable) */
 static inline int mbclen(wchar_t* string) {
     int count = 0;
-    while (*string) if (*string++ > 0x7f) count++;
+    for (; *string; string++) {
+        if (*string > 0xffff) count += 3;
+        else if (*string > 0x7ff) count += 2;
+        else if (*string > 0x7f) count++;
+    }
     return count;
 }
 

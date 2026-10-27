@@ -47,7 +47,7 @@ The Wine desktop is set up to look like Windows 10/11 rather than Windows 95:
 
 `tools/s11/shell/s11shell.c` is a small Win32 program (built with clang against Wine's
 headers, `build.sh`; the exe ships in the rootfs overlay) that replaces explorer.exe's
-taskbar on the desktop session: centred program buttons with unified rounded app-icon tiles and tooltips, the
+taskbar on the desktop session: centred program buttons with the S11 app icons and tooltips, the
 notification area (it answers Wine's `Shell_NotifyIcon` messages as `Shell_TrayWnd`), a
 clock, input-language indicator and quick links for hidden background icons, Wi-Fi and
 Bluetooth, and a start menu with every installed program, search (Hangul initial consonants
@@ -126,8 +126,40 @@ Win+I, or the taskbar's menu:
 
 The File Explorer keeps its shell navigation but now applies the S11 palette and Segoe-style
 typography to the embedded file list, uses Explorer-themed headers, double buffering, and
-full-row selection; the application icon is a familiar light-blue folder rather than Wine
-branding.
+full-row selection.
+
+## Korean in Wine's shell
+
+Wine's Korean resources leave some of its file views English. shell32 builds the Type column
+itself ("Folder", "File", "<ext> file" are fixed strings) and takes the type names from the
+registry, where wine.inf put English ones ("Application", "Text Document"); Wine 10.10's
+Korean translation lacks "Ne&w" and "Run as &Administrator"; verbs without a description show
+their key name; Wine's Korean locale data writes "AM"/"PM" and "2026. 10. 27.".
+
+- `KoreanShell` writes Korean names for Wine's file types and verbs into the registry before
+  Wine starts (English ones again when the app or the container's `LC_ALL` is not Korean), and,
+  once Wine has set the user locale to ko-KR, Windows' date notation (`2026-10-27 오전 3:07`).
+  This reaches every program's file dialogs. Only display names change, never a command.
+- `tools/s11/shell/s11shellko.h` fixes the rest where the S11 programs show it: a
+  `WH_CALLWNDPROCRET` hook on the UI thread rewrites the shell view's Type and date texts
+  after Wine fills them in (finding the columns by property key), menu items (`WM_INITMENUPOPUP`)
+  and the read-only fields of the properties pages (`WM_INITDIALOG`). The File Explorer and the
+  Settings app (its file dialogs) install it; the explorer also uses Windows' column titles and
+  alignment and names drives as its navigation pane does ("로컬 디스크 (C:)").
+- `WineRegistryEditor` writes characters beyond ASCII as `\x` escapes, exactly as Wine does,
+  and reads them back. The native helper counted every such character as one extra byte, but
+  Hangul is three in UTF-8, so an edit after Korean text in the same file landed at the wrong
+  offset and corrupted it (`mbclen`, fixed as well).
+
+## App icons
+
+The built-in programs share one icon style: a white symbol on the blue tile of the S11 mark
+(Settings, File Explorer, Gallery, Command Prompt, Notepad, WordPad, Task Manager, Registry
+Editor, Wine settings, the installers, GPU info, Direct3D test, WineMine and 7-Zip).
+`tools/s11/branding/make_app_icons.py` draws them from a few shapes: the .ico files of the S11
+programs, a preview sheet, and `tools/s11/shell/s11tiles.h`, the same shapes as numbers, which
+the shell draws with GDI+ on the taskbar and in the start menu (`draw_s11_tile`). Other
+programs keep their own icon on a soft rounded surface.
 
 What Wine keeps in the registry it writes directly. Resolution, mode and background belong
 to the container in Winlator, so it sends them to winhandler's UDP port (codes 102-104,

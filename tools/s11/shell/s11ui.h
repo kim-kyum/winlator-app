@@ -323,108 +323,144 @@ enum s11_builtin_icon {
     S11_ICON_TERMINAL,
     S11_ICON_NOTEPAD,
     S11_ICON_TASK_MANAGER,
-    S11_ICON_REGISTRY
+    S11_ICON_REGISTRY,
+    S11_ICON_WORDPAD,
+    S11_ICON_WINECFG,
+    S11_ICON_INSTALLER,
+    S11_ICON_GPU,
+    S11_ICON_D3D,
+    S11_ICON_MINES,
+    S11_ICON_ARCHIVE
 };
 
-/* Minimal line-art symbols keep built-in apps distinct but visually related. */
-static void draw_s11_builtin_glyph(struct canvas *c, int kind, int x, int y, int size)
-{
-    float l = (float)x, t = (float)y, s = (float)size;
-    float cx = l + s / 2, cy = t + s / 2;
-    GpPen *pen;
-    GpSolidFill *brush;
+/*
+ * The built-in programs' icons: a white symbol on the blue tile of the S11 mark. The shapes
+ * come from tools/s11/branding/make_app_icons.py (s11tiles.h), which also draws the .ico files.
+ */
+#include "s11tiles.h"
 
+static const float *s11_tile_symbol(int kind)
+{
     switch (kind) {
-    case S11_ICON_SETTINGS:
-        draw_gear_glyph(c, cx, cy, s * 0.76f, pal.accent);
-        break;
-    case S11_ICON_EXPLORER:
-        draw_folder_glyph(c, cx, cy, s * 0.78f, pal.accent);
-        break;
-    case S11_ICON_GALLERY: {
-        RECT frame = {x + size / 6, y + size / 6, x + size - size / 6, y + size - size / 6};
-        GpPointF mountain[] = {
-            {l + s * 0.23f, t + s * 0.69f}, {l + s * 0.43f, t + s * 0.48f},
-            {l + s * 0.56f, t + s * 0.59f}, {l + s * 0.70f, t + s * 0.43f},
-            {l + s * 0.80f, t + s * 0.69f}
-        };
-        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.075f));
-        GdipDrawRectangle(c->g, pen, (float)frame.left, (float)frame.top,
-                          (float)(frame.right - frame.left), (float)(frame.bottom - frame.top));
-        GdipDrawEllipse(c->g, pen, l + s * 0.62f, t + s * 0.26f, s * 0.11f, s * 0.11f);
-        GdipDrawLines(c->g, pen, mountain, ARRAY_SIZE(mountain));
-        GdipDeletePen(pen);
-        break;
-    }
-    case S11_ICON_TERMINAL: {
-        RECT screen = {x + size / 7, y + size / 5, x + size - size / 7, y + size - size / 5};
-        stroke_round_rect(c, &screen, (float)SC(3), argb(pal.accent, 255), max(1.0f, s * 0.075f));
-        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.08f));
-        GdipDrawLine(c->g, pen, l + s * 0.29f, cy - s * 0.10f, l + s * 0.42f, cy);
-        GdipDrawLine(c->g, pen, l + s * 0.42f, cy, l + s * 0.29f, cy + s * 0.10f);
-        GdipDrawLine(c->g, pen, l + s * 0.49f, cy + s * 0.11f, l + s * 0.67f, cy + s * 0.11f);
-        GdipDeletePen(pen);
-        break;
-    }
-    case S11_ICON_NOTEPAD: {
-        RECT page = {x + size / 5, y + size / 7, x + size - size / 5, y + size - size / 7};
-        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.075f));
-        GdipDrawRectangle(c->g, pen, (float)page.left, (float)page.top,
-                          (float)(page.right - page.left), (float)(page.bottom - page.top));
-        GdipDrawLine(c->g, pen, l + s * 0.32f, t + s * 0.42f, l + s * 0.68f, t + s * 0.42f);
-        GdipDrawLine(c->g, pen, l + s * 0.32f, t + s * 0.54f, l + s * 0.68f, t + s * 0.54f);
-        GdipDrawLine(c->g, pen, l + s * 0.32f, t + s * 0.66f, l + s * 0.60f, t + s * 0.66f);
-        GdipDeletePen(pen);
-        break;
-    }
-    case S11_ICON_TASK_MANAGER:
-        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.07f));
-        GdipDrawLine(c->g, pen, l + s * 0.22f, t + s * 0.76f, l + s * 0.78f, t + s * 0.76f);
-        GdipDeletePen(pen);
-        GdipCreateSolidFill(argb(pal.accent, 255), &brush);
-        GdipFillRectangle(c->g, (GpBrush *)brush, l + s * 0.29f, t + s * 0.55f, s * 0.11f, s * 0.21f);
-        GdipFillRectangle(c->g, (GpBrush *)brush, l + s * 0.46f, t + s * 0.37f, s * 0.11f, s * 0.39f);
-        GdipFillRectangle(c->g, (GpBrush *)brush, l + s * 0.63f, t + s * 0.25f, s * 0.11f, s * 0.51f);
-        GdipDeleteBrush((GpBrush *)brush);
-        break;
-    case S11_ICON_REGISTRY: {
-        float r = s * 0.095f;
-        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.07f));
-        GdipDrawLine(c->g, pen, cx, t + s * 0.31f, l + s * 0.31f, t + s * 0.57f);
-        GdipDrawLine(c->g, pen, cx, t + s * 0.31f, l + s * 0.69f, t + s * 0.57f);
-        GdipDrawLine(c->g, pen, l + s * 0.31f, t + s * 0.57f, l + s * 0.31f, t + s * 0.76f);
-        GdipDrawLine(c->g, pen, l + s * 0.69f, t + s * 0.57f, l + s * 0.69f, t + s * 0.76f);
-        GdipDeletePen(pen);
-        GdipCreateSolidFill(argb(pal.field, 255), &brush);
-        GdipFillEllipse(c->g, (GpBrush *)brush, cx - r, t + s * 0.22f, r * 2, r * 2);
-        GdipFillEllipse(c->g, (GpBrush *)brush, l + s * 0.22f, t + s * 0.49f, r * 2, r * 2);
-        GdipFillEllipse(c->g, (GpBrush *)brush, l + s * 0.60f, t + s * 0.49f, r * 2, r * 2);
-        GdipFillEllipse(c->g, (GpBrush *)brush, l + s * 0.22f, t + s * 0.68f, r * 2, r * 2);
-        GdipFillEllipse(c->g, (GpBrush *)brush, l + s * 0.60f, t + s * 0.68f, r * 2, r * 2);
-        GdipDeleteBrush((GpBrush *)brush);
-        pen = make_pen(argb(pal.accent, 255), max(1.0f, s * 0.07f));
-        GdipDrawEllipse(c->g, pen, cx - r, t + s * 0.22f, r * 2, r * 2);
-        GdipDrawEllipse(c->g, pen, l + s * 0.22f, t + s * 0.49f, r * 2, r * 2);
-        GdipDrawEllipse(c->g, pen, l + s * 0.60f, t + s * 0.49f, r * 2, r * 2);
-        GdipDrawEllipse(c->g, pen, l + s * 0.22f, t + s * 0.68f, r * 2, r * 2);
-        GdipDrawEllipse(c->g, pen, l + s * 0.60f, t + s * 0.68f, r * 2, r * 2);
-        GdipDeletePen(pen);
-        break;
-    }
-    default:
-        break;
+    case S11_ICON_SETTINGS: return s11_tile_settings;
+    case S11_ICON_EXPLORER: return s11_tile_explorer;
+    case S11_ICON_GALLERY: return s11_tile_gallery;
+    case S11_ICON_TERMINAL: return s11_tile_terminal;
+    case S11_ICON_NOTEPAD: return s11_tile_notepad;
+    case S11_ICON_TASK_MANAGER: return s11_tile_taskmgr;
+    case S11_ICON_REGISTRY: return s11_tile_registry;
+    case S11_ICON_WORDPAD: return s11_tile_wordpad;
+    case S11_ICON_WINECFG: return s11_tile_winecfg;
+    case S11_ICON_INSTALLER: return s11_tile_installer;
+    case S11_ICON_GPU: return s11_tile_gpu;
+    case S11_ICON_D3D: return s11_tile_d3d;
+    case S11_ICON_MINES: return s11_tile_mines;
+    case S11_ICON_ARCHIVE: return s11_tile_archive;
+    default: return NULL;
     }
 }
 
-/* App icons share the soft, rounded surface and accent line art of S11 Settings. */
+/* Adds a filled shape (rounded rectangle, polygon or circle) to a path; the numbers it used */
+static int s11_tile_add_shape(GpPath *path, const float *op, float x, float y, float u)
+{
+    switch ((int)op[0]) {
+    case 1: {
+        GpPath *rr = round_rect_path(x + op[2] * u, y + op[3] * u, (op[4] - op[2]) * u, (op[5] - op[3]) * u, op[6] * u);
+        GdipAddPathPath(path, rr, FALSE);
+        GdipDeletePath(rr);
+        return 7;
+    }
+    case 2: {
+        GpPointF points[128];
+        int n = (int)op[2], i;
+        for (i = 0; i < n && i < ARRAY_SIZE(points); i++) {
+            points[i].X = x + op[3 + 2 * i] * u;
+            points[i].Y = y + op[4 + 2 * i] * u;
+        }
+        GdipAddPathPolygon(path, points, i);
+        return 3 + 2 * n;
+    }
+    case 3:
+        GdipAddPathEllipse(path, x + (op[2] - op[4]) * u, y + (op[3] - op[4]) * u, 2 * op[4] * u, 2 * op[4] * u);
+        return 5;
+    }
+    return 0;
+}
+
+static void draw_s11_tile(struct canvas *c, const float *ops, int x, int y, int size)
+{
+    float fx = (float)x, fy = (float)y, u = size / 100.0f;
+    GpPointF from = {fx, fy}, to = {fx + size, fy + size};
+    GpLineGradient *tile;
+    GpPath *path;
+
+    GdipCreateLineBrush(&from, &to, 0xff5cc0ff, 0xff568cff, WrapModeTileFlipXY, &tile);
+    path = round_rect_path(fx, fy, (float)size, (float)size, size * 0.23f);
+    GdipFillPath(c->g, (GpBrush *)tile, path);
+    GdipDeletePath(path);
+
+    while (ops && ops[0] != 0) {
+        int code = (int)ops[0];
+        float alpha = ops[1];
+        GpSolidFill *white = NULL;
+        GpBrush *brush;
+
+        /* cut-outs are painted with the tile itself */
+        if (alpha < 0) brush = (GpBrush *)tile;
+        else {
+            GdipCreateSolidFill(((ARGB)(BYTE)alpha << 24) | 0xffffff, &white);
+            brush = (GpBrush *)white;
+        }
+        if (code == 4) {
+            GpPointF points[16];
+            GpPen *pen;
+            int n = (int)ops[3], i;
+            for (i = 0; i < n && i < ARRAY_SIZE(points); i++) {
+                points[i].X = fx + ops[4 + 2 * i] * u;
+                points[i].Y = fy + ops[5 + 2 * i] * u;
+            }
+            GdipCreatePen2(brush, ops[2] * u, UnitPixel, &pen);
+            GdipSetPenStartCap(pen, LineCapRound);
+            GdipSetPenEndCap(pen, LineCapRound);
+            GdipSetPenLineJoin(pen, LineJoinRound);
+            GdipDrawLines(c->g, pen, points, i);
+            GdipDeletePen(pen);
+            ops += 4 + 2 * n;
+        }
+        else {
+            int used, count = 1, k;
+            GdipCreatePath(FillModeWinding, &path);
+            if (code == 5) {      /* a group: its shapes are filled together */
+                count = (int)ops[2];
+                ops += 3;
+            }
+            for (k = 0; k < count && ops[0] != 0; k++) {
+                if (!(used = s11_tile_add_shape(path, ops, fx, fy, u))) break;
+                ops += used;
+            }
+            GdipFillPath(c->g, brush, path);
+            GdipDeletePath(path);
+            if (k < count) break;  /* an unknown shape: stop rather than misread the rest */
+        }
+        if (white) GdipDeleteBrush((GpBrush *)white);
+    }
+    GdipDeleteBrush((GpBrush *)tile);
+}
+
+/* Built-in programs show their S11 tile; others their own icon on a soft rounded surface */
 static void draw_s11_app_icon(struct canvas *c, HICON icon, int x, int y, int box_size, int icon_size, int kind)
 {
     RECT box = {x, y, x + box_size, y + box_size};
+    const float *symbol = s11_tile_symbol(kind);
+    if (symbol) {
+        /* a little smaller than the surface other icons sit on: the tile is all colour */
+        int size = box_size - (box_size - icon_size) / 3;
+        draw_s11_tile(c, symbol, x + (box_size - size) / 2, y + (box_size - size) / 2, size);
+        return;
+    }
     fill_round_rect(c, &box, (float)SC(9), argb(pal.field, 255));
     stroke_round_rect(c, &box, (float)SC(9), argb(pal.field_border, 190), 1);
-    if (kind != S11_ICON_DEFAULT)
-        draw_s11_builtin_glyph(c, kind, x + (box_size - icon_size) / 2, y + (box_size - icon_size) / 2, icon_size);
-    else draw_icon(c, icon, x + (box_size - icon_size) / 2, y + (box_size - icon_size) / 2, icon_size);
+    draw_icon(c, icon, x + (box_size - icon_size) / 2, y + (box_size - icon_size) / 2, icon_size);
 }
 
 /* ---------------------------------------------------------------------------------------- */

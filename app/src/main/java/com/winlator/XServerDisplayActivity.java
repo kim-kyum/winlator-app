@@ -116,6 +116,7 @@ import com.winlator.s11.CaptionButtons;
 import com.winlator.s11.ComposingOverlay;
 import com.winlator.s11.ImeSession;
 import com.winlator.s11.KoreanFonts;
+import com.winlator.s11.KoreanShell;
 import com.winlator.s11.LegacyBrowserCleanup;
 import com.winlator.s11.MetaKeyCapture;
 import com.winlator.s11.ModernLook;
@@ -947,6 +948,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         }
 
         if (KoreanFonts.applyIfNeeded(container, rootFS.getRootDir())) containerDataChanged = true;
+        // Winlator S11: Korean file type names and Windows' date notation for Wine's shell
+        if (KoreanShell.applyIfNeeded(container, rootFS.getRootDir())) containerDataChanged = true;
         if (ModernLook.applyIfNeeded(container, rootFS.getRootDir())) containerDataChanged = true;
         // Winlator S11: registry settings saved in the container settings while it was running
         // (after the defaults above, so the user's choice wins)

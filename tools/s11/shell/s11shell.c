@@ -1334,12 +1334,23 @@ static int app_icon_kind(const WCHAR *path)
 {
     const WCHAR *exe = file_part(path);
     if (!lstrcmpiW(exe, L"s11settings.exe")) return S11_ICON_SETTINGS;
-    if (!lstrcmpiW(exe, L"s11explorer.exe") || !lstrcmpiW(exe, L"wfm.exe")) return S11_ICON_EXPLORER;
+    if (!lstrcmpiW(exe, L"s11explorer.exe") || !lstrcmpiW(exe, L"wfm.exe") || !lstrcmpiW(exe, L"winefile.exe") ||
+        !lstrcmpiW(exe, L"explorer.exe"))
+        return S11_ICON_EXPLORER;
     if (!lstrcmpiW(exe, L"s11gallery.exe")) return S11_ICON_GALLERY;
-    if (!lstrcmpiW(exe, L"cmd.exe")) return S11_ICON_TERMINAL;
+    if (!lstrcmpiW(exe, L"cmd.exe") || !lstrcmpiW(exe, L"wineconsole.exe")) return S11_ICON_TERMINAL;
     if (!lstrcmpiW(exe, L"notepad.exe")) return S11_ICON_NOTEPAD;
     if (!lstrcmpiW(exe, L"taskmgr.exe")) return S11_ICON_TASK_MANAGER;
     if (!lstrcmpiW(exe, L"regedit.exe")) return S11_ICON_REGISTRY;
+    if (!lstrcmpiW(exe, L"write.exe") || !lstrcmpiW(exe, L"wordpad.exe")) return S11_ICON_WORDPAD;
+    if (!lstrcmpiW(exe, L"winecfg.exe")) return S11_ICON_WINECFG;
+    /* the Wine Mono / Gecko entries start control.exe; Steam (Legacy) winaddons.exe */
+    if (!lstrcmpiW(exe, L"control.exe") || !lstrcmpiW(exe, L"winaddons.exe") || !lstrcmpiW(exe, L"uninstaller.exe"))
+        return S11_ICON_INSTALLER;
+    if (!lstrcmpiW(exe, L"GPUInfo.exe")) return S11_ICON_GPU;
+    if (!lstrcmpiW(exe, L"TestD3D.exe")) return S11_ICON_D3D;
+    if (!lstrcmpiW(exe, L"winemine.exe")) return S11_ICON_MINES;
+    if (!lstrcmpiW(exe, L"7zFM.exe") || !lstrcmpiW(exe, L"7zG.exe")) return S11_ICON_ARCHIVE;
     return S11_ICON_DEFAULT;
 }
 
