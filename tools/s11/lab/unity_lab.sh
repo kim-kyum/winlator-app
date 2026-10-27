@@ -218,19 +218,22 @@ run_steam() {
     started=$(date +%s)
     ( cd "$steamdir" && env $(base_env) $(preset_env PERFORMANCE) ${STEAM_ENV:-} timeout "${STEAM_SECONDS:-1500}" "$BOX64" "$WINE" "$STEAM" $STEAM_ARGS > "$OUT/steam-wine.log" 2>&1 ) &
     pid=$!
+    # the bootstrapper updates the client, then starts it again and exits (status 42): follow
+    # the Wine session rather than that first process
+    session_alive() { kill -0 "$pid" 2>/dev/null || pgrep -f "wineserver" > /dev/null; }
     for t in 60 120 240 360 480 600 780 960 1140 1320 1480; do
         while [ $(( $(date +%s) - started )) -lt "$t" ]; do
-            kill -0 "$pid" 2>/dev/null || break
+            session_alive || break
             sleep 5
         done
-        if ! kill -0 "$pid" 2>/dev/null; then alive=no; break; fi
+        if ! session_alive; then alive=no; break; fi
         import -window root -resize 50% -quality 70 "$OUT/steam-${t}s.jpg" 2>/dev/null
         log "steam ${t}s: windows: $(xwininfo -root -children 2>/dev/null | grep -c '"'), $(xwininfo -root -children 2>/dev/null | grep -o '"[^"]*"' | sort -u | grep -v '"Wine' | head -6 | tr '\n' ' ')"
         log "steam ${t}s: bootstrap: $(tail -1 "$steamdir/logs/bootstrap_log.txt" 2>/dev/null | cut -c1-200)"
         log "steam ${t}s: processes: $(ps -eo args | grep -io '[a-z_]*\.exe' | sort | uniq -c | tr '\n' ' ' | cut -c1-300)"
     done
     wait "$pid"; status=$?
-    log "steam: exit status $status after $(( $(date +%s) - started )) s (alive at end: $alive)"
+    log "steam: first process exit status $status; session $(( $(date +%s) - started )) s (alive at end: $alive)"
     env $(base_env) timeout 60 "$BOX64" "$WINESERVER" -k > /dev/null 2>&1
     mkdir -p "$OUT/steam-logs"
     cp "$steamdir"/logs/*.txt "$OUT/steam-logs/" 2>/dev/null
