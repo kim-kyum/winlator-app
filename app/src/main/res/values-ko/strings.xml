@@ -438,7 +438,7 @@
     <string name="s11_problem_status_entry_point">DLL에 필요한 함수가 없음</string>
     <string name="s11_problem_status_image_format">32/64비트가 맞지 않는 DLL</string>
     <string name="s11_problem_status_init_failed">DLL 초기화 실패</string>
-    <string name="s11_problem_unity_steam">Steam에서 다시 실행되도록 스스로 종료했어요</string>
+    <string name="s11_problem_unity_steam">Steam에서 다시 실행되도록 스스로 종료했어요. 이 컨테이너에 Steam을 설치하고 Steam에서 게임을 실행해 주세요</string>
     <string name="s11_problem_unity_crash">게임이 오류로 종료됐어요: %1$s</string>
     <string name="s11_problem_unity_crash_plain">게임이 오류로 종료됐어요</string>
     <string name="s11_problem_unity_graphics">그래픽 장치를 시작하지 못했어요 (%1$s)</string>

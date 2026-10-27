@@ -495,7 +495,7 @@
     <string name="s11_problem_status_entry_point">a DLL lacks a function it needs</string>
     <string name="s11_problem_status_image_format">a DLL of the wrong kind (32/64-bit)</string>
     <string name="s11_problem_status_init_failed">a DLL failed to initialize</string>
-    <string name="s11_problem_unity_steam">Quit so that Steam would start it again</string>
+    <string name="s11_problem_unity_steam">It quit to be started again by Steam. Install Steam in this container and start the game from Steam</string>
     <string name="s11_problem_unity_crash">The game crashed: %1$s</string>
     <string name="s11_problem_unity_crash_plain">The game crashed</string>
     <string name="s11_problem_unity_graphics">Couldn’t start the graphics device (%1$s)</string>
