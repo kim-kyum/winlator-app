@@ -27,7 +27,7 @@
             android:indeterminate="true"
             app:indicatorColor="?attr/colorAccent"
             app:indicatorSize="30dp"
-            app:trackColor="#00000000"
+            app:trackColor="?attr/s11FieldFill"
             app:trackThickness="3dp" />
 
         <TextView

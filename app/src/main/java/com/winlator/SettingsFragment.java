@@ -438,10 +438,31 @@ public class SettingsFragment extends Fragment {
                     AppUtils.showToast(activity, R.string.unable_to_install_wine);
                     return;
                 }
+                // what Wine prints while its version is asked, shown if that fails (it would
+                // otherwise only say it could not install)
+                final java.util.ArrayDeque<String> output = new java.util.ArrayDeque<>();
+                final com.winlator.core.Callback<String> collect = (line) -> {
+                    synchronized (output) {
+                        output.add(line);
+                        while (output.size() > 20) output.removeFirst();
+                    }
+                };
+                com.winlator.core.ProcessHelper.addDebugCallback(collect);
                 WineInstaller.findWineVersionAsync(activity, destination, (wineInfo) -> {
+                    com.winlator.core.ProcessHelper.removeDebugCallback(collect);
                     preloaderDialog.closeOnUiThread();
                     if (wineInfo == null) {
-                        AppUtils.showToast(activity, R.string.unable_to_install_wine);
+                        final String lines;
+                        synchronized (output) {
+                            lines = String.join("\n", output);
+                        }
+                        activity.runOnUiThread(() -> {
+                            ContentDialog dialog = new ContentDialog(activity);
+                            dialog.setTitle(R.string.unable_to_install_wine);
+                            dialog.setMessage(lines.isEmpty() ? activity.getString(R.string.s11_arm64_wine_no_output) : lines);
+                            dialog.findViewById(R.id.BTCancel).setVisibility(View.GONE);
+                            dialog.show();
+                        });
                         return;
                     }
                     activity.runOnUiThread(() -> showWineInstallDialog(wineInfo));

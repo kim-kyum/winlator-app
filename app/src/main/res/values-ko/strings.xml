@@ -331,7 +331,7 @@
     <string name="s11_cs_footer_hint">바뀐 설정은 다음에 컨테이너를 켤 때 적용돼요.</string>
     <string name="s11_cs_name_desc">컨테이너 목록과 바로 가기에 표시돼요.</string>
     <string name="s11_cs_screen_size_desc">Windows 바탕 화면의 크기예요. Native는 이 기기의 화면 전체를 써요.</string>
-    <string name="s11_cs_wine_version_desc">컨테이너를 만들 때 정해요.</string>
+    <string name="s11_cs_wine_version_desc">컨테이너를 만들 때 정해요. ARM64(설정에서 받기)는 프로그램이 더 빠르고 ARM64판 프로그램도 그대로 돌아요. 게임은 기본 Wine을 쓰세요.</string>
     <string name="s11_cs_graphics">그래픽과 소리</string>
     <string name="s11_cs_graphics_driver_desc">Vulkan과 OpenGL이 GPU에 닿는 방법이에요. 대부분은 기본값이 잘 맞아요.</string>
     <string name="s11_cs_dxwrapper">DirectX</string>
@@ -438,7 +438,7 @@
     <string name="s11_problem_status_entry_point">DLL에 필요한 함수가 없음</string>
     <string name="s11_problem_status_image_format">32/64비트가 맞지 않는 DLL</string>
     <string name="s11_problem_status_init_failed">DLL 초기화 실패</string>
-    <string name="s11_problem_unity_steam">Steam에서 다시 실행되도록 스스로 종료했어요</string>
+    <string name="s11_problem_unity_steam">Steam에서 다시 실행되도록 스스로 종료했어요. 이 컨테이너에 Steam을 설치하고 Steam에서 게임을 실행해 주세요</string>
     <string name="s11_problem_unity_crash">게임이 오류로 종료됐어요: %1$s</string>
     <string name="s11_problem_unity_crash_plain">게임이 오류로 종료됐어요</string>
     <string name="s11_problem_unity_graphics">그래픽 장치를 시작하지 못했어요 (%1$s)</string>
@@ -472,4 +472,5 @@
     <string name="s11_arm64_wine_get">받기</string>
     <string name="s11_arm64_wine_installed">설치됨</string>
     <string name="s11_arm64_wine_failed">ARM64 Wine을 받지 못했어요. 인터넷 연결을 확인해 주세요.</string>
+    <string name="s11_arm64_wine_no_output">ARM64 Wine이 시작되지 않았어요 (아무것도 출력하지 않았어요).</string>
 </resources>

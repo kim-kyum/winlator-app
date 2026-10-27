@@ -101,7 +101,16 @@ public abstract class ProcessHelper {
 
             if (terminationCallback != null) createWaitForThread(process, terminationCallback);
         }
-        catch (Exception e) {}
+        catch (Exception e) {
+            // Winlator S11: say why the program did not start (it used to vanish silently)
+            String message = "exec failed: "+e;
+            if (outputCallback != null) outputCallback.call(message);
+            ArrayList<Callback<String>> callbacks;
+            synchronized (debugCallbacks) {
+                callbacks = new ArrayList<>(debugCallbacks);
+            }
+            for (Callback<String> callback : callbacks) callback.call(message);
+        }
         return pid;
     }
 

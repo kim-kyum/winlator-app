@@ -138,12 +138,18 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         }
         else command = rootDir+"/usr/local/bin/box64 "+guestExecutable;
 
-        return ProcessHelper.exec(command, envVars, rootDir, (status) -> {
+        int newPid = ProcessHelper.exec(command, envVars, rootDir, (status) -> {
             synchronized (lock) {
                 pid = -1;
             }
             if (terminationCallback != null) terminationCallback.call(status);
         }, outputCallback);
+        // Winlator S11: a program that could not start ends at once (whoever waits for it is told)
+        if (newPid == -1 && terminationCallback != null) {
+            final Callback<Integer> callback = terminationCallback;
+            java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> callback.call(-1));
+        }
+        return newPid;
     }
 
     private void extractBox64File() {

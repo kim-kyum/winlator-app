@@ -391,7 +391,7 @@
     <string name="s11_cs_footer_hint">Changes apply the next time this container starts.</string>
     <string name="s11_cs_name_desc">Shown in the container list and on shortcuts.</string>
     <string name="s11_cs_screen_size_desc">The size of the Windows desktop. Native uses the whole screen of this device.</string>
-    <string name="s11_cs_wine_version_desc">Chosen when the container is created.</string>
+    <string name="s11_cs_wine_version_desc">Chosen when the container is created. ARM64 (from Settings) is faster for programs and has an ARM64 build of theirs to use; keep the default one for games.</string>
     <string name="s11_cs_graphics">Graphics and sound</string>
     <string name="s11_cs_graphics_driver_desc">How Vulkan and OpenGL reach the GPU. The default suits most programs.</string>
     <string name="s11_cs_dxwrapper">DirectX</string>
@@ -495,7 +495,7 @@
     <string name="s11_problem_status_entry_point">a DLL lacks a function it needs</string>
     <string name="s11_problem_status_image_format">a DLL of the wrong kind (32/64-bit)</string>
     <string name="s11_problem_status_init_failed">a DLL failed to initialize</string>
-    <string name="s11_problem_unity_steam">Quit so that Steam would start it again</string>
+    <string name="s11_problem_unity_steam">It quit to be started again by Steam. Install Steam in this container and start the game from Steam</string>
     <string name="s11_problem_unity_crash">The game crashed: %1$s</string>
     <string name="s11_problem_unity_crash_plain">The game crashed</string>
     <string name="s11_problem_unity_graphics">Couldn’t start the graphics device (%1$s)</string>
@@ -529,4 +529,5 @@
     <string name="s11_arm64_wine_get">Download</string>
     <string name="s11_arm64_wine_installed">Installed</string>
     <string name="s11_arm64_wine_failed">Could not download the ARM64 Wine. Check the internet connection.</string>
+    <string name="s11_arm64_wine_no_output">The ARM64 Wine did not start (it printed nothing).</string>
 </resources>
