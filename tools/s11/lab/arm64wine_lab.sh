@@ -54,10 +54,13 @@ rm -rf "$W64" && mkdir -p "$W64"
 cp -a "$LAB/hangover/stage/usr/." "$W64/"
 du -sh "$W64" >> "$SUMMARY"
 ls "$W64/bin" "$W64/lib/wine" >> "$SUMMARY" 2>&1
+# every program with an ELF interpreter: bin/ and lib/wine/aarch64-unix/ (Wine re-executes
+# lib/wine/aarch64-unix/wine, directly or through wine-preloader, which is static)
 ELFS=""
-for b in "$W64"/bin/*; do
-    file "$b" | grep -q "ELF.*aarch64" && { ELFS="$ELFS $b"; cp -a "$b" "$b.orig"; }
-done
+while IFS= read -r b; do
+    file "$b" | grep -q "ELF.*aarch64.*interpreter" && { ELFS="$ELFS $b"; cp -a "$b" "$b.orig"; }
+done < <(find "$W64/bin" "$W64/lib/wine/aarch64-unix" -maxdepth 1 -type f ! -name "*.so")
+log "programs to patch:$ELFS"
 # run 11: every program dumped core right after patchelf. Run 12: without HOME and USER, Wine
 # reads the rootfs's /etc/passwd (there is none) and crashes at NULL; with them (as below) it
 # still dumped core in wineboot (SIGBUS). Find where.
