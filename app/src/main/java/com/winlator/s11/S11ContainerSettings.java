@@ -275,6 +275,14 @@ public final class S11ContainerSettings {
             container.getBox64Preset());
         for (Box64Preset preset : Box64PresetManager.getPresets(context)) option(preset.id, preset.name);
 
+        row("compat", "choice", "box64Cache", getString(R.string.s11_cs_box64_cache), getString(R.string.s11_cs_box64_cache_desc),
+            isBox64CacheOn(container) ? "1" : "0");
+        option("1", getString(R.string.s11_on));
+        option("0", getString(R.string.s11_off));
+        File cache = box64CacheDir(RootFS.find(context).getRootDir());
+        row("compat", "action", "box64CacheClear", getString(R.string.s11_cs_box64_cache_clear),
+            context.getString(R.string.s11_cs_box64_cache_size, sizeOf(cache) / (1024 * 1024)), getString(R.string.s11_cs_box64_cache_clear_button));
+
         row("compat", "choice", "startupSelection", getString(R.string.startup_selection), getString(R.string.s11_cs_startup_desc),
             String.valueOf(container.getStartupSelection()));
         indexedOptions(getArray(R.array.startup_selection_entries));
@@ -374,6 +382,15 @@ public final class S11ContainerSettings {
                 if (Box64PresetManager.getPreset(context, value) == null || value.equals(container.getBox64Preset())) return false;
                 container.setBox64Preset(value);
                 return true;
+            case "box64Cache":
+                if (!value.equals("0") && !value.equals("1")) return false;
+                if (value.equals(isBox64CacheOn(container) ? "1" : "0")) return false;
+                container.putExtra(BOX64_CACHE_EXTRA, value);
+                return true;
+            case "box64CacheClear":
+                // running programs keep the files they opened; the next ones translate again
+                FileUtils.clear(box64CacheDir(RootFS.find(context).getRootDir()));
+                return false;
             case "cpuList":
             case "cpuListWoW64": {
                 String list = parseCPUList(value);
@@ -850,5 +867,42 @@ public final class S11ContainerSettings {
             labels[i] = label;
         }
         return labels;
+    }
+
+    // ------------------------------------------------------------------------------------
+    // Box64's DynaCache
+    // ------------------------------------------------------------------------------------
+
+    private static final String BOX64_CACHE_EXTRA = "s11Box64Cache";
+
+    public static boolean isBox64CacheOn(Container container) {
+        return !"0".equals(container.getExtra(BOX64_CACHE_EXTRA));
+    }
+
+    /** In the container's home (the rootfs's home links to the running container's) */
+    public static File box64CacheDir(File rootDir) {
+        return new File(rootDir, RootFS.USER_CACHE_PATH + "/box64");
+    }
+
+    private static long sizeOf(File file) {
+        if (!file.isDirectory()) return file.length();
+        long size = 0;
+        File[] files = file.listFiles();
+        if (files != null) for (File f : files) size += FileUtils.isSymlink(f) ? 0 : sizeOf(f);
+        return size;
+    }
+
+    /**
+     * Box64 keeps the code it translated (DynaCache): a program starts faster the second time
+     * (the S11 lab: cmd 1.3 s to 0.24 s, Notepad's window 0.8 s to 0.6 s). Upstream Winlator
+     * turned it off; it is on unless the container's Compatibility page turns it off.
+     */
+    public static void addBox64CacheEnvVars(Container container, File rootDir, EnvVars envVars) {
+        if (!isBox64CacheOn(container)) return;
+        File dir = box64CacheDir(rootDir);
+        if (!dir.isDirectory()) dir.mkdirs();
+        envVars.put("BOX64_DYNACACHE", "1");
+        envVars.put("BOX64_DYNACACHE_FOLDER", dir.getPath());
+        envVars.put("BOX64_DYNACACHE_LIMIT", "1024");
     }
 }

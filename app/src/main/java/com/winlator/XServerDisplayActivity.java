@@ -1029,6 +1029,9 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             envVars.put("S11_CONTAINER", container.getName());
             // Winlator S11: the device's time zone (the rootfs has no zone database: UTC otherwise)
             envVars.put("TZ", TimeZones.posixTz());
+            // Winlator S11: Box64 keeps the code it translated (DynaCache), so programs start faster
+            // the second time; the container's own variables below may still turn it off
+            S11ContainerSettings.addBox64CacheEnvVars(container, rootFS.getRootDir(), envVars);
 
             envVars.putAll(container.getEnvVars());
             if (shortcut != null) envVars.putAll(shortcut.getExtra("envVars"));

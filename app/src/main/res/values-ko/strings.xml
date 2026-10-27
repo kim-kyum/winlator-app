@@ -461,4 +461,9 @@
     <string name="s11_problem_hint_unity">Unity 게임은 exe 옆에 UnityPlayer.dll과 ‘_Data’ 폴더가 있어야 해요. 게임 폴더를 통째로 옮기거나 압축을 풀고, 그 안의 exe를 실행해 주세요.</string>
     <string name="s11_problem_hint_runtime">Visual C++ 런타임 파일이에요. 프로그램에 딸린 vc_redist(x64 또는 x86)를 먼저 설치해 주세요.</string>
     <string name="s11_problem_hint_local">보통 프로그램과 함께 있는 파일이에요. exe만 따로 옮겼거나 압축 파일 안에서 바로 실행했다면, 폴더째 옮겨 주세요.</string>
+    <string name="s11_cs_box64_cache">번역 캐시</string>
+    <string name="s11_cs_box64_cache_desc">Box64가 번역한 코드를 저장해 두어, 두 번째 실행부터 프로그램이 빨리 시작돼요. 업데이트 뒤 프로그램이 이상하면 꺼 보세요.</string>
+    <string name="s11_cs_box64_cache_clear">번역 캐시 비우기</string>
+    <string name="s11_cs_box64_cache_size">지금 %1$d MB예요. 비우면 다음 실행 때 다시 번역해요.</string>
+    <string name="s11_cs_box64_cache_clear_button">비우기</string>
 </resources>
