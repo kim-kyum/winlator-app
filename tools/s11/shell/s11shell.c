@@ -1532,6 +1532,17 @@ static BOOL resolve_link(const WCHAR *lnk, WCHAR *target, WCHAR *icon_path, int 
         raw[0] = 0;
         if (SUCCEEDED(IShellLinkW_GetPath(link, raw, MAX_PATH, &fd, 0)) && raw[0])
             ExpandEnvironmentStringsW(raw, target, MAX_PATH);
+        else {
+            /* Winlator's own shortcuts (its start menu, MSLink.java) hold only an item list, and
+             * Wine's GetPath says nothing about those until the link is resolved: the target
+             * comes from the list. Without it they kept Wine's icons and Winlator's file manager
+             * took the File Explorer's place. */
+            ITEMIDLIST *pidl = NULL;
+            if (SUCCEEDED(IShellLinkW_GetIDList(link, &pidl)) && pidl) {
+                if (!SHGetPathFromIDListW(pidl, target)) target[0] = 0;
+                CoTaskMemFree(pidl);
+            }
+        }
         raw[0] = 0;
         if (SUCCEEDED(IShellLinkW_GetArguments(link, raw, MAX_PATH)) && raw[0]) *has_args = TRUE;
         raw[0] = 0;
@@ -2007,10 +2018,10 @@ static void launch_item(int item)
     }
     {
         struct app *app = &apps[shown[run_item ? item - 1 : item]];
-        const WCHAR *exe = wcsrchr(app->path, L'\\');
-        exe = exe ? exe + 1 : app->path;
+        /* a shortcut's program (Command Prompt is one in Winlator's start menu) */
+        const WCHAR *exe = file_part(app->target[0] && !app->target_args ? app->target : app->path);
         /* ShellExecute's lpDirectory is ignored by Wine's winhandler delegation; use cmd itself. */
-        if (!lstrcmpiW(exe, L"cmd.exe")) run(app->path, L"/K cd /d C:\\");
+        if (!lstrcmpiW(exe, L"cmd.exe")) run(app->target[0] ? app->target : app->path, L"/K cd /d C:\\");
         else run(app->path, app->args[0] ? app->args : NULL);
     }
 }

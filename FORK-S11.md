@@ -215,6 +215,13 @@ programs, a preview sheet, and `tools/s11/shell/s11tiles.h`, the same shapes as 
 the shell draws with GDI+ on the taskbar and in the start menu (`draw_s11_tile`). Other
 programs keep their own icon on a soft rounded surface.
 
+The start menu knows a program by its shortcut's target. Winlator's own start menu
+(`WineStartMenuCreator`, `MSLink`) writes shortcuts with only an item list, and Wine's
+`IShellLink::GetPath` returns nothing for those until the link is resolved, so the shell
+reads the path from the list (`SHGetPathFromIDListW`). Before that, every Winlator entry kept
+Wine's icon and the "파일 탐색기" entry (Winlator's `wfm.exe`, English) took the place of the
+S11 File Explorer.
+
 What Wine keeps in the registry it writes directly. Resolution, mode and background belong
 to the container in Winlator, so it sends them to winhandler's UDP port (codes 102-104,
 `S11Settings`), the app stores them in the container, and they apply when it restarts; a
