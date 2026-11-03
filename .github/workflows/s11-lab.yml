@@ -3,9 +3,9 @@ name: S11 Lab (Unity on ARM64)
 # Experiments that need an ARM64 CPU: Winlator's Wine under Box64 with S11's settings.
 # Results are pushed to the s11-lab-results branch (job logs are not reachable from the
 # build session).
+# Started by hand only (Actions > this workflow > Run workflow): these test runs are heavy,
+# so a push no longer starts them.
 on:
-  push:
-    branches: [ s11-lab ]
   workflow_dispatch:
 
 concurrency:
