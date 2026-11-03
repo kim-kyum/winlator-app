@@ -2,9 +2,9 @@ name: S11 UI screenshots
 
 # Builds the app and takes screenshots of its Android screens in an emulator, pushed to the
 # s11-ui-results branch (the build session cannot see job logs or artifacts).
+# Started by hand only (Actions > this workflow > Run workflow): these test runs are heavy,
+# so a push no longer starts them.
 on:
-  push:
-    branches: [ s11-ui ]
   workflow_dispatch:
 
 concurrency:
