@@ -3,9 +3,9 @@ name: S11 ARM64 Wine package
 # Hangover's ARM64 Wine laid out for the app's rootfs (tools/s11/wine-arm64/package.sh), tried
 # in that rootfs, and published as a release the app downloads from Settings. The logs go to the
 # s11-wine-arm64-results branch.
+# Started by hand only (Actions > this workflow > Run workflow): these test runs are heavy,
+# so a push no longer starts them.
 on:
-  push:
-    branches: [ s11-wine-arm64 ]
   workflow_dispatch:
 
 concurrency:
